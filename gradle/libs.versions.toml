@@ -2,10 +2,14 @@
 kotlin = "1.8.10"
 blocking-bridge = "3.0.0-180.1"
 junit-bom = "5.9.1"
+jackson = "2.18.2"
 
 [libraries]
 blocking-bridge-runtime = { module = "me.him188:kotlin-jvm-blocking-bridge-runtime", version.ref = "blocking-bridge" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-bom" }
+
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

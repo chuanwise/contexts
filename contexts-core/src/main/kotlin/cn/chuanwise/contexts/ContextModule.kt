@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts
 
-repositories {
-    mavenCentral()
-}
+interface ContextModule {
+    fun onContextPreEnter(context: Context): Unit = Unit
+    fun onContextPreAdd(parent: Context, child: Context): Unit = Unit
+    fun onContextPreRemove(parent: Context, child: Context): Unit = Unit
 
-dependencies {
-    api(libs.blocking.bridge.runtime)
-
-    api(libs.jackson.module.kotlin)
-    api(libs.jackson.databind)
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    fun onContextPostEnter(context: Context): Unit = Unit
+    fun onContextPostAdd(parent: Context, child: Context): Unit = Unit
+    fun onContextPostRemove(parent: Context, child: Context): Unit = Unit
 }

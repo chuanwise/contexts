@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
+package cn.chuanwise.contexts
+
+import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.NotStableForInheritance
+
+@NotStableForInheritance
+interface ContextManager {
+    val modules: Collection<ContextModule>
+
+    fun registerContextHandlerFactory(factory: ContextModule)
 }
 
-repositories {
-    mavenCentral()
-}
+@ContextsInternalApi
+class ContextManagerImpl : ContextManager {
+    override val modules: Collection<ContextModule>
+        get() = TODO("Not yet implemented")
 
-dependencies {
-    api(libs.blocking.bridge.runtime)
-
-    api(libs.jackson.module.kotlin)
-    api(libs.jackson.databind)
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    override fun registerContextHandlerFactory(factory: ContextModule) {
+        TODO("Not yet implemented")
+    }
 }

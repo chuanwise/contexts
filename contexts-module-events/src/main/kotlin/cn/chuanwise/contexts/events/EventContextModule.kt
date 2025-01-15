@@ -14,24 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
+import cn.chuanwise.contexts.ContextModule
 
-dependencies {
-    api(libs.blocking.bridge.runtime)
-
-    api(libs.jackson.module.kotlin)
-    api(libs.jackson.databind)
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+object EventContextModule : ContextModule {
 }
