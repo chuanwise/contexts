@@ -24,11 +24,7 @@ import cn.chuanwise.contexts.util.ReadAddRemoveLock
 import cn.chuanwise.contexts.util.add
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
-import cn.chuanwise.contexts.util.withWriteLocks
 import java.util.ArrayDeque
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
-import kotlin.concurrent.write
 
 @NotStableForInheritance
 interface Context : MutableBeans {
@@ -304,11 +300,7 @@ class ContextImpl(
         return removed
     }
 
-    override fun enterChild(
-        child: Collection<Any>,
-        key: String?,
-        replace: Boolean
-    ): Context? {
+    override fun enterChild(child: Collection<Any>, key: String?, replace: Boolean): Context? {
         val context = ContextImpl(manager, key, beans).apply {
             putAll(child)
         }
