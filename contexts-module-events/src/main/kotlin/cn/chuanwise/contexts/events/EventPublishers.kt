@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+@file:JvmName("EventPublishers")
 
-repositories {
-    mavenCentral()
-}
+package cn.chuanwise.contexts.events
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-    testImplementation(libs.junit.jupiter)
-}
+/**
+ * 获取事件管理器。
+ */
+val Beans.eventPublisherOrNull: EventPublisher? get() = getBeanValue()
 
-tasks.test {
-    useJUnitPlatform()
-}
+/**
+ * 获取事件管理器。
+ */
+val Beans.eventPublisher: EventPublisher get() = getBeanValueOrFail()

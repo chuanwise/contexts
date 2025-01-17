@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
+import cn.chuanwise.contexts.Context
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+/**
+ * 事件处理器。
+ *
+ * @author Chuanwise
+ */
+fun interface EventHandler {
+    fun onEvent(currentContext: Context, eventContext: EventContext<*>)
 }

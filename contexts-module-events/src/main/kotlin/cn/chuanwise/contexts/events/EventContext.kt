@@ -16,7 +16,27 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.ContextModule
+import cn.chuanwise.contexts.Context
 
-object EventContextModule : ContextModule {
+/**
+ * 事件上下文。
+ *
+ * @param T 事件类型
+ * @author Chuanwise
+ */
+interface EventContext<T : Any> {
+    /**
+     * 上下文。
+     */
+    val context: Context
+
+    /**
+     * 事件
+     */
+    val event: T
+
+    /**
+     * 是否被拦截
+     */
+    var isIntercepted: Boolean
 }

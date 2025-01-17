@@ -25,7 +25,6 @@ repositories {
 
 dependencies {
     api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
 
     testImplementation(libs.junit.jupiter)
 }

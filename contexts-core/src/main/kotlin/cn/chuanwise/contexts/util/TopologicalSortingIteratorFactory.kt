@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
+@file:JvmName("TopologicalSortingIteratorFactory")
+
+package cn.chuanwise.contexts.util
+
+import cn.chuanwise.contexts.Context
+
+@OptIn(ContextsInternalApi::class)
+fun Iterable<Context>.createParentToChildTopologicalSortingIterator(): Iterator<Context> {
+    return ParentToChildTopologicalSortingImpl(this)
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+@OptIn(ContextsInternalApi::class)
+fun Iterable<Context>.createChildToParentTopologicalSortingIterator(): Iterator<Context> {
+    return ChildToParentTopologicalSortingImpl(this)
 }

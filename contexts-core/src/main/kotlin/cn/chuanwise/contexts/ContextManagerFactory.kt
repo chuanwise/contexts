@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+@file:JvmName("ContextManagerFactory")
 
-repositories {
-    mavenCentral()
-}
+package cn.chuanwise.contexts
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+import cn.chuanwise.contexts.util.ContextsInternalApi
 
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+@OptIn(ContextsInternalApi::class)
+fun createContextManager(): ContextManager = ContextManagerImpl()

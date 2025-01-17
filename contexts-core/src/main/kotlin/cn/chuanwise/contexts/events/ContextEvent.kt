@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
+import cn.chuanwise.contexts.ContextManager
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+/**
+ * 上下文事件。
+ *
+ * @author Chuanwise
+ */
+interface ContextEvent {
+    val contextManager: ContextManager
 }

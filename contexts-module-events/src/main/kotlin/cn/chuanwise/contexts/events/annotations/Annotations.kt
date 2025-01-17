@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events.annotations
 
-repositories {
-    mavenCentral()
-}
+import kotlin.reflect.KClass
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+/**
+ * 事件监听器函数注解。
+ *
+ * @property eventClass 事件类
+ */
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Listener(
+    val eventClass: KClass<*> = Nothing::class,
+    val filter: Boolean = true,
+    val intercept: Boolean = false
+)
 
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Event

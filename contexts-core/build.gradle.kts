@@ -28,6 +28,7 @@ dependencies {
 
     api(libs.jackson.module.kotlin)
     api(libs.jackson.databind)
+    api(libs.coroutines.core)
 
     testImplementation(libs.junit.jupiter)
 }

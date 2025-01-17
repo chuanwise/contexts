@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+/**
+ * 事件监听器。
+ *
+ * @param T 事件的类型
+ */
+fun interface Listener<T : Any> {
+    fun onEvent(eventContext: EventContext<T>)
 }

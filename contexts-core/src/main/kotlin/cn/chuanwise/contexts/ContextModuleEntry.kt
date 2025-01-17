@@ -14,22 +14,31 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts
 
-repositories {
-    mavenCentral()
-}
+/**
+ * 表示一个上下文模块的实例。
+ *
+ * @author Chuanwise
+ */
+interface ContextModuleEntry {
+    /**
+     * 是否已经被删除。
+     */
+    val isRemoved: Boolean
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+    /**
+     * 此模块的实例。
+     */
+    val module: ContextModule
 
-    testImplementation(libs.junit.jupiter)
-}
+    /**
+     * 管理此模块的上下文管理器。
+     */
+    val contextManager: ContextManager
 
-tasks.test {
-    useJUnitPlatform()
+    /**
+     * 删除此模块。
+     */
+    fun remove()
 }

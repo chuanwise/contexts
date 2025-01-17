@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.util
 
-repositories {
-    mavenCentral()
-}
+interface MutableEntry<out T> : Entry<T> {
+    override val value: T
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    fun remove()
 }

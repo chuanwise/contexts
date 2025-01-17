@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
+import org.junit.jupiter.api.Test
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+class EventHandlerTest {
+    @Test
+    fun testLifecycleEvent() {
 
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    }
 }

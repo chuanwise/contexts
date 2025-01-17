@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.filters
 
-repositories {
-    mavenCentral()
-}
+interface FilterEntry {
+    val filter: Filter<Any>
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    val isRemoved: Boolean
+    fun remove()
 }

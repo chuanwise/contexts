@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.filters
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+/**
+ * 过滤器。
+ *
+ * @author Chuanwise
+ */
+fun interface Filter<T : Any> {
+    fun onFilter(value: T): Boolean?
 }

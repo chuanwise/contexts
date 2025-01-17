@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.filters.annotations
 
-repositories {
-    mavenCentral()
-}
+import kotlin.reflect.KClass
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+/**
+ * 注册函数为一个类型的过滤器。
+ *
+ * @author Chuanwise
+ */
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Filter(
+    val valueClass: KClass<*> = Nothing::class
+)
 
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+/**
+ * 标注一个过滤器函数的多个参数中的过滤目标类型。
+ *
+ * @author Chuanwise
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Value

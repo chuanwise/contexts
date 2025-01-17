@@ -16,12 +16,25 @@
 
 package cn.chuanwise.contexts
 
-interface ContextModule {
-    fun onContextPreEnter(context: Context): Unit = Unit
-    fun onContextPreAdd(parent: Context, child: Context): Unit = Unit
-    fun onContextPreRemove(parent: Context, child: Context): Unit = Unit
+import cn.chuanwise.contexts.events.ContextPostAddEvent
+import cn.chuanwise.contexts.events.ContextPostEnterEvent
+import cn.chuanwise.contexts.events.ContextPostExitEvent
+import cn.chuanwise.contexts.events.ContextPostRemoveEvent
+import cn.chuanwise.contexts.events.ContextPreAddEvent
+import cn.chuanwise.contexts.events.ContextPreEnterEvent
+import cn.chuanwise.contexts.events.ContextPreExitEvent
+import cn.chuanwise.contexts.events.ContextPreRemoveEvent
 
-    fun onContextPostEnter(context: Context): Unit = Unit
-    fun onContextPostAdd(parent: Context, child: Context): Unit = Unit
-    fun onContextPostRemove(parent: Context, child: Context): Unit = Unit
+interface ContextModule {
+    fun onContextPreAdd(event: ContextPreAddEvent): Unit = Unit
+    fun onContextPostAdd(event: ContextPostAddEvent): Unit = Unit
+
+    fun onContextPreRemove(event: ContextPreRemoveEvent): Unit = Unit
+    fun onContextPostRemove(event: ContextPostRemoveEvent): Unit = Unit
+
+    fun onContextPreEnter(event: ContextPreEnterEvent): Unit = Unit
+    fun onContextPostEnter(event: ContextPostEnterEvent): Unit = Unit
+
+    fun onContextPreExit(event: ContextPreExitEvent): Unit = Unit
+    fun onContextPostExit(event: ContextPostExitEvent): Unit = Unit
 }

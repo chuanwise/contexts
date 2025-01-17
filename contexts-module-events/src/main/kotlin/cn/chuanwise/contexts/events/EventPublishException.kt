@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.events
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+class EventPublishException(
+    val event: Any,
+    val exceptions: List<Throwable>
+) : RuntimeException("${exceptions.size} exception(s) occurred while publishing event $event.", exceptions.firstOrNull())

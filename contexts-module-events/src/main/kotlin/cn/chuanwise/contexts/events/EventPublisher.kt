@@ -14,22 +14,33 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
+package cn.chuanwise.contexts.events
+
+import cn.chuanwise.contexts.Context
+
+/**
+ * 事件发布器。
+ *
+ * @author Chuanwise
+ */
+interface EventPublisher {
+    /**
+     * 上下文。
+     */
+    val context: Context
+
+    /**
+     * 仅仅将事件发布给当前上下文中的监听器。
+     *
+     * @param event 事件
+     */
+    fun publishToContext(event: Any)
+
+    /**
+     * 发布事件。事件的传播范围是从子到父，过滤范围是从父到子。
+     *
+     * @param event 事件
+     */
+    fun publishToAllChildrenAndContext(event: Any)
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}

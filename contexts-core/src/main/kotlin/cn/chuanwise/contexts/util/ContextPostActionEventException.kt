@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+package cn.chuanwise.contexts.util
 
-repositories {
-    mavenCentral()
-}
+import cn.chuanwise.contexts.events.ContextEvent
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
-
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
+class ContextPostActionEventException @ContextsInternalApi constructor(
+    val event: ContextEvent,
+    val exceptions: List<Throwable>
+) : RuntimeException(
+    "${exceptions.size} exception(s) occurred during handling post context event: $event",
+    exceptions.first()
+) {
+    override fun toString(): String = "ContextPostActionEventException(event=$event, exceptions=$exceptions)"
 }

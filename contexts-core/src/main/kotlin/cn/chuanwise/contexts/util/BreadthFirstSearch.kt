@@ -20,69 +20,45 @@ import cn.chuanwise.contexts.Context
 import java.util.Deque
 import java.util.ArrayDeque
 
-/**
- * 广度优先搜索迭代器。
- *
- * @author Chuanwise
- */
-interface BreadthFirstSearch : Iterator<Context>
-
-/**
- * 创建一个广度优先搜索迭代器。
- *
- * @param queue 搜索队列。
- * @param visited 已访问的上下文。
- * @return 广度优先搜索迭代器。
- */
-@JvmOverloads
-@OptIn(ContextsInternalApi::class)
-fun BreadthFirstSearch(
-    queue: Deque<Context>,
-    visited: MutableSet<Context> = mutableSetOf()
-): BreadthFirstSearch = BreadthFirstSearchImpl(queue, visited)
-
-/**
- * 创建一个广度优先搜索迭代器。
- *
- * @param root 根上下文。
- * @param visited 已访问的上下文。
- * @return 广度优先搜索迭代器。
- */
-@JvmOverloads
-@OptIn(ContextsInternalApi::class)
-fun BreadthFirstSearch(
-    root: Context,
-    visited: MutableSet<Context> = mutableSetOf()
-): BreadthFirstSearch = BreadthFirstSearchImpl(ArrayDeque<Context>().apply { add(root) }, visited)
-
 @ContextsInternalApi
-class BreadthFirstSearchImpl(
-    private val queue: Deque<Context>,
-    private val visited: MutableSet<Context>
-) : BreadthFirstSearch {
+class BreadthFirstSearchIterator<T>(
+    private val queue: Deque<T>,
+    private val visited: MutableSet<T> = mutableSetOf(),
+    private val neighbors: (T) -> Iterable<T>
+) : Iterator<T> {
     override fun hasNext(): Boolean {
         if (queue.isEmpty()) {
             return false
         }
-        var context: Context
+        var value: T
         do {
-            context = queue.peek()
-            if (context !in visited) {
+            value = queue.peek()
+            if (value !in visited) {
                 return true
             }
         } while (queue.poll() != null)
         return false
     }
 
-    override fun next(): Context {
+    override fun next(): T {
         check(hasNext()) { "No more elements" }
-        val context = queue.poll()
-        visited.add(context)
-        for (child in context.children) {
-            if (child !in visited) {
-                queue.add(child)
+        val value = queue.poll()
+        visited.add(value)
+        for (neighbor in neighbors(value)) {
+            if (neighbor !in visited) {
+                queue.add(neighbor)
             }
         }
-        return context
+        return value
     }
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createAllChildrenBreadthFirstSearchIterator(): Iterator<Context> {
+    return BreadthFirstSearchIterator(ArrayDeque(children), mutableSetOf(), Context::children)
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createAllParentsBreadthFirstSearchIterator(): Iterator<Context> {
+    return BreadthFirstSearchIterator(ArrayDeque(parents), mutableSetOf(), Context::parents)
 }

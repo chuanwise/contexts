@@ -17,72 +17,48 @@
 package cn.chuanwise.contexts.util
 
 import cn.chuanwise.contexts.Context
-import java.util.ArrayDeque
 import java.util.Deque
-
-/**
- * 深度优先搜索迭代器。
- *
- * @author Chuanwise
- */
-interface DeepFirstSearch : Iterator<Context>
-
-/**
- * 创建一个深度优先搜索迭代器。
- *
- * @param stack 搜索栈。
- * @param visited 已访问的上下文。
- * @return 深度优先搜索迭代器。
- */
-@JvmOverloads
-@OptIn(ContextsInternalApi::class)
-fun DeepFirstSearch(
-    stack: Deque<Context>,
-    visited: MutableSet<Context> = mutableSetOf()
-): DeepFirstSearch = DeepFirstSearchImpl(stack, visited)
-
-/**
- * 创建一个深度优先搜索迭代器。
- *
- * @param root 根上下文。
- * @param visited 已访问的上下文。
- * @return 深度优先搜索迭代器。
- */
-@JvmOverloads
-@OptIn(ContextsInternalApi::class)
-fun DeepFirstSearch(
-    root: Context,
-    visited: MutableSet<Context> = mutableSetOf()
-): DeepFirstSearch = DeepFirstSearchImpl(ArrayDeque<Context>().apply { add(root) }, visited)
+import java.util.ArrayDeque
 
 @ContextsInternalApi
-class DeepFirstSearchImpl(
-    private val stack: Deque<Context>,
-    private val visited: MutableSet<Context>
-) : DeepFirstSearch {
+class DeepFirstSearchImpl<T>(
+    private val stack: Deque<T>,
+    private val visited: MutableSet<T> = mutableSetOf(),
+    private val neighbors: (T) -> Iterable<T>
+) : Iterator<T> {
     override fun hasNext(): Boolean {
         if (stack.isEmpty()) {
             return false
         }
-        var context: Context
+        var value: T
         do {
-            context = stack.peekLast()
-            if (context !in visited) {
+            value = stack.peekLast()
+            if (value !in visited) {
                 return true
             }
         } while (stack.poll() != null)
         return false
     }
 
-    override fun next(): Context {
+    override fun next(): T {
         check(hasNext()) { "No more elements" }
-        val next = stack.pop()
-        visited.add(next)
-        for (child in next.children) {
-            if (child !in visited) {
-                stack.push(child)
+        val value = stack.pop()
+        visited.add(value)
+        for (neighbor in neighbors(value)) {
+            if (neighbor !in visited) {
+                stack.push(neighbor)
             }
         }
-        return next
+        return value
     }
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createAllChildrenDeepFirstSearchIterator(): Iterator<Context> {
+    return DeepFirstSearchImpl(ArrayDeque(children), mutableSetOf(), Context::children)
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createAllParentsDeepFirstSearchIterator(): Iterator<Context> {
+    return DeepFirstSearchImpl(ArrayDeque(parents), mutableSetOf(), Context::parents)
 }

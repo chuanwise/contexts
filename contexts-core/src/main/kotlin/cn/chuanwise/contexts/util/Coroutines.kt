@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.blocking.bridge)
-}
+@file:JvmName("Coroutines")
 
-repositories {
-    mavenCentral()
-}
+package cn.chuanwise.contexts.util
 
-dependencies {
-    api(project(":contexts-core"))
-    api(project(":contexts-module-filters"))
+import cn.chuanwise.contexts.Context
+import kotlinx.coroutines.CoroutineScope
 
-    testImplementation(libs.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+val Beans.coroutineScope: CoroutineScope get() = getBeanValueOrFail()
+val Beans.coroutineScopeOrNull: CoroutineScope? get() = getBeanValue()

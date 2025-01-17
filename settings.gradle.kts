@@ -18,3 +18,5 @@
 rootProject.name = "contexts"
 include("contexts-core")
 include("contexts-module-events")
+include("contexts-module-filters")
+include("contexts-module-spigot")

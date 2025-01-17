@@ -21,11 +21,17 @@ plugins {
 
 repositories {
     mavenCentral()
+
+    maven("https://hub.spigotmc.org/nexus/content/repositories/public/")
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
 }
 
 dependencies {
     api(project(":contexts-core"))
+    api(project(":contexts-module-events"))
     api(project(":contexts-module-filters"))
+
+    runtimeOnly(libs.spigot.api)
 
     testImplementation(libs.junit.jupiter)
 }

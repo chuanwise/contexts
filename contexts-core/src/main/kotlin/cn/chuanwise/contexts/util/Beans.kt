@@ -16,78 +16,183 @@
 
 package cn.chuanwise.contexts.util
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.type.CollectionType
 import com.fasterxml.jackson.databind.type.TypeFactory
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedDeque
 
+/**
+ * 表示一个在 [Beans] 内的对象。
+ *
+ * @param T 对象的类型
+ */
+@NotStableForInheritance
+interface Bean<out T : Any> {
+    /**
+     * 对象的值。
+     */
+    val value: T
+
+    /**
+     * 对象的键。
+     */
+    val keys: Set<Any>?
+
+    /**
+     * 是否为主要对象。
+     */
+    val isPrimary: Boolean
+
+    /**
+     * 是否已经被移除。
+     */
+    val isRemoved: Boolean
+}
+
+/**
+ * 一个对象容器。
+ *
+ * @author Chuanwise
+ */
 @NotStableForInheritance
 interface Beans {
-    operator fun <T> get(beanClass: Class<T>): T?
-    operator fun <T> get(beanType: TypeReference<T>): T?
-    operator fun get(type: Type): Any?
+    /**
+     * 获取一个对象。
+     *
+     * @param type 对象的类型
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象
+     */
+    fun getBean(type: Type, primary: Boolean? = null, key: Any? = null): Bean<*>?
 
-    fun <T> getOrFail(beanClass: Class<T>): T?
-    fun <T> getOrFail(beanType: TypeReference<T>): T?
-    fun getOrFail(type: Type): Any?
+    /**
+     * 获取一个对象的值。
+     *
+     * @param type 对象的类型
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象的值
+     */
+    fun getBeanValue(type: Type, primary: Boolean? = null, key: Any? = null): Any?
 
-    fun <T> getAll(beanClass: Class<T>): List<T>
-    fun <T> getAll(beanType: TypeReference<T>): List<T>
-    fun getAll(type: Type): List<Any>
+    /**
+     * 获取一个对象，如果不存在则抛出异常。
+     *
+     * @param type 对象的类型
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象
+     * @throws NoSuchElementException 如果对象不存在
+     */
+    fun getBeanOrFail(type: Type, primary: Boolean? = null, key: Any? = null): Bean<*>
+
+    /**
+     * 获取一个对象的值，如果不存在则抛出异常。
+     *
+     * @param type 对象的类型
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象的值
+     * @throws NoSuchElementException 如果对象不存在
+     */
+    fun getBeanValueOrFail(type: Type, primary: Boolean? = null, key: Any? = null): Any
+
+    /**
+     * 获取一个对象。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象
+     */
+    fun <T : Any> getBean(beanClass: Class<T>, primary: Boolean? = null, key: Any? = null): Bean<T>?
+
+    /**
+     * 获取一个对象的值。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象的值。
+     */
+    fun <T : Any> getBeanValue(beanClass: Class<T>, primary: Boolean? = null, key: Any? = null): T?
+
+    /**
+     * 获取一个对象，如果不存在则抛出异常。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象的值。
+     * @throws NoSuchElementException 如果对象不存在
+     */
+    fun <T : Any> getBeanOrFail(beanClass: Class<T>, primary: Boolean? = null, key: Any? = null): Bean<T>
+
+    /**
+     * 获取一个对象的值，如果不存在则抛出异常。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @param primary 是否为主要对象
+     * @param key 对象的键
+     * @return 对象的值。
+     * @throws NoSuchElementException 如果对象不存在
+     */
+    fun <T : Any> getBeanValueOrFail(beanClass: Class<T>, primary: Boolean? = null, key: Any? = null): T
+
+    /**
+     * 获取所有对象。
+     *
+     * @param type 对象的类型
+     * @return 所有对象
+     */
+    fun getBeans(type: Type): List<Bean<*>>
+
+    /**
+     * 获取所有对象的值。
+     *
+     * @param type 对象的类型
+     * @return 所有对象的值
+     */
+    fun getBeanValues(type: Type): List<*>
+
+    /**
+     * 获取所有对象。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @return 所有对象
+     */
+    fun <T : Any> getBeans(beanClass: Class<T>): List<Bean<T>>
+
+    /**
+     * 获取所有对象的值。
+     *
+     * @param T 对象的类型
+     * @param beanClass 对象的类
+     * @return 所有对象的值
+     */
+    fun <T : Any> getBeanValues(beanClass: Class<T>): List<T>
 }
 
-inline fun <reified T> Beans.get(): T? {
-    return get(T::class.java)
+inline fun <reified T : Any> Beans.getBean(): Bean<T>? {
+    return getBean(T::class.java)
 }
-inline fun <reified T> Beans.getOrFail(): T? {
-    return getOrFail(T::class.java)
-}
-
-@NotStableForInheritance
-interface MutableBeans : Beans {
-    fun <T> put(bean: T)
-    fun <T> putAll(beans: Collection<T>)
+inline fun <reified T : Any> Beans.getBeanOrFail(): Bean<T> {
+    return getBeanOrFail(T::class.java)
 }
 
-@OptIn(ContextsInternalApi::class)
-fun MutableBeans(): MutableBeans = MutableBeansImpl()
-
-@ContextsInternalApi
-@Suppress("UNCHECKED_CAST")
-abstract class AbstractBeans : Beans {
-    override fun <T> get(beanClass: Class<T>): T? {
-        return get(beanClass as Type) as T?
-    }
-
-    override fun <T> get(beanType: TypeReference<T>): T? {
-        return get(beanType.type) as T?
-    }
-
-    override fun <T> getOrFail(beanClass: Class<T>): T? {
-        return get(beanClass) ?: throw NoSuchElementException("Cannot find the bean of class $beanClass")
-    }
-
-    override fun <T> getOrFail(beanType: TypeReference<T>): T? {
-        return get(beanType) ?: throw NoSuchElementException("Cannot find the bean of type ${beanType.type}")
-    }
-
-    override fun getOrFail(type: Type): Any? {
-        return get(type) ?: throw NoSuchElementException("Cannot find the bean of type $type")
-    }
-
-    override fun <T> getAll(beanClass: Class<T>): List<T> {
-        return getAll(beanClass as Type) as List<T>
-    }
-
-    override fun <T> getAll(beanType: TypeReference<T>): List<T> {
-        return getAll(beanType.type) as List<T>
-    }
+inline fun <reified T : Any> Beans.getBeanValue(): T? {
+    return getBeanValue(T::class.java)
 }
-
-@ContextsInternalApi
-abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans
+inline fun <reified T : Any> Beans.getBeanValueOrFail(): T {
+    return getBeanValueOrFail(T::class.java)
+}
 
 private val typeFactory: TypeFactory = TypeFactory.defaultInstance()
 private val types: MutableMap<String, JavaType> = ConcurrentHashMap()
@@ -97,32 +202,51 @@ private fun getJavaType(type: Type): JavaType = types.computeIfAbsent(type.typeN
 }
 
 @ContextsInternalApi
-class MutableBeansImpl : AbstractMutableBeans() {
-//    private class BeanEntry(
-//        val type: JavaType,
-//        val value: Any
-//    )
-//    private val entries: MutableCollection<BeanEntry> = ConcurrentLinkedDeque()
-
-    private val beans = ConcurrentLinkedDeque<Any>()
-
-    override fun get(type: Type): Any? {
-//        val javaType = getJavaType(type)
-        return getAll(type).singleOrNull()
+@Suppress("UNCHECKED_CAST")
+abstract class AbstractBeans : Beans {
+    override fun getBean(type: Type, primary: Boolean?, key: Any?): Bean<*>? {
+        require(type is Class<*>) { "Type must be a class." }
+        return getBean(type, primary, key)
     }
 
-    override fun getAll(type: Type): List<Any> {
-//        return when (val javaType = getJavaType(type)) {
-//            is CollectionLikeType -> getAll(javaType.contentType)
-//        }
-        return beans.filterIsInstance(type as Class<*>)
+    override fun getBeanValue(type: Type, primary: Boolean?, key: Any?): Any? {
+        return when (val javaType = getJavaType(type)) {
+            is CollectionType -> when (type) {
+                List::class.java -> getBeanValues(javaType.contentType)
+                Set::class.java -> getBeanValues(javaType.contentType).toSet()
+                else -> throw IllegalArgumentException("Unsupported collection type: $type.")
+            }
+            else -> getBean(javaType.rawClass, primary, key)?.value
+        }
     }
 
-    override fun <T> put(bean: T) {
-        beans.add(bean)
+    override fun <T : Any> getBeanValue(beanClass: Class<T>, primary: Boolean?, key: Any?): T? {
+        return getBeanValue(beanClass as Type, primary, key) as T?
     }
 
-    override fun <T> putAll(beans: Collection<T>) {
-        this.beans.addAll(beans)
+    override fun getBeanOrFail(type: Type, primary: Boolean?, key: Any?): Bean<*> {
+        return getBean(type, primary, key) ?: throw NoSuchElementException("No bean found for type ${type.typeName}.")
+    }
+
+    override fun <T : Any> getBeanOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T> {
+        return getBeanOrFail(beanClass as Type, primary, key) as Bean<T>
+    }
+
+    override fun getBeanValueOrFail(type: Type, primary: Boolean?, key: Any?): Any {
+        return getBeanValue(type, primary, key) ?: throw NoSuchElementException("No bean found for type ${type.typeName}.")
+    }
+
+    override fun <T : Any> getBeanValueOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): T {
+        return getBeanValueOrFail(beanClass as Type, primary, key) as T
+    }
+
+    override fun getBeans(type: Type): List<Bean<*>> {
+        require(type is Class<*>) { "Type must be a class." }
+        return getBeans(type)
+    }
+
+    override fun getBeanValues(type: Type): List<*> {
+        require(type is Class<*>) { "Type must be a class." }
+        return getBeanValues(type)
     }
 }

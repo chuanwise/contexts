@@ -23,6 +23,7 @@ import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 
 /**
@@ -38,9 +39,6 @@ interface ReadAddRemoveLock {
     val addLock: Lock
     val removeLock: Lock
 }
-
-@OptIn(ContextsInternalApi::class)
-fun ReadAddRemoveLock(): ReadAddRemoveLock = ReentrantReadAddRemoveLock()
 
 inline fun <T> ReadAddRemoveLock.read(action: () -> T): T = readLock.withLock(action)
 inline fun <T> ReadAddRemoveLock.add(action: () -> T): T = addLock.withLock(action)
@@ -86,6 +84,8 @@ class ReentrantReadAddRemoveLock : ReadAddRemoveLock {
         }
         return last
     }
+
+    private fun tryGetLastAction(): Action? = action.get().peekLast()
 
     private abstract class AbstractLock : Lock {
         override fun lock() {
@@ -139,7 +139,7 @@ class ReentrantReadAddRemoveLock : ReadAddRemoveLock {
                 State.READ -> State.READ
                 State.WRITE_ADD,
                 State.WRITE_ADD_REMOVE,
-                State.WRITE_REMOVE -> return@withLock false
+                State.WRITE_REMOVE -> return@withLock tryGetLastAction() == Action.READ
             }
             onLocked()
         }
@@ -173,7 +173,7 @@ class ReentrantReadAddRemoveLock : ReadAddRemoveLock {
                 State.WRITE_REMOVE -> State.WRITE_ADD_REMOVE
                 State.READ,
                 State.WRITE_ADD,
-                State.WRITE_ADD_REMOVE -> return@withLock false
+                State.WRITE_ADD_REMOVE -> return@withLock tryGetLastAction() == Action.WRITE_ADD
             }
             onLocked()
         }
@@ -220,7 +220,7 @@ class ReentrantReadAddRemoveLock : ReadAddRemoveLock {
                 State.WRITE_ADD -> State.WRITE_ADD_REMOVE
                 State.READ,
                 State.WRITE_ADD_REMOVE,
-                State.WRITE_REMOVE -> return@withLock false
+                State.WRITE_REMOVE -> return@withLock tryGetLastAction() == Action.WRITE_REMOVE
             }
             onLocked()
         }
@@ -234,4 +234,12 @@ class ReentrantReadAddRemoveLock : ReadAddRemoveLock {
     override val readLock: Lock = ReadLock()
     override val addLock: Lock = AddLock()
     override val removeLock: Lock = RemoveLock()
+}
+
+class ReadWriteLockBasedReadAddRemoveLock(
+    private val readWriteLock: ReadWriteLock = ReentrantReadWriteLock()
+) : ReadAddRemoveLock {
+    override val readLock: Lock get() = readWriteLock.readLock()
+    override val addLock: Lock get() = readWriteLock.writeLock()
+    override val removeLock: Lock get() = readWriteLock.writeLock()
 }
