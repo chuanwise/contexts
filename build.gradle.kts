@@ -17,6 +17,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.blocking.bridge) apply false
+    alias(libs.plugins.shadow) apply false
 }
 
 subprojects {

@@ -31,6 +31,7 @@ dependencies {
     api(libs.coroutines.core)
 
     testImplementation(libs.junit.jupiter)
+//    testImplementation(libs.slf)
 }
 
 tasks.test {

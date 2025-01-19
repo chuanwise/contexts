@@ -26,7 +26,8 @@ import kotlin.reflect.KClass
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Filter(
-    val valueClass: KClass<*> = Nothing::class
+    val valueClass: KClass<*> = Nothing::class,
+    val cache: Boolean = true
 )
 
 /**

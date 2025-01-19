@@ -22,5 +22,5 @@ package cn.chuanwise.contexts.events
  * @param T 事件的类型
  */
 fun interface Listener<T : Any> {
-    fun onEvent(eventContext: EventContext<T>)
+    fun listen(eventContext: EventContext<T>)
 }

@@ -25,9 +25,9 @@ import cn.chuanwise.contexts.util.getBeanValueOrFail
 /**
  * 获取事件管理器。
  */
-val Beans.eventPublisherOrNull: EventPublisher? get() = getBeanValue()
+val Beans.eventPublisherOrNull: EventPublisher<Any>? get() = getBeanValue()
 
 /**
  * 获取事件管理器。
  */
-val Beans.eventPublisher: EventPublisher get() = getBeanValueOrFail()
+val Beans.eventPublisher: EventPublisher<Any> get() = getBeanValueOrFail()

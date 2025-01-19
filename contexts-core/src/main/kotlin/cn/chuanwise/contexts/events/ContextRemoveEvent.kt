@@ -33,7 +33,9 @@ interface ContextRemoveEvent : ContextEvent {
 }
 
 interface ContextPreRemoveEvent: ContextRemoveEvent
-interface ContextPostRemoveEvent: ContextRemoveEvent
+interface ContextPostRemoveEvent: ContextRemoveEvent {
+    var exitIfNoParent: Boolean
+}
 
 @ContextsInternalApi
 data class ContextPreRemoveEventImpl(
@@ -50,5 +52,6 @@ data class ContextPostRemoveEventImpl(
     override val child: Context,
     override val replace: ContextAddEvent?,
     override val exit: Boolean,
-    override val contextManager: ContextManager
+    override val contextManager: ContextManager,
+    override var exitIfNoParent: Boolean = true
 ) : ContextPostRemoveEvent

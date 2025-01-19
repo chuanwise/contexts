@@ -19,10 +19,16 @@ package cn.chuanwise.contexts.events
 import cn.chuanwise.contexts.Context
 
 /**
- * 事件处理器。
+ * 事件处理器，负责把一个事件发送给一个上下文。
  *
  * @author Chuanwise
  */
 fun interface EventHandler {
-    fun onEvent(currentContext: Context, eventContext: EventContext<*>)
+    /**
+     * 处理事件。
+     *
+     * @param currentContext 当前上下文
+     * @param eventContext 事件上下文
+     */
+    fun handle(currentContext: Context, eventContext: EventContext<*>)
 }

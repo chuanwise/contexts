@@ -19,6 +19,7 @@
 package cn.chuanwise.contexts
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Logger
 
 @OptIn(ContextsInternalApi::class)
-fun createContextManager(): ContextManager = ContextManagerImpl()
+fun createContextManager(logger: Logger): ContextManager = ContextManagerImpl(logger)

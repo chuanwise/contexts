@@ -25,12 +25,12 @@ import cn.chuanwise.contexts.events.ContextPreEnterEventImpl
 import cn.chuanwise.contexts.events.ContextPreExitEventImpl
 import cn.chuanwise.contexts.events.ContextPreRemoveEventImpl
 import cn.chuanwise.contexts.util.Bean
+import cn.chuanwise.contexts.util.Beans
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeanImpl
 import cn.chuanwise.contexts.util.MutableBeans
 import cn.chuanwise.contexts.util.NotStableForInheritance
-import cn.chuanwise.contexts.util.ReadAddRemoveLock
 import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
 import cn.chuanwise.contexts.util.add
 import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
@@ -38,12 +38,19 @@ import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createChildToParentTopologicalSortingIterator
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
+import java.lang.reflect.Type
+import java.util.NoSuchElementException
+import java.util.function.Supplier
 
 @NotStableForInheritance
 interface Context : MutableBeans {
     val key: Any?
     val contextManager: ContextManager
 
+    /**
+     * 若当前上下文只有一个父上下文时，可以用此获取其值。
+     */
+    val parent: Context
     val parents: List<Context>
     val allParents: List<Context>
     val parentCount: Int
@@ -61,6 +68,21 @@ interface Context : MutableBeans {
     val components: List<Context>
 
     /**
+     * 尝试获取一个带有指定对象的子上下文。
+     *
+     * @param bean 对象
+     * @param key 键
+     * @return 子上下文
+     */
+    fun getChild(bean: Any, key: Any? = null): Context?
+    fun getChildOrFail(bean: Any, key: Any? = null): Context {
+        return getChild(bean, key) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
+    }
+
+    fun getOrEnterChild(bean: Any, beanKey: Any? = null): Context
+    fun getOrEnterChild(bean: Any, beanKey: Any? = null, childKey: Any): Context
+
+    /**
      * 进入一个子上下文。
      *
      * @param key 上下文键。
@@ -69,6 +91,7 @@ interface Context : MutableBeans {
      * @return 添加后的上下文。
      */
     fun enterChild(child: Any, key: Any, replace: Boolean = false): Context?
+    fun enterChild(child: Any, key: Any): Context
     fun enterChild(child: Any): Context
 
     /**
@@ -80,6 +103,7 @@ interface Context : MutableBeans {
      * @return 添加后的上下文。
      */
     fun enterChild(vararg child: Any, key: Any, replace: Boolean = false): Context?
+    fun enterChild(vararg child: Any, key: Any): Context
     fun enterChild(vararg child: Any): Context
 
     /**
@@ -91,6 +115,7 @@ interface Context : MutableBeans {
      * @return 添加后的上下文。
      */
     fun enterChild(child: Collection<Any>, key: Any, replace: Boolean = false): Context?
+    fun enterChild(child: Collection<Any>, key: Any): Context
     fun enterChild(child: Collection<Any>): Context
 
     /**
@@ -152,6 +177,22 @@ abstract class AbstractContext : Context {
     override fun enterChild(vararg child: Any): Context {
         return enterChild(child.toList())
     }
+
+    override fun enterChild(child: Any, key: Any): Context {
+        return enterChild(listOf(child), key, replace = false)!!
+    }
+
+    override fun enterChild(vararg child: Any, key: Any): Context {
+        return enterChild(child.toList(), key, replace = false)!!
+    }
+
+    override fun getOrEnterChild(bean: Any, beanKey: Any?): Context {
+        return getChild(bean, beanKey) ?: enterChild(bean)
+    }
+
+    override fun getOrEnterChild(bean: Any, beanKey: Any?, childKey: Any): Context {
+        return getChild(bean, beanKey) ?: enterChild(bean, childKey)
+    }
 }
 
 @ContextsInternalApi
@@ -159,13 +200,22 @@ abstract class AbstractContext : Context {
 class ContextImpl(
     override val contextManager: ContextManagerImpl,
     override val key: Any?,
-    private val beans: MutableBeans = MutableBeanImpl()
-) : AbstractContext(), MutableBeans by beans {
+) : AbstractContext() {
+    private inner class AllParentIterable : Iterable<Beans> {
+        override fun iterator(): Iterator<Beans> {
+            return sequence {
+                yieldAll(allParents.createChildToParentTopologicalSortingIterator())
+                yield(contextManager)
+            }.iterator()
+        }
+    }
+    private val beans: InheritedMutableBeans = InheritedMutableBeans(AllParentIterable())
     private val lock = ReadWriteLockBasedReadAddRemoveLock()
 
     private val mutableParents: MutableCollection<ContextImpl> = mutableListOf()
     private val mutableParentsByKey: MutableMap<Any, ContextImpl> = mutableMapOf()
 
+    override val parent: Context get() = lock.read { mutableParents.single() }
     override val parents: List<Context> get() = lock.read { mutableParents.toList() }
     override val allParents: List<Context> get() = createAllParentsBreadthFirstSearchIterator().asSequence().toList()
     override val parentCount: Int get() = lock.read { mutableParents.size }
@@ -179,10 +229,20 @@ class ContextImpl(
 
     override val components: List<Context> get() = allParents + allChildren + this
 
-    override val contextBeanValues: List<*> get() = beans.getBeanValues(Any::class.java)
-    override val contextBeans: List<MutableBean<*>> get() = beans.getBeans(Any::class.java) as List<MutableBean<Any>>
+    override val contextBeanValues: List<*> get() = beans.beans.getBeanValues(Any::class.java)
+    override val contextBeans: List<MutableBean<*>> get() = beans.beans.getBeans(Any::class.java) as List<MutableBean<Any>>
 
     private val contextBean = registerBean(this)
+
+    override fun getChild(bean: Any, key: Any?): Context? = lock.read {
+        for (child in mutableChildren) {
+            val beanValue = child.getBean(bean::class.java, key = key)?.value ?: continue
+            if (beanValue == bean) {
+                return child
+            }
+        }
+        null
+    }
 
     // 连接两个上下文，不检查是否会成环，不加锁，会通知 context modules: PreAdd, PostAdd。
     private fun addNoLock(parent: ContextImpl, child: ContextImpl, replace: Boolean, enter: Boolean): Boolean {
@@ -324,6 +384,10 @@ class ContextImpl(
         return doEnterChild(child, key, replace)
     }
 
+    override fun enterChild(child: Collection<Any>, key: Any): Context {
+        return doEnterChild(child, key, replace = false)!!
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun addChild(child: Context, replace: Boolean): Boolean {
         require(child is ContextImpl) { "Only ContextImpl is supported." }
@@ -392,25 +456,80 @@ class ContextImpl(
         }
     }
 
+    override fun getBean(type: Type, primary: Boolean?, key: Any?): Bean<*>? {
+        return beans.getBean(type, primary, key)
+    }
+
     override fun <T : Any> getBean(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T>? {
-        beans.getBean(beanClass, primary, key)?.let { return it }
-        for (context in allParents.createChildToParentTopologicalSortingIterator()) {
-            context as ContextImpl
-            context.beans.getBean(beanClass, primary, key)?.let { return it }
-        }
-        return contextManager.beans.getBean(beanClass, primary, key)
+        return beans.getBean(beanClass, primary, key)
+    }
+
+    override fun getBeanOrFail(type: Type, primary: Boolean?, key: Any?): Bean<*> {
+        return beans.getBeanOrFail(type, primary, key)
+    }
+
+    override fun <T : Any> getBeanOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T> {
+        return beans.getBeanOrFail(beanClass, primary, key)
+    }
+
+    override fun getBeans(type: Type): List<Bean<*>> {
+        return beans.getBeans(type)
     }
 
     override fun <T : Any> getBeans(beanClass: Class<T>): List<Bean<T>> {
-        return beans.getBeans(beanClass) +
-                allParents.flatMap { it.contextBeans } as List<Bean<T>> +
-                contextManager.beans.getBeans(beanClass)
+        return beans.getBeans(beanClass)
+    }
+
+    override fun <T : Any> registerBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
+        return beans.registerBean(value, keys, primary)
+    }
+
+    override fun <T : Any> registerBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
+        return beans.registerBean(value, key, primary)
+    }
+
+    override fun <T : Any> registerBean(value: T, primary: Boolean): MutableBean<T> {
+        return beans.registerBean(value, primary)
+    }
+
+    override fun <T : Any> registerBeanGetter(
+        keys: MutableSet<Any>?,
+        primary: Boolean,
+        factory: Supplier<T>
+    ): MutableBean<T> {
+        return beans.registerBeanGetter(keys, primary, factory)
+    }
+
+    override fun <T : Any> registerLazyBean(
+        keys: MutableSet<Any>?,
+        primary: Boolean,
+        factory: Supplier<T>
+    ): MutableBean<T> {
+        return beans.registerLazyBean(keys, primary, factory)
+    }
+
+    override fun getBeanValue(type: Type, primary: Boolean?, key: Any?): Any? {
+        return beans.getBeanValue(type, primary, key)
+    }
+
+    override fun <T : Any> getBeanValue(beanClass: Class<T>, primary: Boolean?, key: Any?): T? {
+        return beans.getBeanValue(beanClass, primary, key)
+    }
+
+    override fun getBeanValueOrFail(type: Type, primary: Boolean?, key: Any?): Any {
+        return beans.getBeanValueOrFail(type, primary, key)
+    }
+
+    override fun <T : Any> getBeanValueOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): T {
+        return beans.getBeanValueOrFail(beanClass, primary, key)
+    }
+
+    override fun getBeanValues(type: Type): List<*> {
+        return beans.getBeanValues(type)
     }
 
     override fun <T : Any> getBeanValues(beanClass: Class<T>): List<T> {
-        return beans.getBeanValues(beanClass) +
-                allParents.flatMap { it.contextBeanValues } as List<T> +
-                contextManager.beans.getBeanValues(beanClass)
+        return beans.getBeanValues(beanClass)
     }
 
     override fun toString(): String {

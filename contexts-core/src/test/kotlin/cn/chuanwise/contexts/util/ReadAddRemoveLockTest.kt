@@ -19,10 +19,11 @@ package cn.chuanwise.contexts.util
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 
+@OptIn(ContextsInternalApi::class)
 class ReadAddRemoveLockTest {
     @Test
     fun onReadAddRemove() {
-        val lock = ReadAddRemoveLock()
+        val lock = ReentrantReadAddRemoveLock()
         val pool = Executors.newCachedThreadPool()
 
         pool.submit {

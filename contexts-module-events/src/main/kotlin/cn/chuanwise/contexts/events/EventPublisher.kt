@@ -17,13 +17,16 @@
 package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.util.AllChildrenAndContextScope
+import cn.chuanwise.contexts.util.ContextScope
+import cn.chuanwise.contexts.util.Scope
 
 /**
  * 事件发布器。
  *
  * @author Chuanwise
  */
-interface EventPublisher {
+interface EventPublisher<T : Any> {
     /**
      * 上下文。
      */
@@ -34,13 +37,15 @@ interface EventPublisher {
      *
      * @param event 事件
      */
-    fun publishToContext(event: Any)
+    fun publishToContext(event: T) = publish(event, ContextScope)
 
     /**
-     * 发布事件。事件的传播范围是从子到父，过滤范围是从父到子。
+     * 发布事件。
+     *
+     * 事件类上可以使用 [Scope] 标注其传播范围，默认的范围是 [AllChildrenAndContextScope]。
      *
      * @param event 事件
      */
-    fun publishToAllChildrenAndContext(event: Any)
+    fun publish(event: T, scope: Scope?)
+    fun publish(event: T) = publish(event, scope = null)
 }
-

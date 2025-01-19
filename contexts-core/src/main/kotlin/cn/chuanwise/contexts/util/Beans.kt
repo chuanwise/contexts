@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.type.CollectionType
 import com.fasterxml.jackson.databind.type.TypeFactory
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KProperty
 
 /**
  * 表示一个在 [Beans] 内的对象。

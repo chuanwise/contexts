@@ -18,7 +18,6 @@
 
 package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.Context
 import kotlinx.coroutines.CoroutineScope
 
 val Beans.coroutineScope: CoroutineScope get() = getBeanValueOrFail()

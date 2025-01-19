@@ -16,6 +16,7 @@
 
 package cn.chuanwise.contexts.events.annotations
 
+import cn.chuanwise.contexts.util.Scope
 import kotlin.reflect.KClass
 
 /**
@@ -29,6 +30,17 @@ annotation class Listener(
     val eventClass: KClass<*> = Nothing::class,
     val filter: Boolean = true,
     val intercept: Boolean = false
+)
+
+/**
+ * 标注一个可能被过滤的类型，以指定其默认过滤范围。
+ *
+ * @property scopeClass 过滤器的作用域
+ */
+@Target(AnnotationTarget.TYPE)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Scope(
+    val scopeClass: KClass<Scope>
 )
 
 @Target(AnnotationTarget.VALUE_PARAMETER)

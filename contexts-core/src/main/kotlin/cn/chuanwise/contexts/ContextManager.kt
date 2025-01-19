@@ -27,11 +27,14 @@ import cn.chuanwise.contexts.events.ContextPreEnterEvent
 import cn.chuanwise.contexts.events.ContextPreEnterEventImpl
 import cn.chuanwise.contexts.events.ContextPreExitEvent
 import cn.chuanwise.contexts.events.ContextPreRemoveEvent
+import cn.chuanwise.contexts.util.Beans
 import cn.chuanwise.contexts.util.ContextPostActionEventException
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Logger
 import cn.chuanwise.contexts.util.MutableBean
 import cn.chuanwise.contexts.util.MutableBeanImpl
 import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -42,14 +45,16 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface ContextManager {
+interface ContextManager : MutableBeans {
+    val logger: Logger
+
     val contexts: List<Context>
-    val beans: MutableBeans
+    val roots: List<Context>
 
-    val modules: List<ContextModule>
-    val moduleEntries: List<ContextModuleEntry>
+    val modules: List<Module>
+    val moduleEntries: List<MutableEntry<Module>>
 
-    fun registerModule(module: ContextModule): ContextModuleEntry
+    fun registerModule(module: Module): MutableEntry<Module>
 
     fun enter(context: Any, key: Any? = null): Context
     fun enter(vararg context: Any, key: Any? = null): Context
@@ -57,24 +62,25 @@ interface ContextManager {
 }
 
 @ContextsInternalApi
-class ContextManagerImpl : ContextManager {
-    override val beans: MutableBeans = MutableBeanImpl()
-
+class ContextManagerImpl(
+    override val logger: Logger,
+    private val beans: MutableBeans = MutableBeanImpl()
+) : ContextManager, MutableBeans by beans {
     private val mutableContexts: MutableList<Context> = CopyOnWriteArrayList()
     override val contexts: List<Context> get() = mutableContexts
+    override val roots: List<Context> get() = mutableContexts.filter { it.parentCount <= 0 }
 
-    private val mutableModuleEntries: MutableList<ContextModuleEntry> = CopyOnWriteArrayList()
-    override val modules: List<ContextModule> get() = mutableModuleEntries.map { it.module }
-    override val moduleEntries: List<ContextModuleEntry> get() = mutableModuleEntries
+    private val mutableModuleEntries: MutableList<MutableEntry<Module>> = CopyOnWriteArrayList()
+    override val modules: List<Module> get() = mutableModuleEntries.map { it.value }
+    override val moduleEntries: List<MutableEntry<Module>> get() = mutableModuleEntries
 
     private inner class ContextModuleEntryImpl(
-        override val module: ContextModule,
-        private val bean: MutableBean<ContextModule>
-    ) : ContextModuleEntry {
+        override val value: Module,
+        private val bean: MutableBean<Module>
+    ) : MutableEntry<Module> {
         private var mutableIsRemoved = AtomicBoolean(false)
         override val isRemoved: Boolean get() = mutableIsRemoved.get()
 
-        override val contextManager: ContextManager get() = this@ContextManagerImpl
         override fun remove() {
             if (mutableIsRemoved.compareAndSet(false, true)) {
                 bean.remove()
@@ -83,10 +89,13 @@ class ContextManagerImpl : ContextManager {
         }
     }
 
-    override fun registerModule(module: ContextModule) : ContextModuleEntry {
+    override fun registerModule(module: Module) : MutableEntry<Module> {
+        module.onEnable(this)
+
         val bean = beans.registerBean(module)
         val entry = ContextModuleEntryImpl(module, bean)
         mutableModuleEntries.add(entry)
+        logger.debug { "Registered module: ${module::class.simpleName}" }
         return entry
     }
 
@@ -108,17 +117,17 @@ class ContextManagerImpl : ContextManager {
         return newContext
     }
 
-    private inline fun onPreEvent(action: (ContextModule) -> Unit) {
+    private inline fun onPreEvent(action: (Module) -> Unit) {
         for (entry in mutableModuleEntries) {
-            action(entry.module)
+            action(entry.value)
         }
     }
 
-    private inline fun onPostEvent(event: ContextEvent, action: (ContextModule) -> Unit) {
+    private inline fun onPostEvent(event: ContextEvent, action: (Module) -> Unit) {
         val exceptions = mutableListOf<Throwable>()
         for (entry in mutableModuleEntries) {
             try {
-                action(entry.module)
+                action(entry.value)
             } catch (e: Throwable) {
                 exceptions.add(e)
             }
@@ -131,7 +140,15 @@ class ContextManagerImpl : ContextManager {
     fun onContextPreAdd(event: ContextPreAddEvent) = onPreEvent { it.onContextPreAdd(event) }
     fun onContextPostAdd(event: ContextPostAddEvent) = onPostEvent(event) { it.onContextPostAdd(event) }
 
-    fun onContextPostRemove(event: ContextPostRemoveEvent) = onPostEvent(event) { it.onContextPostRemove(event) }
+    fun onContextPostRemove(event: ContextPostRemoveEvent) {
+        try {
+            onPostEvent(event) { it.onContextPostRemove(event) }
+        } finally {
+            if (event.child.parentCount <= 0 && event.exitIfNoParent) {
+                event.child.exit()
+            }
+        }
+    }
     fun onContextPreRemove(event: ContextPreRemoveEvent) = onPreEvent { it.onContextPreRemove(event) }
 
     fun onContextPreEnter(event: ContextPreEnterEvent) = onPreEvent { it.onContextPreEnter(event) }

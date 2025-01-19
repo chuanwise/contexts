@@ -24,5 +24,8 @@ import cn.chuanwise.contexts.ContextManager
  * @author Chuanwise
  */
 interface ContextEvent {
+    /**
+     * 上下文管理器。
+     */
     val contextManager: ContextManager
 }

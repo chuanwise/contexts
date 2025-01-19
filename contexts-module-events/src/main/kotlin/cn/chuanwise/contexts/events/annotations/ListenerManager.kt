@@ -17,13 +17,20 @@
 package cn.chuanwise.contexts.events.annotations
 
 import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.Listener
 import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Entry
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
+/**
+ * 监听器管理器。
+ *
+ * @author Chuanwise
+ */
 interface ListenerManager {
     /**
      * 上下文。
@@ -43,6 +50,20 @@ interface ListenerManager {
         intercept: Boolean = false,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
+
+    fun <T : Any> registerListener(
+        filter: Boolean = true,
+        intercept: Boolean = false,
+        listener: Listener<T>
+    ) : MutableEntry<Listener<T>>
+
+    /**
+     * 发布事件到当前上下文。
+     *
+     * @param eventContext 事件上下文
+     */
+    @ContextsInternalApi
+    fun publishToContext(eventContext: EventContext<Any>)
 }
 
 val Beans.listenerManager: ListenerManager get() = getBeanValueOrFail()

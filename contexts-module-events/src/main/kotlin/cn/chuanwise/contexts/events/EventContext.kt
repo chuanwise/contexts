@@ -17,6 +17,10 @@
 package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.filters.FilterContext
+import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.NotStableForInheritance
+import cn.chuanwise.contexts.util.Scope
 
 /**
  * 事件上下文。
@@ -24,11 +28,12 @@ import cn.chuanwise.contexts.Context
  * @param T 事件类型
  * @author Chuanwise
  */
-interface EventContext<T : Any> {
+@NotStableForInheritance
+interface EventContext<out T : Any> {
     /**
-     * 上下文。
+     * 事件的范围。
      */
-    val context: Context
+    val scope: Scope
 
     /**
      * 事件
@@ -36,7 +41,28 @@ interface EventContext<T : Any> {
     val event: T
 
     /**
+     * 事件过滤器上下文。
+     */
+    val filterContext: FilterContext<T>
+
+    /**
+     * 事件是从哪个上下文发布的。
+     */
+    val context: Context
+
+    /**
+     * 和事件发布相关的上下文，用于存储一些和事件发布相关的数据。
+     * 继承了 [context] 内的所有数据。
+     */
+    val beans: MutableBeans
+
+    /**
      * 是否被拦截
      */
-    var isIntercepted: Boolean
+    val isIntercepted: Boolean
+
+    /**
+     * 拦截事件
+     */
+    fun intercept()
 }

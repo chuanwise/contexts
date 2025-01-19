@@ -18,9 +18,11 @@ package cn.chuanwise.contexts.util
 
 @ContextsInternalApi
 class InheritedMutableBeans(
-    private val parent: Beans
+    private val parents: Iterable<Beans>,
+    val beans: AbstractMutableBeans = MutableBeanImpl()
 ): AbstractMutableBeans() {
-    private val beans = MutableBeanImpl()
+    constructor(parent: Beans) : this(listOf(parent))
+    constructor(vararg parents: Beans) : this(parents.toList())
 
     override fun registerBean(bean: MutableBean<*>) {
         beans.registerBean(bean)
@@ -31,14 +33,18 @@ class InheritedMutableBeans(
     }
 
     override fun <T : Any> getBean(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T>? {
-        return beans.getBean(beanClass, primary, key) ?: parent.getBean(beanClass, primary, key)
+        beans.getBean(beanClass, primary, key)?.let { return it }
+        for (parent in parents) {
+            parent.getBean(beanClass, primary, key)?.let { return it }
+        }
+        return null
     }
 
     override fun <T : Any> getBeans(beanClass: Class<T>): List<Bean<T>> {
-        return beans.getBeans(beanClass) + parent.getBeans(beanClass)
+        return beans.getBeans(beanClass) + parents.flatMap { it.getBeans(beanClass) }
     }
 
     override fun <T : Any> getBeanValues(beanClass: Class<T>): List<T> {
-        return beans.getBeanValues(beanClass) + parent.getBeanValues(beanClass)
+        return beans.getBeanValues(beanClass) + parents.flatMap { it.getBeanValues(beanClass) }
     }
 }

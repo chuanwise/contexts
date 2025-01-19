@@ -21,6 +21,6 @@ package cn.chuanwise.contexts.filters
  *
  * @author Chuanwise
  */
-fun interface Filter<T : Any> {
-    fun onFilter(value: T): Boolean?
+fun interface Filter<out T : Any> {
+    fun filter(filterContext: FilterContext<@UnsafeVariance T>): Boolean?
 }
