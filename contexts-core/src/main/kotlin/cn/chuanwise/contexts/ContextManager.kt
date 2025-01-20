@@ -126,7 +126,7 @@ interface ContextManager : MutableBeans, AutoCloseable {
      * @param key 上下文的键
      * @return 进入的上下文
      */
-    fun enterRoot(context: Collection<Any>, key: Any? = null): Context
+    fun enterRoot(context: Iterable<Any> = emptyList(), key: Any? = null): Context
 }
 
 @ContextsInternalApi
@@ -363,7 +363,7 @@ class ContextManagerImpl(
 
     override fun enterRoot(vararg context: Any, key: Any?): Context = enterRoot(context.toList(), key)
 
-    override fun enterRoot(context: Collection<Any>, key: Any?): Context {
+    override fun enterRoot(context: Iterable<Any>, key: Any?): Context {
         val newContext = ContextImpl(this, key).apply {
             registerBeans(context)
         }
