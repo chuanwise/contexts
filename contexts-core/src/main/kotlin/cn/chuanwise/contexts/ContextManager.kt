@@ -405,11 +405,13 @@ class ContextManagerImpl(
             for (context in roots) {
                 context.exit()
             }
-            mutableModuleEntries.forEach {
+            // 因为启动的顺序是拓扑顺序，所以关闭的顺序是反拓扑顺序。
+            for (entry in mutableModuleEntries.reversed()) {
                 try {
-                    it.remove()
+                    entry.remove()
                 } catch (e: Throwable) {
-                    logger.error(e) { "Error occurred while removing module: ${it.value::class.simpleName} with id: ${it.id}." }
+                    logger.error(e) { "Error occurred while removing module: ${entry.value::class.simpleName} " +
+                            "with id: ${entry.id}." }
                 }
             }
             mutableModuleEntries.clear()
