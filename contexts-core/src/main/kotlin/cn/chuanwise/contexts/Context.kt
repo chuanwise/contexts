@@ -121,9 +121,9 @@ interface Context : MutableBeans, AutoCloseable {
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
      */
-    fun enterChild(child: Collection<Any>, key: Any, replace: Boolean = false): Context?
-    fun enterChild(child: Collection<Any>, key: Any): Context
-    fun enterChild(child: Collection<Any>): Context
+    fun enterChild(child: Iterable<Any>, key: Any, replace: Boolean = false): Context?
+    fun enterChild(child: Iterable<Any>, key: Any): Context
+    fun enterChild(child: Iterable<Any>): Context
 
     /**
      * 添加一个子上下文。
@@ -386,7 +386,7 @@ class ContextImpl(
         return true
     }
 
-    private fun doEnterChild(child: Collection<Any>, key: Any?, replace: Boolean): Context? {
+    private fun doEnterChild(child: Iterable<Any>, key: Any?, replace: Boolean): Context? {
         checkNotExited()
         val context = ContextImpl(contextManager, key).apply {
             registerBeans(child)
@@ -408,15 +408,15 @@ class ContextImpl(
         return context
     }
 
-    override fun enterChild(child: Collection<Any>): Context {
+    override fun enterChild(child: Iterable<Any>): Context {
         return doEnterChild(child, null, replace = false)!!
     }
 
-    override fun enterChild(child: Collection<Any>, key: Any, replace: Boolean): Context? {
+    override fun enterChild(child: Iterable<Any>, key: Any, replace: Boolean): Context? {
         return doEnterChild(child, key, replace)
     }
 
-    override fun enterChild(child: Collection<Any>, key: Any): Context {
+    override fun enterChild(child: Iterable<Any>, key: Any): Context {
         return doEnterChild(child, key, replace = false)!!
     }
 
