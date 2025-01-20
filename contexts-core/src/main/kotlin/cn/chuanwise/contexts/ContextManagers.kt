@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-@file:JvmName("EventAnnotationsModuleFactory")
-package cn.chuanwise.contexts.events.annotations
+@file:JvmName("ContextManagers")
+package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
-
-@OptIn(ContextsInternalApi::class)
-fun createEventAnnotationsModule(): EventAnnotationsModule = EventAnnotationsModuleImpl()
+fun ContextManager.checkAllRegisteredModuleEnabled() {
+    check(isAllRegisteredModuleEnabled()) { "Not all registered module enabled! " }
+}

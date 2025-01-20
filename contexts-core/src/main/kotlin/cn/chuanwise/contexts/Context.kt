@@ -16,14 +16,6 @@
 
 package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.events.ContextPostAddEventImpl
-import cn.chuanwise.contexts.events.ContextPostEnterEventImpl
-import cn.chuanwise.contexts.events.ContextPostExitEventImpl
-import cn.chuanwise.contexts.events.ContextPostRemoveEventImpl
-import cn.chuanwise.contexts.events.ContextPreAddEventImpl
-import cn.chuanwise.contexts.events.ContextPreEnterEventImpl
-import cn.chuanwise.contexts.events.ContextPreExitEventImpl
-import cn.chuanwise.contexts.events.ContextPreRemoveEventImpl
 import cn.chuanwise.contexts.util.Bean
 import cn.chuanwise.contexts.util.Beans
 import cn.chuanwise.contexts.util.ContextsInternalApi
@@ -38,12 +30,14 @@ import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createChildToParentTopologicalSortingIterator
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
+import cn.chuanwise.contexts.util.withLocks
 import java.lang.reflect.Type
 import java.util.NoSuchElementException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
 @NotStableForInheritance
-interface Context : MutableBeans {
+interface Context : MutableBeans, AutoCloseable {
     val key: Any?
     val contextManager: ContextManager
 
@@ -67,6 +61,17 @@ interface Context : MutableBeans {
      */
     val components: List<Context>
 
+    fun getChildByKey(key: Any): Context?
+    fun getChildByKeyOrFail(key: Any): Context {
+        return getChildByKey(key) ?: throw NoSuchElementException("Cannot find child with key $key.")
+    }
+
+    fun getParentByKey(key: Any): Context?
+    fun getParentByKeyOrFail(key: Any): Context {
+        return getParentByKey(key) ?: throw NoSuchElementException("Cannot find parent with key $key.")
+    }
+
+
     /**
      * 尝试获取一个带有指定对象的子上下文。
      *
@@ -74,13 +79,15 @@ interface Context : MutableBeans {
      * @param key 键
      * @return 子上下文
      */
-    fun getChild(bean: Any, key: Any? = null): Context?
-    fun getChildOrFail(bean: Any, key: Any? = null): Context {
-        return getChild(bean, key) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
+    fun getChildByBean(bean: Any, key: Any? = null): Context?
+    fun getChildByBeanOrFail(bean: Any, key: Any? = null): Context {
+        return getChildByBean(bean, key) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
     }
 
-    fun getOrEnterChild(bean: Any, beanKey: Any? = null): Context
-    fun getOrEnterChild(bean: Any, beanKey: Any? = null, childKey: Any): Context
+    fun getParentByBean(bean: Any, key: Any? = null): Context?
+    fun getParentByBeanOrFail(bean: Any, key: Any? = null): Context {
+        return getParentByBean(bean, key) ?: throw NoSuchElementException("Cannot find parent with bean $bean and key $key.")
+    }
 
     /**
      * 进入一个子上下文。
@@ -158,6 +165,13 @@ interface Context : MutableBeans {
      * @author Chuanwise
      */
     fun exit()
+
+    /**
+     * 检查是否已经退出。
+     */
+    val isExited: Boolean
+
+    override fun close() = exit()
 }
 
 @ContextsInternalApi
@@ -184,14 +198,6 @@ abstract class AbstractContext : Context {
 
     override fun enterChild(vararg child: Any, key: Any): Context {
         return enterChild(child.toList(), key, replace = false)!!
-    }
-
-    override fun getOrEnterChild(bean: Any, beanKey: Any?): Context {
-        return getChild(bean, beanKey) ?: enterChild(bean)
-    }
-
-    override fun getOrEnterChild(bean: Any, beanKey: Any?, childKey: Any): Context {
-        return getChild(bean, beanKey) ?: enterChild(bean, childKey)
     }
 }
 
@@ -232,10 +238,31 @@ class ContextImpl(
     override val contextBeanValues: List<*> get() = beans.beans.getBeanValues(Any::class.java)
     override val contextBeans: List<MutableBean<*>> get() = beans.beans.getBeans(Any::class.java) as List<MutableBean<Any>>
 
+    private val exitLock = AtomicBoolean(false)
+    override val isExited: Boolean get() = exitLock.get()
+
     private val contextBean = registerBean(this)
 
-    override fun getChild(bean: Any, key: Any?): Context? = lock.read {
-        for (child in mutableChildren) {
+    override fun getChildByKey(key: Any): Context? = lock.read {
+        mutableChildrenByKey[key]
+    }
+
+    override fun getParentByKey(key: Any): Context? = lock.read {
+        mutableParentsByKey[key]
+    }
+
+    override fun getParentByBean(bean: Any, key: Any?): Context? {
+        for (parent in createAllParentsBreadthFirstSearchIterator()) {
+            val beanValue = parent.getBean(bean::class.java, key = key)?.value ?: continue
+            if (beanValue == bean) {
+                return parent
+            }
+        }
+        return null
+    }
+
+    override fun getChildByBean(bean: Any, key: Any?): Context? = lock.read {
+        for (child in createAllChildrenBreadthFirstSearchIterator()) {
             val beanValue = child.getBean(bean::class.java, key = key)?.value ?: continue
             if (beanValue == bean) {
                 return child
@@ -339,23 +366,28 @@ class ContextImpl(
             val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
             contextManager.onContextPreRemove(contextPreRemoveEvent)
 
-            check(parent.mutableChildrenByKey.remove(key) === child)
-            check(child.mutableParentsByKey.remove(key) === parent)
+            // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，
+            // 使得 PreRemove 事件发出后可能子已经退出。
+            val removedChild = parent.mutableChildrenByKey.remove(key)
+            check(removedChild === child || removedChild == null)
+
+            val removedParent = child.mutableParentsByKey.remove(key)
+            check(removedParent === parent || removedParent == null)
         } else {
             val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
             contextManager.onContextPreRemove(contextPreRemoveEvent)
         }
 
-        val removed = parent.mutableChildren.remove(child) && child.mutableParents.remove(parent)
-        if (removed) {
-            val contextPostRemoveEvent = ContextPostRemoveEventImpl(parent, child, null, exit, contextManager)
-            contextManager.onContextPostRemove(contextPostRemoveEvent)
-        }
+        parent.mutableChildren.remove(child) && child.mutableParents.remove(parent)
 
-        return removed
+        val contextPostRemoveEvent = ContextPostRemoveEventImpl(parent, child, null, exit, contextManager)
+        contextManager.onContextPostRemove(contextPostRemoveEvent)
+
+        return true
     }
 
     private fun doEnterChild(child: Collection<Any>, key: Any?, replace: Boolean): Context? {
+        checkNotExited()
         val context = ContextImpl(contextManager, key).apply {
             registerBeans(child)
         }
@@ -391,6 +423,9 @@ class ContextImpl(
     @Suppress("UNCHECKED_CAST")
     override fun addChild(child: Context, replace: Boolean): Boolean {
         require(child is ContextImpl) { "Only ContextImpl is supported." }
+        checkNotExited()
+        child.checkNotExited()
+
         return lock.add {
             // 检查是否会形成环。
             val allParents = allParents as List<ContextImpl>
@@ -417,6 +452,7 @@ class ContextImpl(
 
     override fun removeChild(child: Context): Boolean {
         require(child is ContextImpl) { "Only ContextImpl is supported." }
+        checkNotExited()
 
         return listOf(lock, child.lock).remove {
             removeNoLock(this, child, exit = false)
@@ -428,8 +464,9 @@ class ContextImpl(
     override fun removeParent(parent: Context): Boolean = parent.removeChild(this)
 
     override fun exit() {
-        // 加 add lock 的原因是避免其他人对上下文进行操作。
-        return lock.add {
+        if (exitLock.compareAndSet(false, true)) {
+            // 不加 addLock 的原因是在 exitLock = true 的时候其他线程不可能对他 add。
+
             val contextPreExitEvent = ContextPreExitEventImpl(this, contextManager)
             contextManager.onContextPreExit(contextPreExitEvent)
 
@@ -439,14 +476,14 @@ class ContextImpl(
             for (parent in parents) {
                 parent as ContextImpl
 
-                parent.lock.remove {
+                listOf(lock, parent.lock).remove {
                     removeNoLock(parent, this, exit = true)
                 }
             }
             for (child in children) {
                 child as ContextImpl
 
-                child.lock.remove {
+                listOf(lock, child.lock).remove {
                     removeNoLock(this, child, exit = true)
                 }
             }
@@ -533,6 +570,10 @@ class ContextImpl(
     }
 
     override fun toString(): String {
-        return "Context(key=$key, hash=${hashCode()})"
+        return "Context(key=$key, hash=${hashCode()}, exit=$isExited)"
+    }
+
+    private fun checkNotExited() {
+        check(!isExited) { "Context is exited." }
     }
 }

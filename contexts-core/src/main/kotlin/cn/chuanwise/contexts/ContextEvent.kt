@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.events
+package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.util.ContextsInternalApi
 
 /**
- * 上下文退出事件。
+ * 上下文事件。
  *
  * @author Chuanwise
  */
-interface ContextExitEvent : ContextEvent {
-    val context: Context
+interface ContextEvent {
+    /**
+     * 上下文管理器。
+     */
+    val contextManager: ContextManager
 }
-
-interface ContextPreExitEvent : ContextExitEvent
-interface ContextPostExitEvent : ContextExitEvent
-
-@ContextsInternalApi
-data class ContextPreExitEventImpl(
-    override val context: Context,
-    override val contextManager: ContextManager,
-) : ContextPreExitEvent
-
-@ContextsInternalApi
-data class ContextPostExitEventImpl(
-    override val context: Context,
-    override val contextManager: ContextManager,
-) : ContextPostExitEvent

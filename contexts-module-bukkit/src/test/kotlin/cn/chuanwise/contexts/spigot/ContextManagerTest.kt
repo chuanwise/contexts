@@ -16,7 +16,11 @@
 
 package cn.chuanwise.contexts.spigot
 
-import cn.chuanwise.contexts.annotations.createAnnotationModule
+import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.ContextPostExitEvent
+import cn.chuanwise.contexts.ContextPostRemoveEvent
+import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.checkAllRegisteredModuleEnabled
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
@@ -25,11 +29,10 @@ import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
 import cn.chuanwise.contexts.events.eventPublisher
-import cn.chuanwise.contexts.filters.FilterModule
 import cn.chuanwise.contexts.filters.annotations.Filter
-import cn.chuanwise.contexts.filters.annotations.FiltersAnnotationsModuleImpl
 import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
 import cn.chuanwise.contexts.filters.createFilterModule
+import cn.chuanwise.contexts.findAndRegisterModules
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.junit.jupiter.api.Test
@@ -43,10 +46,22 @@ class ContextManagerTest {
     data class PlayerJoinEvent(override val playerName: String) : PlayerEvent
     data class PlayerJumpEvent(override val playerName: String) : PlayerEvent
 
+    private object ExitLoggerContext {
+        @Listener
+        fun ContextPreExitEvent.onPreExit(context: Context) {
+            println("Pre Exit: $context")
+        }
+
+        @Listener
+        fun ContextPostExitEvent.onPostExit(context: Context) {
+            println("Post Exit: $context")
+        }
+    }
+
     private object GlobalContext {
         @Filter
-        fun filterPlayerEvent(event: PlayerEvent) : Boolean? {
-            println("Global context filtering: $event")
+        fun PlayerEvent.filterPlayerEvent() : Boolean? {
+            println("Global context filtering: $this")
             return null
         }
     }
@@ -74,27 +89,31 @@ class ContextManagerTest {
     fun testContextManager() {
         val logger = ConsoleLoggerImpl()
         val contextManager = createContextManager(logger).apply {
-            registerModule(createAnnotationModule())
+            findAndRegisterModules()
 
-            registerModule(createFilterModule())
-            registerModule(createFiltersAnnotationsModule())
-
-            registerModule(createEventModule())
-            registerModule(createEventAnnotationsModule())
-
-            registerModule(createContextEventModule())
+//            registerModule(createAnnotationModule())            // 启动注解扫描管理。
+//
+//            registerModule(createFilterModule())                // 启动过滤器机制。
+//            registerModule(createFiltersAnnotationsModule())    // 把 @Filter 注解的函数注册为过滤器。
+//
+//            registerModule(createEventModule())                 // 启动事件机制。
+//            registerModule(createEventAnnotationsModule())      // 把 @Listener 注解的函数注册为事件监听器。
+//
+//            registerModule(createContextEventModule())          // 启动上下文生命周期事件。
         }
 
-        val globalContext = contextManager.enter(GlobalContext, key = "Global")
+        val globalContext = contextManager.enterRoot(GlobalContext, ExitLoggerContext, key = "Global")
 
-        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), key = "Chuanwise")
-        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), key = "404E")
-        fourZeroFourEContext.enterChild(JumpToolContext)
+        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), ExitLoggerContext, key = "Chuanwise")
+        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), ExitLoggerContext, key = "404E")
+        fourZeroFourEContext.enterChild(JumpToolContext, key = "Jump")
 
         val listenerManager = chuanwiseContext.listenerManager
         globalContext.eventPublisher.publish(PlayerJoinEvent("Chuanwise"))
 
         globalContext.eventPublisher.publish(PlayerJumpEvent("404E"))
         globalContext.eventPublisher.publish(PlayerJumpEvent("Chuanwise"))
+
+        contextManager.close()
     }
 }

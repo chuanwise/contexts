@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-@file:JvmName("ContextManagerFactory")
+package cn.chuanwise.contexts.events
 
-package cn.chuanwise.contexts
-
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.Logger
-
-@OptIn(ContextsInternalApi::class)
-fun createContextManager(logger: Logger): ContextManager {
-    return ContextManagerImpl(logger)
+/**
+ * 事件处理器，负责处理事件发布的全流程。
+ *
+ * @param T 事件类型
+ * @author Chuanwise
+ */
+interface EventProcessor<T : Any> {
+    fun process(eventContext: EventContext<T>)
 }

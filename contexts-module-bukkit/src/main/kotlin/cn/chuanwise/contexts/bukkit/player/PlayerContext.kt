@@ -17,8 +17,7 @@
 package cn.chuanwise.contexts.bukkit.player
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.events.ContextPreEnterEvent
-import cn.chuanwise.contexts.events.annotations.Event
+import cn.chuanwise.contexts.ContextPreEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
 import org.bukkit.entity.Player
@@ -42,17 +41,16 @@ class PlayerContextImpl(
     @Listener
     fun onEnter(event: ContextPreEnterEvent) {
         event.context.registerBean(player)
-        println("Player ${player.name} entered.")
     }
 
     @Filter
-    fun filterPlayerEvent(event: PlayerEvent): Boolean {
-        return event.player.name == playerName
+    fun PlayerEvent.onPlayerEvent(): Boolean {
+        return player.name == playerName
     }
 
     @EventHandler
-    fun onPlayerQuit(@Event event: PlayerQuitEvent, context: Context) {
-        println("Player ${event.player.name} quit.")
+    fun PlayerQuitEvent.onPlayerQuit(context: Context) {
+        println("Player ${player.name} quit.")
         context.exit()
     }
 }

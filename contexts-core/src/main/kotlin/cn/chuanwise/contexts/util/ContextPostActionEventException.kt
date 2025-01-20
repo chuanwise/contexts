@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.events.ContextEvent
+import cn.chuanwise.contexts.ContextEvent
 
 class ContextPostActionEventException @ContextsInternalApi constructor(
     val event: ContextEvent,

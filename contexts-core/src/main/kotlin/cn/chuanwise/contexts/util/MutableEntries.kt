@@ -18,21 +18,33 @@ package cn.chuanwise.contexts.util
 
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 @ContextsInternalApi
-class MutableEntries<T> : Iterable<MutableEntry<T>> {
-    private inner class MutableEntryImpl<T>(override val value: T) : MutableEntry<T> {
+class MutableEntries<T>(
+    private val onPreRemove: Consumer<MutableEntry<T>>? = null,
+    private val onPostRemove: Consumer<MutableEntry<T>>? = null,
+) : Iterable<MutableEntry<T>> {
+    private inner class MutableEntryImpl<U : T>(override val value: U) : MutableEntry<U> {
         private val mutableIsRemoved = AtomicBoolean(false)
         override val isRemoved: Boolean get() = mutableIsRemoved.get()
 
         override fun remove() {
             if (mutableIsRemoved.compareAndSet(false, true)) {
-                entries.remove(this)
+                try {
+                    onPreRemove?.accept(this)
+                } finally {
+                    entries.remove(this)
+                    onPostRemove?.accept(this)
+                }
             }
         }
     }
 
     private val entries = ConcurrentLinkedDeque<MutableEntry<*>>()
+
+    val size: Int get() = entries.size
+    val isEmpty: Boolean get() = entries.isEmpty()
 
     fun add(value: T) : MutableEntry<T> {
         return MutableEntryImpl(value).also {

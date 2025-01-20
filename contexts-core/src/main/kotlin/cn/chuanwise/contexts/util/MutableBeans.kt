@@ -30,8 +30,8 @@ import kotlin.concurrent.withLock
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface MutableBean<T : Any> : Bean<T> {
-    override var value: T
+interface MutableBean<T : Any> : Bean<T>, AutoCloseable {
+    override val value: T
     override var keys: MutableSet<Any>?
 
     override var isPrimary: Boolean
@@ -41,6 +41,7 @@ interface MutableBean<T : Any> : Bean<T> {
      * 移除对象。
      */
     fun remove()
+    override fun close() = remove()
 }
 
 /**
@@ -63,7 +64,7 @@ interface MutableBeans : Beans {
     fun <T : Any> registerBean(value: T, key: Any, primary: Boolean = false): MutableBean<T>
     fun <T : Any> registerBean(value: T, primary: Boolean = false): MutableBean<T>
 
-    fun <T : Any> registerBeans(values: Collection<T>): List<Bean<T>> {
+    fun <T : Any> registerBeans(values: Iterable<T>): List<Bean<T>> {
         return values.map { registerBean(it) }
     }
 
@@ -111,7 +112,7 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
     }
 
     private inner class LiteralMutableBeanImpl<T : Any>(
-        override var value: T,
+        override val value: T,
         override var keys: MutableSet<Any>?,
         override var isPrimary: Boolean
     ) : AbstractMutableBean<T>(keys, isPrimary)
@@ -127,9 +128,7 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
         private var initialized = false
 
         private lateinit var mutableValue: T
-        override var value: T
-            get() = doGetValue()
-            set(value) = doSetValue(value)
+        override val value: T get() = doGetValue()
 
         private fun doGetValue(): T {
             if (initialized) {
@@ -145,11 +144,6 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
                 return mutableValue
             }
         }
-
-        private fun doSetValue(value: T) {
-            initialized = true
-            mutableValue = value
-        }
     }
 
     private inner class MutableBeanGetterImpl<T : Any>(
@@ -157,9 +151,8 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
         override var isPrimary: Boolean,
         private val getter: Supplier<T>
     ) : AbstractMutableBean<T>(keys, isPrimary) {
-        override var value: T
+        override val value: T
             get() = getter.get()
-            set(value) = error("Cannot set value for a getter.")
     }
 
     override fun <T : Any> registerBean(value: T, primary: Boolean): MutableBean<T> {

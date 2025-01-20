@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.events
+@file:JvmName("EventAnnotationModules")
+package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-/**
- * 上下文事件。
- *
- * @author Chuanwise
- */
-interface ContextEvent {
-    /**
-     * 上下文管理器。
-     */
-    val contextManager: ContextManager
-}
+val Beans.eventAnnotationModule: EventAnnotationModule get() = getBeanValueOrFail()
+val Beans.eventAnnotationModuleOrNull: EventAnnotationModule? get() = getBeanValue()

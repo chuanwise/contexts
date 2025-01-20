@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.module
 
-import cn.chuanwise.contexts.events.ContextPostAddEvent
-import cn.chuanwise.contexts.events.ContextPostEnterEvent
-import cn.chuanwise.contexts.events.ContextPostExitEvent
-import cn.chuanwise.contexts.events.ContextPostRemoveEvent
-import cn.chuanwise.contexts.events.ContextPreAddEvent
-import cn.chuanwise.contexts.events.ContextPreEnterEvent
-import cn.chuanwise.contexts.events.ContextPreExitEvent
-import cn.chuanwise.contexts.events.ContextPreRemoveEvent
+import cn.chuanwise.contexts.ContextPostAddEvent
+import cn.chuanwise.contexts.ContextPostEnterEvent
+import cn.chuanwise.contexts.ContextPostExitEvent
+import cn.chuanwise.contexts.ContextPostRemoveEvent
+import cn.chuanwise.contexts.ContextPreAddEvent
+import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.ContextPreRemoveEvent
 
 interface Module {
-    fun onEnable(contextManager: ContextManager): Unit = Unit
-    fun onDisable(contextManager: ContextManager): Unit = Unit
+    fun onModulePreEnable(event: ModulePreEnableEvent): Unit = Unit
+    fun onModulePostEnable(event: ModulePostEnableEvent): Unit = Unit
+
+    fun onModulePreDisable(event: ModulePreDisableEvent): Unit = Unit
+    fun onModulePostDisable(event: ModulePostDisableEvent): Unit = Unit
 
     fun onContextPreAdd(event: ContextPreAddEvent): Unit = Unit
     fun onContextPostAdd(event: ContextPostAddEvent): Unit = Unit

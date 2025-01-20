@@ -16,7 +16,17 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.Module
+import cn.chuanwise.contexts.ContextPostAddEvent
+import cn.chuanwise.contexts.ContextPostEnterEvent
+import cn.chuanwise.contexts.ContextPostExitEvent
+import cn.chuanwise.contexts.ContextPostRemoveEvent
+import cn.chuanwise.contexts.ContextPreAddEvent
+import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.ContextPreRemoveEvent
+import cn.chuanwise.contexts.module.Module
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.NotStableForInheritance
 
@@ -31,6 +41,10 @@ interface ContextEventModule : Module
 
 @ContextsInternalApi
 class ContextEventModuleImpl : ContextEventModule {
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        event.addDependencyModuleClass<EventModule>()
+    }
+
     override fun onContextPreAdd(event: ContextPreAddEvent) {
         event.parent.eventPublisherOrNull?.publishToContext(event)
         event.child.eventPublisherOrNull?.publishToContext(event)

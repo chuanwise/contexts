@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.events
+package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 /**
@@ -32,10 +30,13 @@ interface ContextRemoveEvent : ContextEvent {
     val exit: Boolean
 }
 
-interface ContextPreRemoveEvent: ContextRemoveEvent
-interface ContextPostRemoveEvent: ContextRemoveEvent {
-    var exitIfNoParent: Boolean
+interface ContextPreRemoveEvent: ContextRemoveEvent {
+    /**
+     * 如果 [exit] 为 `true`，则在移除后也退出那些没有父上下文的子上下文。
+     */
+    var alsoExitChildIfItWillBeRoot: Boolean
 }
+interface ContextPostRemoveEvent: ContextRemoveEvent
 
 @ContextsInternalApi
 data class ContextPreRemoveEventImpl(
@@ -43,7 +44,8 @@ data class ContextPreRemoveEventImpl(
     override val child: Context,
     override val replace: ContextAddEvent?,
     override val exit: Boolean,
-    override val contextManager: ContextManager
+    override val contextManager: ContextManager,
+    override var alsoExitChildIfItWillBeRoot: Boolean = true
 ) : ContextPreRemoveEvent
 
 @ContextsInternalApi
@@ -53,5 +55,4 @@ data class ContextPostRemoveEventImpl(
     override val replace: ContextAddEvent?,
     override val exit: Boolean,
     override val contextManager: ContextManager,
-    override var exitIfNoParent: Boolean = true
 ) : ContextPostRemoveEvent

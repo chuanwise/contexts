@@ -18,12 +18,18 @@ package cn.chuanwise.contexts.filters.annotations
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.Module
+import cn.chuanwise.contexts.annotations.AnnotationModule
+import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.annotations.ArgumentResolver
 import cn.chuanwise.contexts.annotations.FunctionProcessor
 import cn.chuanwise.contexts.annotations.annotationModule
 import cn.chuanwise.contexts.filters.FilterContext
+import cn.chuanwise.contexts.filters.FilterModule
 import cn.chuanwise.contexts.filters.filterManagerOrNull
+import cn.chuanwise.contexts.module.ModulePostDisableEvent
+import cn.chuanwise.contexts.module.ModulePostEnableEvent
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableEntry
@@ -33,7 +39,6 @@ import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.jvm.isAccessible
 
 /**
  * 过滤器注解模块，在进入状态之前把带 [Filter] 注解的函数注册为过滤器。
@@ -89,8 +94,13 @@ class FiltersAnnotationsModuleImpl : FiltersAnnotationsModule {
 
     private lateinit var functionProcessor: MutableEntry<FunctionProcessor<Filter>>
 
-    override fun onEnable(contextManager: ContextManager) {
-        val annotationModule = contextManager.annotationModule
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        event.addDependencyModuleClass<AnnotationModule>()
+        event.addDependencyModuleClass<FilterModule>()
+    }
+
+    override fun onModulePostEnable(event: ModulePostEnableEvent) {
+        val annotationModule = event.contextManager.annotationModule
         functionProcessor = annotationModule.registerFunctionProcessor(Filter::class.java) {
             val function = it.function
             val value = it.value
@@ -108,7 +118,7 @@ class FiltersAnnotationsModuleImpl : FiltersAnnotationsModule {
         }
     }
 
-    override fun onDisable(contextManager: ContextManager) {
+    override fun onModulePostDisable(event: ModulePostDisableEvent) {
         functionProcessor.remove()
     }
 }

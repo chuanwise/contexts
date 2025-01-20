@@ -16,11 +16,29 @@
 
 package cn.chuanwise.contexts.events
 
+import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.util.ContextsInternalApi
+
 /**
- * 传播事件
+ * 事件传播器，负责处理事件给一个上下文的所有子发布的流程。
  *
  * @param T 事件类型
+ * @author Chuanwise
  */
 interface EventSpreader<T : Any> {
-    fun spread(eventContext: EventContext<T>)
+    fun spread(currentContext: Context, eventContext: EventContext<T>)
+}
+
+/**
+ * 将事件发布给所有子上下文的事件传播器。
+ *
+ * @author Chuanwise
+ */
+object ChildrenEventSpreader : EventSpreader<Any> {
+    @OptIn(ContextsInternalApi::class)
+    override fun spread(currentContext: Context, eventContext: EventContext<Any>) {
+        currentContext.children.forEach {
+            it.eventPublisher.publish(eventContext)
+        }
+    }
 }

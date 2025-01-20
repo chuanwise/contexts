@@ -18,18 +18,12 @@ package cn.chuanwise.contexts.bukkit
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.annotations.createAnnotationModule
-import cn.chuanwise.contexts.bukkit.event.BukkitEventModule
 import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
 import cn.chuanwise.contexts.bukkit.ui.OpenMenuCommand
 import cn.chuanwise.contexts.createContextManager
-import cn.chuanwise.contexts.events.ContextEventModule
-import cn.chuanwise.contexts.events.EventModule
-import cn.chuanwise.contexts.events.annotations.EventAnnotationsModule
 import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
-import cn.chuanwise.contexts.filters.FilterModule
-import cn.chuanwise.contexts.filters.annotations.FiltersAnnotationsModuleImpl
 import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
 import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
@@ -57,7 +51,7 @@ class ContextsPlugin : JavaPlugin() {
     lateinit var pluginContext: Context
 
     override fun onEnable() {
-        pluginContext = contextManager.enter(this, key = "Global")
+        pluginContext = contextManager.enterRoot(this, key = "Global")
 
         getCommand("contexts")!!.setExecutor(OpenMenuCommand)
     }

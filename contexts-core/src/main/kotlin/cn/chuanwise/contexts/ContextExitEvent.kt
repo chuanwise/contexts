@@ -14,14 +14,30 @@
  * limitations under the License.
  */
 
-@file:JvmName("ContextManagerFactory")
-
 package cn.chuanwise.contexts
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.Logger
 
-@OptIn(ContextsInternalApi::class)
-fun createContextManager(logger: Logger): ContextManager {
-    return ContextManagerImpl(logger)
+/**
+ * 上下文退出事件。
+ *
+ * @author Chuanwise
+ */
+interface ContextExitEvent : ContextEvent {
+    val context: Context
 }
+
+interface ContextPreExitEvent : ContextExitEvent
+interface ContextPostExitEvent : ContextExitEvent
+
+@ContextsInternalApi
+data class ContextPreExitEventImpl(
+    override val context: Context,
+    override val contextManager: ContextManager,
+) : ContextPreExitEvent
+
+@ContextsInternalApi
+data class ContextPostExitEventImpl(
+    override val context: Context,
+    override val contextManager: ContextManager,
+) : ContextPostExitEvent

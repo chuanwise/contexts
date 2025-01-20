@@ -17,14 +17,15 @@
 package cn.chuanwise.contexts.bukkit.event
 
 import cn.chuanwise.contexts.events.EventContext
-import cn.chuanwise.contexts.events.EventSpreader
+import cn.chuanwise.contexts.events.EventProcessor
 import cn.chuanwise.contexts.events.annotations.listenerManager
+import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableBean
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
-object BukkitEventSpreader : EventSpreader<Event> {
+object BukkitEventProcessor : EventProcessor<Event> {
     private val priorities = listOf(
         EventPriority.LOWEST, EventPriority.LOW,
         EventPriority.NORMAL,
@@ -33,14 +34,10 @@ object BukkitEventSpreader : EventSpreader<Event> {
     )
 
     @OptIn(ContextsInternalApi::class)
-    override fun spread(eventContext: EventContext<Event>) {
-        var bean: MutableBean<EventPriority>? = null
+    override fun process(eventContext: EventContext<Event>) {
         for (priority in priorities) {
-            bean = bean ?: eventContext.beans.registerBean(priority)
-            bean.value = priority
-
-            for (context in eventContext.scope.createIterator(eventContext.context)) {
-                context.listenerManager.publishToContext(eventContext)
+            eventContext.beans.registerBean(priority).use {
+                eventContext.context.eventPublisher.publish(eventContext)
             }
         }
     }

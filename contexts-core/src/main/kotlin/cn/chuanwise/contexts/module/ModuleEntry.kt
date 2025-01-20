@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-@file:JvmName("ContextManagerFactory")
+package cn.chuanwise.contexts.module
 
-package cn.chuanwise.contexts
+import cn.chuanwise.contexts.util.MutableEntry
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.Logger
-
-@OptIn(ContextsInternalApi::class)
-fun createContextManager(logger: Logger): ContextManager {
-    return ContextManagerImpl(logger)
+interface ModuleEntry : MutableEntry<Module> {
+    val id: String?
+    val isEnabled: Boolean
 }

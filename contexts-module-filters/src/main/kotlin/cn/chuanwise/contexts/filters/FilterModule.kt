@@ -17,9 +17,10 @@
 package cn.chuanwise.contexts.filters
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.Module
-import cn.chuanwise.contexts.events.ContextPostAddEvent
-import cn.chuanwise.contexts.events.ContextPreEnterEvent
+import cn.chuanwise.contexts.module.Module
+import cn.chuanwise.contexts.ContextPostAddEvent
+import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableBean
@@ -43,9 +44,7 @@ class FilterModuleImpl : FilterModule {
         }
     }
 
-    private class FilterManagerImpl(
-        override val context: Context,
-    ) : FilterManager {
+    private class FilterManagerImpl(override val context: Context) : FilterManager {
         private var resolverBean: MutableBean<FilterResolver>? = null
         override var resolver: FilterResolver?
             get() = resolverBean?.value
@@ -57,8 +56,9 @@ class FilterModuleImpl : FilterModule {
                     val resolverBeanLocal = resolverBean
                     if (resolverBeanLocal == null) {
                         context.registerBean(value).let { resolverBean = it }
-                    } else {
-                        resolverBeanLocal.value = value
+                    } else if (value != resolverBeanLocal.value) {
+                        resolverBeanLocal.remove()
+                        context.registerBean(value).let { resolverBean = it }
                     }
                 }
             }

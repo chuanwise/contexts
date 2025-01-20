@@ -16,7 +16,6 @@
 
 package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.util.Scope
 import kotlin.reflect.KClass
 
 /**
@@ -33,16 +32,21 @@ annotation class Listener(
 )
 
 /**
- * 标注一个可能被过滤的类型，以指定其默认过滤范围。
+ * 事件传播器函数注解。
  *
- * @property scopeClass 过滤器的作用域
+ * @property eventClass 事件类
  */
-@Target(AnnotationTarget.TYPE)
+@Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Scope(
-    val scopeClass: KClass<Scope>
+annotation class Spreader(
+    val eventClass: KClass<*> = Nothing::class
 )
 
+/**
+ * 事件参数注解。
+ *
+ * @author Chuanwise
+ */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Event

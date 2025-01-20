@@ -19,8 +19,8 @@ package cn.chuanwise.contexts.bukkit.ui
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.bukkit.Plugin
 import cn.chuanwise.contexts.bukkit.player.PlayerContextImpl
-import cn.chuanwise.contexts.events.ContextPostEnterEvent
-import cn.chuanwise.contexts.events.ContextPreExitEvent
+import cn.chuanwise.contexts.ContextPostEnterEvent
+import cn.chuanwise.contexts.ContextPreExitEvent
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
@@ -48,7 +48,7 @@ object OpenMenuCommand : CommandExecutor {
             return true
         }
 
-        val context = Plugin.pluginContext.getChild(sender)
+        val context = Plugin.pluginContext.getChildByBean(sender)
             ?: Plugin.pluginContext.enterChild(PlayerContextImpl(sender), key = sender.name)
 
         context.enterChild(ExtraContentOnlineMenuImpl(listOf(

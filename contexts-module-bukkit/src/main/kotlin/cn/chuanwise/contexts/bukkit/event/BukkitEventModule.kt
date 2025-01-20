@@ -18,19 +18,26 @@ package cn.chuanwise.contexts.bukkit.event
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.Module
+import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.annotations.ArgumentResolver
 import cn.chuanwise.contexts.annotations.FunctionProcessor
 import cn.chuanwise.contexts.annotations.annotationModule
-import cn.chuanwise.contexts.events.ContextPreEnterEvent
+import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.annotations.AnnotationModule
 import cn.chuanwise.contexts.events.EventContext
-import cn.chuanwise.contexts.events.EventSpreader
+import cn.chuanwise.contexts.events.EventProcessor
 import cn.chuanwise.contexts.events.Listener
+import cn.chuanwise.contexts.events.annotations.EventAnnotationModule
 import cn.chuanwise.contexts.events.annotations.ListenerFunctionProcessor
-import cn.chuanwise.contexts.events.annotations.eventAnnotationsModule
+import cn.chuanwise.contexts.events.annotations.eventAnnotationModule
 import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.eventModule
 import cn.chuanwise.contexts.events.eventPublisher
+import cn.chuanwise.contexts.filters.annotations.FiltersAnnotationsModule
+import cn.chuanwise.contexts.module.ModulePostDisableEvent
+import cn.chuanwise.contexts.module.ModulePostEnableEvent
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableEntry
@@ -38,6 +45,8 @@ import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScope
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
+import cn.chuanwise.contexts.util.getBeanOrFail
+import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import kotlinx.coroutines.CoroutineScope
@@ -53,11 +62,18 @@ import java.util.function.Consumer
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
+/**
+ * Bukkit 事件模块，用于处理 Bukkit 事件。
+ *
+ * @author Chuanwise
+ */
 interface BukkitEventModule : Module
 
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
-class BukkitEventModuleImpl : BukkitEventModule {
+class BukkitEventModuleImpl @JvmOverloads constructor(
+    private var plugin: Plugin? = null
+) : BukkitEventModule {
     private data class EventHandlerPolicy(
         val eventClass: Class<out Event>,
         val priority: EventPriority
@@ -214,20 +230,32 @@ class BukkitEventModuleImpl : BukkitEventModule {
     private lateinit var listenerFunctionProcessor: MutableEntry<ListenerFunctionProcessor<Event>>
 
     // 处理不同优先级事件的传播。
-    private lateinit var eventSpreader: MutableEntry<EventSpreader<Event>>
+    private lateinit var eventProcessor: MutableEntry<EventProcessor<Event>>
 
-    override fun onEnable(contextManager: ContextManager) {
+    private fun getPlugin() : Plugin {
+        var pluginLocal = plugin
+        if (pluginLocal == null) {
+            pluginLocal = getContextManager().getBeanValue<Plugin>() ?: error(
+                "Plugin is not found. Set it in the related context or in BukkitEventModule, please."
+            )
+            plugin = pluginLocal
+        }
+        return pluginLocal
+    }
+
+    override fun onModulePostEnable(event: ModulePostEnableEvent) {
+        val contextManager = event.contextManager
         check(this.contextManager == null) {
             "BukkitEventModule is already enabled. Notice that it can not be shared between different context manager. " +
                     "If you want to enable it in another context manager, please create a new instance by createBukkitEventModule()."
         }
         this.contextManager = contextManager
 
-        val plugin = contextManager.getBeanValueOrFail<Plugin>()
+        val plugin = getPlugin()
         bukkitEventHandlerInjector = createBukkitEventHandlerInjector(plugin, contextManager.logger)
 
         val annotationModule = contextManager.annotationModule
-        val eventAnnotationsModule = contextManager.eventAnnotationsModule
+        val eventAnnotationsModule = contextManager.eventAnnotationModule
         val eventModule = contextManager.eventModule
 
         // 让事件注解模块忽略带 EventHandler 注解的方法。
@@ -270,19 +298,22 @@ class BukkitEventModuleImpl : BukkitEventModule {
             context.listenerManager.registerListener(filter, intercept, listener)
         }
 
-
-
-        eventSpreader = eventModule.registerEventSpreader(Event::class.java, BukkitEventSpreader)
+        eventProcessor = eventModule.registerEventProcessor(Event::class.java, BukkitEventProcessor)
     }
 
-    override fun onDisable(contextManager: ContextManager) {
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        event.addDependencyModuleClass<FiltersAnnotationsModule>()
+        event.addDependencyModuleClass<EventAnnotationModule>()
+    }
+
+    override fun onModulePostDisable(event: ModulePostDisableEvent) {
         this.contextManager = null
         eventHandlers.values.forEach { it.remove() }
         eventHandlers.clear()
         ignoreListenerAnnotationClass.remove()
         listenerFunctionProcessor.remove()
         eventHandlerAnnotationClass.remove()
-        eventSpreader.remove()
+        eventProcessor.remove()
     }
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {

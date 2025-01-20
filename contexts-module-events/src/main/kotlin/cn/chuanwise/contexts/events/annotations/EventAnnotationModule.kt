@@ -17,17 +17,23 @@
 package cn.chuanwise.contexts.events.annotations
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.Module
+import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.annotations.ArgumentResolver
 import cn.chuanwise.contexts.annotations.FunctionProcessor
 import cn.chuanwise.contexts.annotations.annotationModule
-import cn.chuanwise.contexts.events.ContextPreEnterEvent
+import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.annotations.AnnotationModule
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventHandler
+import cn.chuanwise.contexts.events.EventModule
+import cn.chuanwise.contexts.events.EventSpreader
 import cn.chuanwise.contexts.events.eventModule
+import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.filters.filterManager
-import cn.chuanwise.contexts.filters.filterManagerOrNull
+import cn.chuanwise.contexts.module.ModulePostDisableEvent
+import cn.chuanwise.contexts.module.ModulePostEnableEvent
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableEntries
@@ -50,7 +56,7 @@ import kotlin.reflect.KParameter
  * @see createEventAnnotationsModule
  */
 @NotStableForInheritance
-interface EventAnnotationsModule : Module {
+interface EventAnnotationModule : Module {
     /**
      * 注册一个监听器，让事件注解模块忽略既有 [Listener] 又有给定注解的函数。
      *
@@ -75,7 +81,7 @@ interface EventAnnotationsModule : Module {
 
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
-class EventAnnotationsModuleImpl : EventAnnotationsModule {
+class EventAnnotationModuleImpl : EventAnnotationModule {
     private abstract class AbstractListener<T : Any>(
         val context: Context,
         val eventClass: Class<T>?,
@@ -257,22 +263,94 @@ class EventAnnotationsModuleImpl : EventAnnotationsModule {
         event.context.registerBean(listenerManager)
     }
 
-    private lateinit var functionProcessor: MutableEntry<FunctionProcessor<Listener>>
+    private lateinit var listenerFunctionProcessor: MutableEntry<FunctionProcessor<Listener>>
+    private lateinit var spreaderFunctionProcessor: MutableEntry<FunctionProcessor<Spreader>>
     private lateinit var eventHandler: MutableEntry<EventHandler>
 
-    override fun onEnable(contextManager: ContextManager) {
+    private class ReflectEventSpreaderImpl<T : Any>(
+        val context: Context,
+        val functionClass: Class<*>,
+        val function: KFunction<*>,
+        val argumentResolvers: Map<KParameter, ArgumentResolver>
+    ) : EventSpreader<T> {
+        override fun spread(currentContext: Context, eventContext: EventContext<T>) {
+            val beans = InheritedMutableBeans(context, currentContext, eventContext.beans)
+            val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
+
+            if (function.isSuspend) {
+                val block: suspend CoroutineScope.() -> Unit = {
+                    try {
+                        function.callSuspendByAndRethrowException(arguments)
+                    } catch (e: Throwable) {
+                        onExceptionOccurred(e, eventContext)
+                    }
+                }
+
+                val coroutineScope = context.coroutineScopeOrNull
+                if (coroutineScope == null) {
+                    context.contextManager.logger.warn {
+                        "Function ${function.name} in class ${functionClass.simpleName} is suspend, " +
+                                "but no coroutine scope found. It will blocking caller thread. " +
+                                "Details: " +
+                                "function class: ${functionClass.name}, " +
+                                "function: $function. "
+                    }
+                    runBlocking(block = block)
+                } else {
+                    coroutineScope.launch(block = block)
+                }
+            } else {
+                try {
+                    function.callByAndRethrowException(arguments)
+                } catch (e: Throwable) {
+                    onExceptionOccurred(e, eventContext)
+                }
+            }
+        }
+
+        private fun onExceptionOccurred(e: Throwable, eventContext: EventContext<T>) {
+            context.contextManager.logger.error(e) {
+                "Exception occurred while spreading event ${eventContext.event} by function ${function.name} " +
+                        "declared in ${functionClass.simpleName} for context $context. " +
+                        "Details: " +
+                        "function class: ${functionClass.name}, " +
+                        "function: $function, " +
+                        "event class: ${eventContext.event::class.qualifiedName}."
+            }
+        }
+
+        fun safeSpared(currentContext: Context, eventContext: EventContext<T>) {
+            try {
+                spread(currentContext, eventContext)
+            } catch (e: Throwable) {
+                currentContext.contextManager.logger.error(e) {
+                    "Exception occurred while spreading event ${eventContext.event} for context $currentContext. " +
+                            "Details: " +
+                            "event class: ${eventContext.event::class.qualifiedName}. "
+                }
+            }
+        }
+    }
+
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        event.addDependencyModuleClass<AnnotationModule>()
+        event.addDependencyModuleClass<EventModule>()
+    }
+
+    override fun onModulePostEnable(event: ModulePostEnableEvent) {
+        val contextManager = event.contextManager
         val eventModule = contextManager.eventModule
         eventHandler = eventModule.registerEventHandler(ListenerManagerEventHandlerImpl)
 
         val annotationModule = contextManager.annotationModule
-        functionProcessor = annotationModule.registerFunctionProcessor(Listener::class.java) {
+        listenerFunctionProcessor = annotationModule.registerFunctionProcessor(Listener::class.java) {
             val function = it.function
             val value = it.value
             val context = it.context
 
             val annotations = it.function.annotations
             for (annotation in annotations) {
-                if (ignoreListenerAnnotationClasses.any { it.value.isInstance(annotation) }) {
+                if (ignoreListenerAnnotationClasses.any { cls -> cls.value.isInstance(annotation) }) {
                     return@registerFunctionProcessor
                 }
             }
@@ -302,10 +380,28 @@ class EventAnnotationsModuleImpl : EventAnnotationsModule {
             val listenerManager = context.listenerManager as ListenerManagerImpl
             listenerManager.registerListener(listener)
         }
+        spreaderFunctionProcessor = annotationModule.registerFunctionProcessor(Spreader::class.java) {
+            val function = it.function
+            val value = it.value
+            val context = it.context
+
+            val functionClass = value::class.java
+            val (argumentResolvers, eventClass) = context.parseSubjectClassAndCollectArgumentResolvers<Any>(
+                functionClass = functionClass,
+                function = function,
+                defaultSubjectClass = it.annotation.eventClass.takeIf { cls -> cls != Nothing::class }?.java,
+                subjectAnnotationClass = Event::class.java
+            )
+
+            val spreader = ReflectEventSpreaderImpl<Any>(it.context, functionClass, function, argumentResolvers)
+            val eventPublisher = it.context.eventPublisher
+            eventPublisher.registerEventSpreader(eventClass as Class<Any>, spreader)
+        }
     }
 
-    override fun onDisable(contextManager: ContextManager) {
-        functionProcessor.remove()
+    override fun onModulePostDisable(event: ModulePostDisableEvent) {
+        listenerFunctionProcessor.remove()
+        spreaderFunctionProcessor.remove()
         eventHandler.remove()
     }
 }

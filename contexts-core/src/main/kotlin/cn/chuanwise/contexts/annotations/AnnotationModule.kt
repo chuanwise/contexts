@@ -17,8 +17,9 @@
 package cn.chuanwise.contexts.annotations
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.Module
-import cn.chuanwise.contexts.events.ContextPostEnterEvent
+import cn.chuanwise.contexts.module.Module
+import cn.chuanwise.contexts.ContextPostEnterEvent
+import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
@@ -139,6 +140,10 @@ class AnnotationModuleImpl : AnnotationModule {
                 }
             }
         }
+    }
+
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        super.onModulePreEnable(event)
     }
 
     override fun onContextPostEnter(event: ContextPostEnterEvent) {

@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.events
+package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 /**

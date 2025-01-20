@@ -31,11 +31,6 @@ import cn.chuanwise.contexts.util.Scope
 @NotStableForInheritance
 interface EventContext<out T : Any> {
     /**
-     * 事件的范围。
-     */
-    val scope: Scope
-
-    /**
      * 事件
      */
     val event: T

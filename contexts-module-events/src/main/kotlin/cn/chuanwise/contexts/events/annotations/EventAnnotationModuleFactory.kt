@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:JvmName("EventAnnotationsModules")
+@file:JvmName("EventAnnotationsModuleFactory")
 package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.util.Beans
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.ContextsInternalApi
 
-val Beans.eventAnnotationsModule: EventAnnotationsModule get() = getBeanValueOrFail()
-val Beans.eventAnnotationsModuleOrNull: EventAnnotationsModule? get() = getBeanValue()
+@OptIn(ContextsInternalApi::class)
+fun createEventAnnotationsModule(): EventAnnotationModule = EventAnnotationModuleImpl()

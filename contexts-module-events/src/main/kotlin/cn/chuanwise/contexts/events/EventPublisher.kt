@@ -19,6 +19,8 @@ package cn.chuanwise.contexts.events
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.util.AllChildrenAndContextScope
 import cn.chuanwise.contexts.util.ContextScope
+import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.Scope
 
 /**
@@ -33,19 +35,33 @@ interface EventPublisher<T : Any> {
     val context: Context
 
     /**
+     * 默认事件传播器。
+     */
+    var defaultEventSpreader: EventSpreader<Any>?
+
+    /**
      * 仅仅将事件发布给当前上下文中的监听器。
      *
      * @param event 事件
      */
-    fun publishToContext(event: T) = publish(event, ContextScope)
+    fun publishToContext(event: T): EventContext<T>
 
     /**
      * 发布事件。
      *
-     * 事件类上可以使用 [Scope] 标注其传播范围，默认的范围是 [AllChildrenAndContextScope]。
-     *
      * @param event 事件
      */
-    fun publish(event: T, scope: Scope?)
-    fun publish(event: T) = publish(event, scope = null)
+    fun publish(event: T): EventContext<T>
+
+    @ContextsInternalApi
+    fun publish(eventContext: EventContext<T>): EventContext<T>
+
+    /**
+     * 注册事件传播器。
+     *
+     * @param spreader 事件传播器
+     * @return 事件传播器
+     */
+    fun registerEventSpreader(spreader: EventSpreader<T>): MutableEntry<EventSpreader<T>>
+    fun <U : T> registerEventSpreader(eventClass: Class<U>, spreader: EventSpreader<U>): MutableEntry<EventSpreader<U>>
 }
