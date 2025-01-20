@@ -529,22 +529,6 @@ class ContextImpl(
         return beans.registerBean(value, primary)
     }
 
-    override fun <T : Any> registerBeanGetter(
-        keys: MutableSet<Any>?,
-        primary: Boolean,
-        factory: Supplier<T>
-    ): MutableBean<T> {
-        return beans.registerBeanGetter(keys, primary, factory)
-    }
-
-    override fun <T : Any> registerLazyBean(
-        keys: MutableSet<Any>?,
-        primary: Boolean,
-        factory: Supplier<T>
-    ): MutableBean<T> {
-        return beans.registerLazyBean(keys, primary, factory)
-    }
-
     override fun getBeanValue(type: Type, primary: Boolean?, key: Any?): Any? {
         return beans.getBeanValue(type, primary, key)
     }

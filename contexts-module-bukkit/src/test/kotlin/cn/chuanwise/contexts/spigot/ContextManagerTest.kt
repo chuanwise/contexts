@@ -35,6 +35,7 @@ import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.findAndRegisterModules
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Joint
 import org.junit.jupiter.api.Test
 
 @OptIn(ContextsInternalApi::class)
@@ -58,6 +59,7 @@ class ContextManagerTest {
         }
     }
 
+    @Joint(ExitLoggerContext::class)
     private object GlobalContext {
         @Filter
         fun PlayerEvent.filterPlayerEvent() : Boolean? {
@@ -65,6 +67,8 @@ class ContextManagerTest {
             return null
         }
     }
+
+    @Joint(ExitLoggerContext::class)
     private class PlayerContext(val playerName: String) {
         @Filter
         fun filterPlayerEvent(event: PlayerEvent) : Boolean {
@@ -78,6 +82,8 @@ class ContextManagerTest {
             println("Player ${event.playerName} joined! FROM $playerName's context")
         }
     }
+
+    @Joint(ExitLoggerContext::class)
     private object JumpToolContext {
         @Listener(intercept = true)
         fun onPlayerJump(@Event event: PlayerJumpEvent, playerContext: PlayerContext) {
@@ -102,10 +108,10 @@ class ContextManagerTest {
 //            registerModule(createContextEventModule())          // 启动上下文生命周期事件。
         }
 
-        val globalContext = contextManager.enterRoot(GlobalContext, ExitLoggerContext, key = "Global")
+        val globalContext = contextManager.enterRoot(GlobalContext, key = "Global")
 
-        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), ExitLoggerContext, key = "Chuanwise")
-        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), ExitLoggerContext, key = "404E")
+        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), key = "Chuanwise")
+        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), key = "404E")
         fourZeroFourEContext.enterChild(JumpToolContext, key = "Jump")
 
         val listenerManager = chuanwiseContext.listenerManager

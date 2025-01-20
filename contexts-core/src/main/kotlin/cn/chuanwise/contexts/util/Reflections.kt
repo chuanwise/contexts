@@ -32,6 +32,7 @@ import java.lang.reflect.Member
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.ArrayDeque
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
@@ -97,6 +98,20 @@ fun Field.getSafe(instance: Any): Any? {
 }
 
 @ContextsInternalApi
+fun Field.getStaticSafe(): Any? {
+    return if (isAccessible) {
+        get(declaringClass)
+    } else {
+        trySetAccessible()
+        try {
+            get(declaringClass)
+        } catch (e: IllegalAccessException) {
+            null
+        }
+    }
+}
+
+@ContextsInternalApi
 fun Method.invokeSafe(instance: Any, vararg args: Any = EMPTY_ANY_ARRAY): Any? {
     return if (canAccess(instance)) {
         invoke(instance, *args)
@@ -137,7 +152,7 @@ fun <T : Any> Class<T>.getInstanceOrFail(
         }
     }
     getDeclaredStaticFieldOrNull("INSTANCE")?.let {
-        it.getSafe(this)?.takeIf { value ->
+        it.getStaticSafe()?.takeIf { value ->
             isInstance(value)
         }?.let { value ->
             return value as T

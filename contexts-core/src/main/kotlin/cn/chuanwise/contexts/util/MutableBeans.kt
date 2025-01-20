@@ -67,18 +67,6 @@ interface MutableBeans : Beans {
     fun <T : Any> registerBeans(values: Iterable<T>): List<Bean<T>> {
         return values.map { registerBean(it) }
     }
-
-    fun <T : Any> registerBeanGetter(
-        keys: MutableSet<Any>? = null,
-        primary: Boolean = false,
-        factory: Supplier<T>
-    ): MutableBean<T>
-
-    fun <T : Any> registerLazyBean(
-        keys: MutableSet<Any>? = null,
-        primary: Boolean = false,
-        factory: Supplier<T>
-    ): MutableBean<T>
 }
 
 inline fun <reified T : Any> MutableBeans.getBean(): Bean<T>? {
@@ -115,44 +103,10 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
         override val value: T,
         override var keys: MutableSet<Any>?,
         override var isPrimary: Boolean
-    ) : AbstractMutableBean<T>(keys, isPrimary)
-
-    private inner class LazyMutableBeanImpl<T : Any>(
-        override var keys: MutableSet<Any>?,
-        override var isPrimary: Boolean,
-        private val factory: Supplier<T>
     ) : AbstractMutableBean<T>(keys, isPrimary) {
-        private val lock = ReentrantLock()
-
-        @Volatile
-        private var initialized = false
-
-        private lateinit var mutableValue: T
-        override val value: T get() = doGetValue()
-
-        private fun doGetValue(): T {
-            if (initialized) {
-                return mutableValue
-            }
-            lock.withLock {
-                if (initialized) {
-                    return mutableValue
-                }
-
-                mutableValue = factory.get()
-                initialized = true
-                return mutableValue
-            }
+        init {
+            onBeanValueSpawned(value)
         }
-    }
-
-    private inner class MutableBeanGetterImpl<T : Any>(
-        override var keys: MutableSet<Any>?,
-        override var isPrimary: Boolean,
-        private val getter: Supplier<T>
-    ) : AbstractMutableBean<T>(keys, isPrimary) {
-        override val value: T
-            get() = getter.get()
     }
 
     override fun <T : Any> registerBean(value: T, primary: Boolean): MutableBean<T> {
@@ -167,17 +121,22 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
         return LiteralMutableBeanImpl(value, keys, primary).apply { registerBean(this) }
     }
 
-    override fun <T : Any> registerBeanGetter(keys: MutableSet<Any>?, primary: Boolean, factory: Supplier<T>): MutableBean<T> {
-        return MutableBeanGetterImpl(keys, primary, factory).apply { registerBean(this) }
-    }
-
-    override fun <T : Any> registerLazyBean(keys: MutableSet<Any>?, primary: Boolean, factory: Supplier<T>): MutableBean<T> {
-        return LazyMutableBeanImpl(keys, primary, factory).apply { registerBean(this) }
-    }
-
     abstract fun registerBean(bean: MutableBean<*>)
 
     abstract fun removeBean(bean: MutableBean<*>)
+
+    private fun onBeanValueSpawned(value: Any) {
+        val joints = value::class.annotations.filterIsInstance<Joint>()
+        for (joint in joints) {
+            val bean = joint.beanClass.java.getInstanceOrFail()
+            val keys = joint.keys.takeIf { it.isNotEmpty() }
+            if (keys == null) {
+                registerBean(bean, primary = joint.primary)
+            } else {
+                registerBean(bean, keys = keys.toMutableSet(), primary = joint.primary)
+            }
+        }
+    }
 }
 
 @ContextsInternalApi

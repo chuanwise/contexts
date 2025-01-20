@@ -17,10 +17,9 @@
 package cn.chuanwise.contexts.filters
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.ContextPostAddEvent
 import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeans
 import cn.chuanwise.contexts.util.MutableBean
