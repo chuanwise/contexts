@@ -20,8 +20,14 @@ package cn.chuanwise.contexts
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Logger
+import cn.chuanwise.contexts.util.createJavaLogger
 
 @OptIn(ContextsInternalApi::class)
 fun createContextManager(logger: Logger): ContextManager {
     return ContextManagerImpl(logger)
+}
+
+fun createContextManager(): ContextManager {
+    val logger = java.util.logging.Logger.getLogger("ContextManager")
+    return createContextManager(createJavaLogger(logger))
 }

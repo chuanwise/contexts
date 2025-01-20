@@ -18,13 +18,17 @@ package cn.chuanwise.contexts.util
 
 import java.util.function.Supplier
 
+interface JavaLogger : Logger {
+    val logger: java.util.logging.Logger
+}
+
 @OptIn(ContextsInternalApi::class)
-fun createJavaLogger(logger: java.util.logging.Logger): Logger = JavaLoggerImpl(logger)
+fun createJavaLogger(logger: java.util.logging.Logger): JavaLogger = JavaLoggerImpl(logger)
 
 @ContextsInternalApi
 class JavaLoggerImpl(
-    private val logger: java.util.logging.Logger
-) : Logger {
+    override val logger: java.util.logging.Logger
+) : JavaLogger {
     override fun info(message: String) {
         logger.info(message)
     }
