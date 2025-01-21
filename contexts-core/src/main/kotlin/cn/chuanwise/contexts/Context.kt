@@ -79,14 +79,24 @@ interface Context : MutableBeans, AutoCloseable {
      * @param key 键
      * @return 子上下文
      */
-    fun getChildByBean(bean: Any, key: Any? = null): Context?
-    fun getChildByBeanOrFail(bean: Any, key: Any? = null): Context {
-        return getChildByBean(bean, key) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
+    fun getChildByBean(bean: Any, key: Any? = null, primary: Boolean? = null): Context?
+    fun getChildByBeanOrFail(bean: Any, key: Any? = null, primary: Boolean? = null): Context {
+        return getChildByBean(bean, key, primary) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
     }
 
-    fun getParentByBean(bean: Any, key: Any? = null): Context?
-    fun getParentByBeanOrFail(bean: Any, key: Any? = null): Context {
-        return getParentByBean(bean, key) ?: throw NoSuchElementException("Cannot find parent with bean $bean and key $key.")
+    fun getChildByBeanClass(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context?
+    fun getChildByBeanClassOrFail(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context {
+        return getChildByBeanClass(beanClass, key, primary) ?: throw NoSuchElementException("Cannot find child with bean class $beanClass and key $key.")
+    }
+
+    fun getParentByBean(bean: Any, key: Any? = null, primary: Boolean? = null): Context?
+    fun getParentByBeanOrFail(bean: Any, key: Any? = null, primary: Boolean? = null): Context {
+        return getParentByBean(bean, key, primary) ?: throw NoSuchElementException("Cannot find parent with bean $bean and key $key.")
+    }
+
+    fun getParentByBeanClass(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context?
+    fun getParentByBeanClassOrFail(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context {
+        return getParentByBeanClass(beanClass, key, primary) ?: throw NoSuchElementException("Cannot find parent with bean class $beanClass and key $key.")
     }
 
     /**
@@ -251,7 +261,7 @@ class ContextImpl(
         mutableParentsByKey[key]
     }
 
-    override fun getParentByBean(bean: Any, key: Any?): Context? {
+    override fun getParentByBean(bean: Any, key: Any?, primary: Boolean?): Context? {
         for (parent in createAllParentsBreadthFirstSearchIterator()) {
             val beanValue = parent.getBean(bean::class.java, key = key)?.value ?: continue
             if (beanValue == bean) {
@@ -261,12 +271,28 @@ class ContextImpl(
         return null
     }
 
-    override fun getChildByBean(bean: Any, key: Any?): Context? = lock.read {
+    override fun getChildByBean(bean: Any, key: Any?, primary: Boolean?): Context? = lock.read {
         for (child in createAllChildrenBreadthFirstSearchIterator()) {
-            val beanValue = child.getBean(bean::class.java, key = key)?.value ?: continue
+            val beanValue = child.getBean(bean::class.java, key = key, primary = primary)?.value ?: continue
             if (beanValue == bean) {
                 return child
             }
+        }
+        null
+    }
+
+    override fun getParentByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? {
+        for (parent in createAllParentsBreadthFirstSearchIterator()) {
+            val bean = parent.getBean(beanClass, key = key, primary = primary) ?: continue
+            return parent
+        }
+        return null
+    }
+
+    override fun getChildByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? = lock.read {
+        for (child in createAllChildrenBreadthFirstSearchIterator()) {
+            val bean = child.getBean(beanClass, key = key, primary = primary) ?: continue
+            return child
         }
         null
     }

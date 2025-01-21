@@ -17,7 +17,6 @@
 package cn.chuanwise.contexts.annotations
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.util.Beans
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -27,7 +26,7 @@ import kotlin.reflect.KParameter
  *
  * @author Chuanwise
  */
-interface ArgumentResolverContext {
+interface ArgumentResolveContext {
     val functionClass: Class<*>
     val function: KFunction<*>
     val parameter: KParameter
@@ -40,4 +39,4 @@ class ArgumentResolveContextImpl(
     override val function: KFunction<*>,
     override val parameter: KParameter,
     override val context: Context
-) : ArgumentResolverContext
+) : ArgumentResolveContext

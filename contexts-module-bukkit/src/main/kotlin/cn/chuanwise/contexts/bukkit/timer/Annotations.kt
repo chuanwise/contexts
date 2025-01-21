@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.ui
+package cn.chuanwise.contexts.bukkit.timer
 
-import org.bukkit.inventory.ItemStack
-
-interface ItemStackButton : Button {
-    val itemStack: ItemStack
-}
+/**
+ * 定时器注解。
+ *
+ * @property period 周期
+ * @property delay 延迟
+ */
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Timer(
+    val period: Long = 1,
+    val delay: Long = 0
+)

@@ -31,17 +31,17 @@ interface ArgumentResolverFactory {
      * @param context 参数解析上下文
      * @return 参数解析器，若失败则返回 `null`。
      */
-    fun tryCreateArgumentResolver(context: ArgumentResolverContext): ArgumentResolver?
+    fun tryCreateArgumentResolver(context: ArgumentResolveContext): ArgumentResolver?
 }
 
 object DefaultArgumentResolverFactory : ArgumentResolverFactory {
-    private class ArgumentResolverImpl(private val context: ArgumentResolverContext) : ArgumentResolver {
-        override fun resolveArgument(beans: Beans): Any {
-            return beans.getBeanValueOrFail(context.parameter.type.javaType, key = context.parameter.name)
+    private class ArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
+        override fun resolveArgument(beans: Beans): Any? {
+            return beans.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)
         }
     }
 
-    override fun tryCreateArgumentResolver(context: ArgumentResolverContext): ArgumentResolver {
+    override fun tryCreateArgumentResolver(context: ArgumentResolveContext): ArgumentResolver {
         return ArgumentResolverImpl(context)
     }
 }

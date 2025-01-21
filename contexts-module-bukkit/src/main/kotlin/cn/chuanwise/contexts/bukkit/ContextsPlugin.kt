@@ -17,43 +17,27 @@
 package cn.chuanwise.contexts.bukkit
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.annotations.createAnnotationModule
-import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
-import cn.chuanwise.contexts.bukkit.ui.OpenMenuCommand
+import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
 import cn.chuanwise.contexts.createContextManager
-import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
-import cn.chuanwise.contexts.events.createContextEventModule
-import cn.chuanwise.contexts.events.createEventModule
-import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
-import cn.chuanwise.contexts.filters.createFilterModule
-import cn.chuanwise.contexts.util.ConsoleLoggerImpl
+import cn.chuanwise.contexts.findAndRegisterModules
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.createJavaLogger
 import org.bukkit.plugin.java.JavaPlugin
 
 class ContextsPlugin : JavaPlugin() {
-    @OptIn(ContextsInternalApi::class)
-    val contextManager = createContextManager(ConsoleLoggerImpl()).apply {
-        registerModule(createAnnotationModule())
-
-        registerModule(createEventModule())
-        registerModule(createEventAnnotationsModule())
-
-        registerModule(createContextEventModule())
-
-        registerModule(createFilterModule())
-        registerModule(createFiltersAnnotationsModule())
-
-        registerModule(createBukkitEventModule())
-
-        registerBean(this@ContextsPlugin)
-    }
-
+    lateinit var contextManager: ContextManager
     lateinit var pluginContext: Context
 
+    @OptIn(ContextsInternalApi::class)
     override fun onEnable() {
-        pluginContext = contextManager.enterRoot(this, key = "Global")
+        contextManager = createContextManager(createJavaLogger(logger)).apply {
+            findAndRegisterModules()
+            registerBean(this@ContextsPlugin)
+        }
+        pluginContext = contextManager.enterRoot(this, key = "Plugin")
 
-        getCommand("contexts")!!.setExecutor(OpenMenuCommand)
+        getCommand("contexts")!!.setExecutor(HotBarTestMenuCommand)
     }
 }
 

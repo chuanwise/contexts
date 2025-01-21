@@ -20,24 +20,31 @@ import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextPreEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
+import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.UUID
 
-interface PlayerContext {
-    val playerName: String
-    val playerUuid: UUID
-
+/**
+ * 玩家会话。
+ *
+ * @author Chuanwise
+ */
+interface PlayerSession {
     val player: Player
+
+    val playerName: String
+    val playerId: UUID
 }
 
-class PlayerContextImpl(
+@ContextsInternalApi
+class PlayerSessionImpl(
     override val player: Player,
     override val playerName: String = player.name,
-    override val playerUuid: UUID = player.uniqueId
-) : PlayerContext {
+    override val playerId: UUID = player.uniqueId
+) : PlayerSession {
     @Listener
     fun onEnter(event: ContextPreEnterEvent) {
         event.context.registerBean(player)
@@ -50,7 +57,6 @@ class PlayerContextImpl(
 
     @EventHandler
     fun PlayerQuitEvent.onPlayerQuit(context: Context) {
-        println("Player ${player.name} quit.")
         context.exit()
     }
 }

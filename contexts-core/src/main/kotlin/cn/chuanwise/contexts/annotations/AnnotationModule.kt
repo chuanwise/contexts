@@ -59,10 +59,10 @@ interface AnnotationModule : Module {
     /**
      * 尝试获取一个参数解析器。
      *
-     * @param argumentResolverContext 参数解析器上下文
+     * @param argumentResolveContext 参数解析器上下文
      * @return 参数解析器
      */
-    fun createArgumentResolver(argumentResolverContext: ArgumentResolverContext): ArgumentResolver?
+    fun createArgumentResolver(argumentResolveContext: ArgumentResolveContext): ArgumentResolver?
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -94,18 +94,18 @@ class AnnotationModuleImpl : AnnotationModule {
         return argumentResolverFactories.add(argumentResolverFactory)
     }
 
-    override fun createArgumentResolver(argumentResolverContext: ArgumentResolverContext): ArgumentResolver? {
+    override fun createArgumentResolver(argumentResolveContext: ArgumentResolveContext): ArgumentResolver? {
         for (entry in argumentResolverFactories) {
             try {
-                entry.value.tryCreateArgumentResolver(argumentResolverContext)?.let { return it }
+                entry.value.tryCreateArgumentResolver(argumentResolveContext)?.let { return it }
             } catch (e: Throwable) {
-                argumentResolverContext.context.contextManager.logger.error(e) {
+                argumentResolveContext.context.contextManager.logger.error(e) {
                     "Error occurred while creating argument resolver by factory ${entry.value::class.qualifiedName} " +
-                            "for function ${argumentResolverContext.function.name}. " +
+                            "for function ${argumentResolveContext.function.name}. " +
                             "Details: " +
-                            "context: ${argumentResolverContext.context}, " +
-                            "resolving parameter name: ${argumentResolverContext.parameter.name}, " +
-                            "resolving function: ${argumentResolverContext.function}."
+                            "context: ${argumentResolveContext.context}, " +
+                            "resolving parameter name: ${argumentResolveContext.parameter.name}, " +
+                            "resolving function: ${argumentResolveContext.function}."
                 }
             }
         }

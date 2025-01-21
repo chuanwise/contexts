@@ -16,5 +16,21 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-interface Button {
+/**
+ * 快捷栏菜单事件。
+ *
+ * @author Chuanwise
+ * @see HotBarMenu
+ */
+interface HotBarMenuEvent {
+    val menu: HotBarMenu
+}
+
+/**
+ * 快捷栏菜单按钮聚焦状态改变事件。
+ *
+ * @author Chuanwise
+ */
+interface HotBarMenuFocusStatusChangedEvent {
+    val focusStatus: Boolean
 }

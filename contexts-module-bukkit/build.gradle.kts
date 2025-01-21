@@ -52,3 +52,7 @@ tasks.processResources {
         )
     }
 }
+
+tasks.shadowJar {
+    mergeServiceFiles()
+}
