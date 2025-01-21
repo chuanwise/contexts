@@ -44,7 +44,14 @@ object DefaultArgumentResolverFactory : ArgumentResolverFactory {
 
     private class RequiredArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
         override fun resolveArgument(beans: Beans): Any {
-            return beans.getBeanValueOrFail(context.parameter.type.javaType, key = context.parameter.name)
+            beans.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)?.let { return it }
+
+            error("Cannot resolve argument for parameter ${context.parameter.name} of type ${context.parameter.type} " +
+                    "caused by missing bean. " +
+                    "while trying to call ${context.function.name} declared in ${context.functionClass.name}. " +
+                    "Details: " +
+                    "function: ${context.function}, " +
+                    "function class: ${context.functionClass.name}. ")
         }
     }
 

@@ -17,13 +17,11 @@
 package cn.chuanwise.contexts.bukkit.ui
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPostExitEvent
 import cn.chuanwise.contexts.bukkit.Plugin
 import cn.chuanwise.contexts.bukkit.player.createPlayerSession
+import cn.chuanwise.contexts.bukkit.timer.Timer
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.Particle
@@ -31,57 +29,62 @@ import org.bukkit.Particle.DustOptions
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
-import org.bukkit.entity.FallingBlock
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.scheduler.BukkitTask
 import kotlin.random.Random
 
 @ContextsInternalApi
 object HotBarTestMenuCommand : CommandExecutor {
-    class DebugHotBarItem(
-        override val itemStack: ItemStack
+    fun generateButtons(): List<HotBarItem> {
+        val items = mutableListOf<HotBarItem>()
+        val material = Material.values().random()
+        for (i in 0 until 9) {
+            items.add(createFocusingHotBarItem(ItemStack(material, i + 1)) { it.enterChild(DeepHotBarItem) })
+        }
+        Random.nextInt(0, 9).let {
+            items[it] = createFocusingHotBarItem(ItemStack(Material.DIAMOND_SWORD)) {
+                parent -> parent.enterChild(LaserPen)
+            }
+        }
+        Random.nextInt(0, 9).let {
+            items[it] = QuitHotBarItem(ItemStack(Material.BARRIER))
+        }
+        return items
+    }
+
+    class QuitHotBarItem(
+        override val itemStack: ItemStack = ItemStack(Material.BARRIER)
     ) : HotBarItem {
-        @Listener
-        fun onFocusOn(event: OnlineHotBarSurfaceFocusStatusChangedEvent) {
-            println("Focus on: ${event.focusStatus} for $itemStack")
+        @Listener(intercept = true)
+        @EventHandler(ignoreCancelled = true)
+        fun PlayerInteractEvent.onInteract(context: Context) {
+            println("QUIT clicked, goodbye!")
+            context.getParentByBeanClass(OnlineHotBarSurface::class.java)!!.exit()
         }
     }
 
-    class LaserPenHotBarItem(
-        override val itemStack: ItemStack
-    ) : HotBarItem {
-        private object LaserPen {
-            fun onHold(player: Player) {
-                val direction = player.location.direction
-                val blockData = DustOptions(Color.GREEN, 1.0f)
-                for (i in 0 until 10) {
-                    player.spawnParticle(Particle.REDSTONE, player.location, 1,
-                        direction.x * i, direction.y * i, direction.z * i, 0.0, blockData)
-                }
-            }
-
-            lateinit var task: BukkitTask
-
-            @Listener
-            fun ContextPostEnterEvent.onEnter(player: Player) {
-                task = Bukkit.getScheduler().runTaskTimerAsynchronously(Plugin, Runnable { onHold(player) }, 0, 3)
-            }
-
-            @Listener
-            fun ContextPostExitEvent.onExit() {
-                task.cancel()
-            }
+    object DeepHotBarItem {
+        @Listener(intercept = true)
+        @EventHandler(ignoreCancelled = true)
+        fun PlayerInteractEvent.onInteract(context: Context) {
+            context.enterChild(createOnlineHotBarMenu(generateButtons()))
         }
+    }
 
-        @Listener
-        fun OnlineHotBarSurfaceFocusStatusChangedEvent.onFocusOn(context: Context) {
-            if (focusStatus) {
-                println("Focus on LASER PEN! $focusStatus for $itemStack")
-                context.enterChild(LaserPen)
-            } else {
-                context.getChildByBean(LaserPen)!!.exit()
-                println("Good bye, our laser pen!")
+    object LaserPen {
+        @Timer
+        fun onSpawnParticles(player: Player) {
+            val direction = player.location.direction
+            val data = DustOptions(Color.WHITE, 1.0f)
+            val eyeLocation = player.eyeLocation.clone()
+
+            for (i in 0 until 30) {
+                player.world.spawnParticle(
+                    Particle.REDSTONE, eyeLocation.clone().add(direction.multiply(i.toDouble())),
+                    1, 0.0, 0.0, 0.0, 0.0, data
+                )
             }
         }
     }
@@ -98,14 +101,6 @@ object HotBarTestMenuCommand : CommandExecutor {
             return
         }
 
-        val items = mutableListOf<HotBarItem>()
-        for (i in 0 until 9) {
-            items.add(DebugHotBarItem(ItemStack(Material.GRASS_BLOCK, i + 1)))
-        }
-        Random.nextInt(0, 9).let {
-            items[it] = LaserPenHotBarItem(ItemStack(Material.DIAMOND_SWORD))
-        }
-
         val playerContext = Plugin.pluginContext.getChildByBean(sender)
             ?: Plugin.pluginContext.enterChild(createPlayerSession(sender), key = "Player[${sender.name}]")
 
@@ -115,7 +110,9 @@ object HotBarTestMenuCommand : CommandExecutor {
             return
         }
 
-        onlineHotBarSurfaceContext = playerContext.enterChild(createOnlineHotBarMenu(items), key = "HotBarMenu[${sender.name}]")
+        onlineHotBarSurfaceContext = playerContext.enterChild(createOnlineHotBarMenu(
+            generateButtons()
+        ), key = "HotBarMenu[${sender.name}]")
         sender.sendMessage("Hot bar menu opened.")
     }
 }

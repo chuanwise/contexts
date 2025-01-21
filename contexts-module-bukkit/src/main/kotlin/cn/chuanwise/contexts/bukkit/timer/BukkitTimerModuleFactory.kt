@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.ui
+@file:JvmName("BukkitTimerModuleFactory")
+package cn.chuanwise.contexts.bukkit.timer
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import org.bukkit.inventory.ItemStack
-import java.util.function.Function
 
-/**
- * 快捷栏菜单按钮。
- *
- * @author Chuanwise
- */
-interface HotBarItem {
-    val itemStack: ItemStack
-}
+@OptIn(ContextsInternalApi::class)
+fun createBukkitTimerModule(): BukkitTimerModule = BukkitTimerModuleImpl()

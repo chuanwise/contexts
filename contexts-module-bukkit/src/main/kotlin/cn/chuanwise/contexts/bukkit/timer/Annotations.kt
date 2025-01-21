@@ -26,5 +26,6 @@ package cn.chuanwise.contexts.bukkit.timer
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Timer(
     val period: Long = 1,
-    val delay: Long = 0
+    val delay: Long = 0,
+    val async: Boolean = false
 )

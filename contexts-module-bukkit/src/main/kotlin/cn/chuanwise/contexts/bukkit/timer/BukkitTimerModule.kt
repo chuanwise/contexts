@@ -25,6 +25,7 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Consumer
 
@@ -38,20 +39,35 @@ class BukkitTimerModuleImpl @JvmOverloads constructor(
 ) : BukkitTimerModule {
     override val plugin: Plugin get() = mutablePlugin ?: error("Bukkit timer module has not been initialized yet.")
 
+    private class BukkitTaskActionImpl(
+        val action: Consumer<BukkitTask>
+    ) : Runnable {
+        val bukkitTaskFuture = CompletableFuture<BukkitTask>()
+
+        override fun run() {
+            action.accept(bukkitTaskFuture.get())
+        }
+    }
+
     private inner class BukkitTimerManagerImpl(
         override val context: Context
     ) : BukkitTimerManager {
         private val bukkitTasks = ConcurrentLinkedDeque<BukkitTask>()
 
         override fun runTaskTimer(delay: Long, period: Long, action: Consumer<BukkitTask>): BukkitTask {
-            plugin.server.scheduler.runTaskTimer(plugin, action, delay, period).apply {
-//                bukkitTasks.addLast(this)
-            }
-            TODO()
+            val finalAction = BukkitTaskActionImpl(action)
+            val bukkitTask = plugin.server.scheduler.runTaskTimer(plugin, finalAction, delay, period)
+            finalAction.bukkitTaskFuture.complete(bukkitTask)
+            bukkitTasks.add(bukkitTask)
+            return bukkitTask
         }
 
         override fun runTaskTimerAsynchronously(delay: Long, period: Long, action: Consumer<BukkitTask>): BukkitTask {
-            TODO("Not yet implemented")
+            val finalAction = BukkitTaskActionImpl(action)
+            val bukkitTask = plugin.server.scheduler.runTaskTimerAsynchronously(plugin, finalAction, delay, period)
+            finalAction.bukkitTaskFuture.complete(bukkitTask)
+            bukkitTasks.add(bukkitTask)
+            return bukkitTask
         }
 
         fun cancelTasks() {

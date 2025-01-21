@@ -26,29 +26,86 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
+import cn.chuanwise.contexts.util.coroutineScopeOrNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.bukkit.scheduler.BukkitTask
 import java.util.function.Consumer
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
-interface BukkitTimerAnnotationModule : Module {
-}
+interface BukkitTimerAnnotationModule : Module
 
 @ContextsInternalApi
 class BukkitTimerAnnotationModuleImpl : BukkitTimerAnnotationModule, Module {
-    override fun onModulePreEnable(event: ModulePreEnableEvent) {
-        event.addDependencyModuleClass<BukkitTimerModule>()
-    }
-
     private class ReflectConsumerImpl(
         private val context: Context,
         private val functionClass: Class<*>,
         private val function: KFunction<*>,
-        private val argumentResolvers: Map<KParameter, ArgumentResolver>
+        private val argumentResolvers: Map<KParameter, ArgumentResolver>,
+        private val async: Boolean
     ) : Consumer<BukkitTask> {
         override fun accept(t: BukkitTask) {
-            TODO()
+            val beans = InheritedMutableBeans(context).apply {
+                registerBean(t)
+            }
+            val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
+
+            if (function.isSuspend) {
+                val block: suspend CoroutineScope.() -> Unit = {
+                    try {
+                        function.callSuspendByAndRethrowException(arguments)
+                    } catch (e: Throwable) {
+                        onExceptionOccurred(e, t)
+                    }
+                }
+
+                if (async) {
+                    val coroutineScope = beans.coroutineScopeOrNull
+                    if (coroutineScope == null) {
+                        context.contextManager.logger.warn {
+                            "Function ${function.name} in class ${functionClass.simpleName} is suspend, " +
+                                    "but no coroutine scope found. It will blocking caller thread. " +
+                                    "Details: " +
+                                    "function class: ${functionClass.name}, " +
+                                    "function: $function. "
+                        }
+                        runBlocking(block = block)
+                    } else {
+                        coroutineScope.launch(block = block)
+                    }
+                } else {
+                    val coroutineScope = beans.getBeanValue(CoroutineScope::class.java, key = "minecraft")
+                    requireNotNull(coroutineScope) {
+                        "Suspend timer must have a context CoroutineScope bean named 'minecraft' to run in server thread."
+                    }
+                    coroutineScope.launch(block = block)
+                }
+            } else {
+                try {
+                    function.callBy(arguments)
+                } catch (e: Throwable) {
+                    onExceptionOccurred(e, t)
+                }
+            }
         }
+
+        private fun onExceptionOccurred(e: Throwable, t: BukkitTask) {
+            context.contextManager.logger.error(e) {
+                "Exception occurred when running timer by calling function ${function.name} " +
+                        "declared in ${functionClass.simpleName}, and its bukkit task id is ${t.taskId}. " +
+                        "Details: " +
+                        "function: $function, " +
+                        "function class: ${functionClass.name}. "
+            }
+        }
+    }
+
+    override fun onModulePreEnable(event: ModulePreEnableEvent) {
+        event.addDependencyModuleClass<BukkitTimerModule>()
     }
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
@@ -59,12 +116,17 @@ class BukkitTimerAnnotationModuleImpl : BukkitTimerAnnotationModule, Module {
 
             val argumentResolvers = function.parameters.associateWith { para ->
                 val argumentResolveContext = ArgumentResolveContextImpl(functionClass, function, para, it.context)
+
                 annotationModule.createArgumentResolver(argumentResolveContext)
                     ?: DefaultArgumentResolverFactory.tryCreateArgumentResolver(argumentResolveContext)
             }
 
-            val action = ReflectConsumerImpl(it.context, functionClass, function, argumentResolvers)
-            it.context.bukkitTimerManager.runTaskTimer(it.annotation.delay, it.annotation.period, action)
+            val action = ReflectConsumerImpl(it.context, functionClass, function, argumentResolvers, it.annotation.async)
+            if (it.annotation.async) {
+                it.context.bukkitTimerManager.runTaskTimerAsynchronously(it.annotation.delay, it.annotation.period, action)
+            } else {
+                it.context.bukkitTimerManager.runTaskTimer(it.annotation.delay, it.annotation.period, action)
+            }
         }
     }
 }

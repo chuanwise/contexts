@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
+@file:JvmName("FocusingHotBarItemFactory")
 package cn.chuanwise.contexts.bukkit.ui
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.inventory.ItemStack
 import java.util.function.Function
 
-/**
- * 快捷栏菜单按钮。
- *
- * @author Chuanwise
- */
-interface HotBarItem {
-    val itemStack: ItemStack
-}
+@OptIn(ContextsInternalApi::class)
+fun createFocusingHotBarItem(
+    itemStack: ItemStack, subContextFactory: Function<Context, Context>
+): FocusingHotBarItem = FocusingHotBarItemImpl(itemStack, subContextFactory)

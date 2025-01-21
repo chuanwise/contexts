@@ -19,10 +19,14 @@ package cn.chuanwise.contexts.bukkit.ui
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextPostEnterEvent
 import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.annotations.Listener
+import cn.chuanwise.contexts.events.annotations.Spreader
+import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.entity.Player
+import org.bukkit.event.player.PlayerEvent
 import org.bukkit.event.player.PlayerItemHeldEvent
 import org.bukkit.inventory.ItemStack
 import java.util.concurrent.atomic.AtomicBoolean
@@ -197,6 +201,12 @@ class OnlineHotBarSurfaceImpl(
 
         // 向新的按钮发送聚焦改变为 True 事件。
         getButtonContext(currentlyFocusedItem).eventPublisher.publishToContext(hotBarMenuButtonFocusStatusChangedToTrueEvent)
+    }
+
+    @Spreader
+    fun PlayerEvent.spread(eventContext: EventContext<PlayerEvent>) {
+        // 只把事件发给当前正在聚焦的按钮上。
+        focusedItemContext.eventPublisher.publish(eventContext)
     }
 
     override fun close() {

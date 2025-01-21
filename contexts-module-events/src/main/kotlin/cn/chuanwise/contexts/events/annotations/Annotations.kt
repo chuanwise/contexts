@@ -22,6 +22,7 @@ import kotlin.reflect.KClass
  * 事件监听器函数注解。
  *
  * @property eventClass 事件类
+ * @author Chuanwise
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
@@ -36,6 +37,7 @@ annotation class Listener(
  * 事件传播器函数注解。
  *
  * @property eventClass 事件类
+ * @author Chuanwise
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

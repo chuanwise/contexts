@@ -20,6 +20,8 @@ import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
 import cn.chuanwise.contexts.annotations.createAnnotationModule
 import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
+import cn.chuanwise.contexts.bukkit.timer.createBukkitTimerAnnotationModule
+import cn.chuanwise.contexts.bukkit.timer.createBukkitTimerModule
 import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.registerModules
@@ -46,12 +48,19 @@ class ContextsPlugin : JavaPlugin() {
             registerBean(this@ContextsPlugin)
             registerModules(
                 createAnnotationModule(),
+
                 createFilterModule(),
                 createFiltersAnnotationsModule(),
+
                 createEventModule(),
                 createEventAnnotationsModule(),
+
                 createContextEventModule(),
-                createBukkitEventModule()
+
+                createBukkitEventModule(),
+
+                createBukkitTimerModule(),
+                createBukkitTimerAnnotationModule()
             )
         }
         pluginContext = contextManager.enterRoot(this, key = "Plugin")
