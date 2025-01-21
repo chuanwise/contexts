@@ -28,7 +28,8 @@ import kotlin.reflect.KClass
 annotation class Listener(
     val eventClass: KClass<*> = Nothing::class,
     val filter: Boolean = true,
-    val intercept: Boolean = false
+    val intercept: Boolean = false,
+    val listen: Boolean = true
 )
 
 /**

@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-@file:JvmName("OnlineHotBarMenuFactory")
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.inventory.ItemStack
 
-@JvmOverloads
-@OptIn(ContextsInternalApi::class)
-fun createOnlineHotBarMenu(
-    menu: HotBarMenu,
-    slotCount: Int = OnlineHotBarMenuImpl.DEFAULT_SLOT_COUNT,
-    maxLeftPaddingSlotCount: Int = OnlineHotBarMenuImpl.DEFAULT_MAX_LEFT_PADDING_SLOT_COUNT,
-    maxRightPaddingSlotCount: Int = OnlineHotBarMenuImpl.DEFAULT_MAX_RIGHT_PADDING_SLOT_COUNT,
-    paddingItemStack: ItemStack = OnlineHotBarMenuImpl.DEFAULT_PADDING_ITEM_STACK,
-): OnlineHotBarMenu = OnlineHotBarMenuImpl(
-    menu, slotCount, maxLeftPaddingSlotCount, maxRightPaddingSlotCount, paddingItemStack
-)
+/**
+ * 快捷栏菜单按钮。
+ *
+ * @author Chuanwise
+ */
+interface HotBarItem {
+    val itemStack: ItemStack
+}

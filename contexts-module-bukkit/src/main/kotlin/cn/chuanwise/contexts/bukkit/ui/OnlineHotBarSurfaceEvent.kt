@@ -16,13 +16,21 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-import org.bukkit.inventory.ItemStack
+/**
+ * 快捷栏界面事件。
+ *
+ * @author Chuanwise
+ * @see HotBarMenu
+ */
+interface OnlineHotBarSurfaceEvent {
+    val surface: OnlineHotBarSurface
+}
 
 /**
- * 快捷栏菜单按钮。
+ * 快捷栏界面按钮聚焦状态改变事件。
  *
  * @author Chuanwise
  */
-interface HotBarMenuButton {
-    val itemStack: ItemStack
+interface OnlineHotBarSurfaceFocusStatusChangedEvent {
+    val focusStatus: Boolean
 }

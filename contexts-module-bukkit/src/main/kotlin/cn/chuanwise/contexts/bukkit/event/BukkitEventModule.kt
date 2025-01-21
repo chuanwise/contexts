@@ -100,7 +100,8 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
 
     private abstract inner class AbstractListener<T : Event>(
         val priority: EventPriority,
-        val ignoreCancelled: Boolean
+        val ignoreCancelled: Boolean,
+        val listen: Boolean
     ) : Listener<T> {
         override fun listen(eventContext: EventContext<T>) {
             val priority = eventContext.beans.getBeanValueOrFail<EventPriority>()
@@ -129,8 +130,9 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         private val context: Context,
         private val argumentResolvers: Map<KParameter, ArgumentResolver>,
         priority: EventPriority,
-        ignoreCancelled: Boolean
-    ) : AbstractListener<Event>(priority, ignoreCancelled) {
+        ignoreCancelled: Boolean,
+        listen: Boolean
+    ) : AbstractListener<Event>(priority, ignoreCancelled, listen) {
         override fun listen0(eventContext: EventContext<Event>) {
             val beans = InheritedMutableBeans(context, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
@@ -141,6 +143,10 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
                         function.callSuspendByAndRethrowException(arguments)
                     } catch (e: Throwable) {
                         onExceptionOccurred(e, eventContext)
+                    } finally {
+                        if (listen) {
+                            eventContext.listen()
+                        }
                     }
                 }
                 val coroutineScope = context.coroutineScopeOrNull
@@ -161,6 +167,10 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
                     function.callByAndRethrowException(arguments)
                 } catch (e: Throwable) {
                     onExceptionOccurred(e, eventContext)
+                } finally {
+                    if (listen) {
+                        eventContext.listen()
+                    }
                 }
             }
         }
@@ -183,10 +193,19 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         private val context: Context,
         private val listener: Listener<Event>,
         priority: EventPriority,
-        ignoreCancelled: Boolean
-    ) : AbstractListener<Event>(priority, ignoreCancelled) {
+        ignoreCancelled: Boolean,
+        listen: Boolean
+    ) : AbstractListener<Event>(priority, ignoreCancelled, listen) {
         override fun listen0(eventContext: EventContext<Event>) {
-            listener.listen(eventContext)
+            try {
+                listener.listen(eventContext)
+            } catch (e: Throwable) {
+                onExceptionOccurred(e, eventContext)
+            } finally {
+                if (listen) {
+                    eventContext.listen()
+                }
+            }
         }
 
         override fun onExceptionOccurred(e: Throwable, eventContext: EventContext<Event>) {
@@ -212,11 +231,12 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
             ignoreCancelled: Boolean,
             filter: Boolean,
             intercept: Boolean,
+            listen: Boolean,
             listener: Listener<T>
         ): MutableEntry<Listener<T>> {
             ensureEventHandlerRegistered(eventClass, priority)
-            val finalListener = ListenerImpl(context, listener as Listener<Event>, priority, ignoreCancelled)
-            return context.listenerManager.registerListener(filter, intercept, finalListener) as MutableEntry<Listener<T>>
+            val finalListener = ListenerImpl(context, listener as Listener<Event>, priority, ignoreCancelled, listen)
+            return context.listenerManager.registerListener(filter, intercept, listen = false, finalListener) as MutableEntry<Listener<T>>
         }
     }
 
@@ -265,8 +285,13 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
             val priority = EventPriority.NORMAL
             val ignoreCancelled = false
 
-            val listener = ReflectListenerImpl(it.function, it.eventClass, it.context, it.argumentResolvers, priority, ignoreCancelled)
-            it.context.listenerManager.registerListener(it.annotation.filter, it.annotation.intercept, listener)
+            ensureEventHandlerRegistered(it.eventClass, priority)
+            val listener = ReflectListenerImpl(
+                it.function, it.value::class.java, it.context, it.argumentResolvers, priority, ignoreCancelled, it.annotation.listen
+            )
+            it.context.listenerManager.registerListener(
+                it.eventClass, it.annotation.filter, it.annotation.intercept, listen = false, listener
+            )
         }
         eventHandlerAnnotationClass = annotationModule.registerFunctionProcessor(EventHandler::class.java) {
             val listenerAnn = it.function.annotations
@@ -277,6 +302,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
             val ignoreCancelled = it.annotation.ignoreCancelled
             val filter = listenerAnn?.filter ?: true
             val intercept = listenerAnn?.intercept ?: false
+            val listen = listenerAnn?.listen ?: true
 
             val function = it.function
             val value = it.value
@@ -294,8 +320,9 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
                 subjectSuperClass = Event::class.java
             )
 
-            val listener = ReflectListenerImpl(function, eventClass, context, argumentResolvers, priority, ignoreCancelled)
-            context.listenerManager.registerListener(filter, intercept, listener)
+            val listener = ReflectListenerImpl(function, functionClass, context, argumentResolvers, priority, ignoreCancelled, listen)
+            ensureEventHandlerRegistered(eventClass, priority)
+            context.listenerManager.registerListener(eventClass as Class<Event>, filter, intercept, listen = false, listener)
         }
 
         eventProcessor = eventModule.registerEventProcessor(Event::class.java, BukkitEventProcessor)

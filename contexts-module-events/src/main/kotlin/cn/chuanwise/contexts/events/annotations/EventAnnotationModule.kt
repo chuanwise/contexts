@@ -86,7 +86,8 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         val context: Context,
         val eventClass: Class<T>?,
         val filter: Boolean,
-        val intercept: Boolean
+        val intercept: Boolean,
+        val listen: Boolean
     ) : cn.chuanwise.contexts.events.Listener<T> {
         override fun listen(eventContext: EventContext<T>) {
             if (eventClass != null && !eventClass.isInstance(eventContext.event)) {
@@ -105,7 +106,10 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         protected abstract fun onEvent0(eventContext: EventContext<T>)
 
         protected fun onEventPosted(eventContext: EventContext<T>) {
-            if (intercept) {
+            if (listen) {
+                eventContext.listen()
+            }
+            if (intercept && eventContext.isListened) {
                 eventContext.intercept()
             }
         }
@@ -116,8 +120,9 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         context: Context,
         eventClass: Class<T>?,
         filter: Boolean,
-        intercept: Boolean
-    ) : AbstractListener<T>(context, eventClass, filter, intercept) {
+        intercept: Boolean,
+        listen: Boolean
+    ) : AbstractListener<T>(context, eventClass, filter, intercept, listen) {
         override fun onEvent0(eventContext: EventContext<T>) {
             listener.listen(eventContext)
             onEventPosted(eventContext)
@@ -131,8 +136,9 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         context: Context,
         eventClass: Class<Any>,
         filter: Boolean,
-        intercept: Boolean
-    ) : AbstractListener<Any>(context, eventClass, filter, intercept) {
+        intercept: Boolean,
+        listen: Boolean
+    ) : AbstractListener<Any>(context, eventClass, filter, intercept, listen) {
         override fun onEvent0(eventContext: EventContext<Any>) {
             val beans = InheritedMutableBeans(context, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
@@ -192,18 +198,20 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             eventClass: Class<T>,
             filter: Boolean,
             intercept: Boolean,
+            listen: Boolean,
             listener: cn.chuanwise.contexts.events.Listener<T>
         ): MutableEntry<cn.chuanwise.contexts.events.Listener<T>> {
-            val finalListener = ListenerImpl(listener, context, eventClass, filter, intercept) as AbstractListener<Any>
+            val finalListener = ListenerImpl(listener, context, eventClass, filter, intercept, listen) as AbstractListener<Any>
             return listeners.add(finalListener) as MutableEntry<cn.chuanwise.contexts.events.Listener<T>>
         }
 
         override fun <T : Any> registerListener(
             filter: Boolean,
             intercept: Boolean,
+            listen: Boolean,
             listener: cn.chuanwise.contexts.events.Listener<T>
         ): MutableEntry<cn.chuanwise.contexts.events.Listener<T>> {
-            val finalListener = ListenerImpl(listener, context, eventClass = null, filter, intercept) as AbstractListener<Any>
+            val finalListener = ListenerImpl(listener, context, eventClass = null, filter, intercept, listen) as AbstractListener<Any>
             return listeners.add(finalListener) as MutableEntry<cn.chuanwise.contexts.events.Listener<T>>
         }
 
@@ -371,10 +379,9 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 }
             }
 
-            val filter = it.annotation.filter
-            val intercept = it.annotation.intercept
             val listener = ReflectListenerImpl(
-                functionClass, function, argumentResolvers, context, eventClass as Class<Any>, filter, intercept
+                functionClass, function, argumentResolvers, context, eventClass as Class<Any>,
+                it.annotation.filter, it.annotation.intercept, it.annotation.listen
             )
 
             val listenerManager = context.listenerManager as ListenerManagerImpl

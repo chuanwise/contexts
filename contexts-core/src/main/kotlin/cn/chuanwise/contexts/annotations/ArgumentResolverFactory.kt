@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.annotations
 
 import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.getBeanValueOrFail
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -35,13 +36,23 @@ interface ArgumentResolverFactory {
 }
 
 object DefaultArgumentResolverFactory : ArgumentResolverFactory {
-    private class ArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
+    private class OptionalArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
         override fun resolveArgument(beans: Beans): Any? {
             return beans.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)
         }
     }
 
+    private class RequiredArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
+        override fun resolveArgument(beans: Beans): Any {
+            return beans.getBeanValueOrFail(context.parameter.type.javaType, key = context.parameter.name)
+        }
+    }
+
     override fun tryCreateArgumentResolver(context: ArgumentResolveContext): ArgumentResolver {
-        return ArgumentResolverImpl(context)
+        return if (context.parameter.isOptional) {
+            OptionalArgumentResolverImpl(context)
+        } else {
+            RequiredArgumentResolverImpl(context)
+        }
     }
 }

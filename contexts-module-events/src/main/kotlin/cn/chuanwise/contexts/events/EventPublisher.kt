@@ -17,11 +17,8 @@
 package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.util.AllChildrenAndContextScope
-import cn.chuanwise.contexts.util.ContextScope
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.Scope
 
 /**
  * 事件发布器。

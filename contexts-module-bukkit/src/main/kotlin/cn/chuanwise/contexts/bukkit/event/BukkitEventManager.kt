@@ -54,6 +54,7 @@ interface BukkitEventManager {
         ignoreCancelled: Boolean = false,
         filter: Boolean = true,
         intercept: Boolean = false,
+        listen: Boolean = false,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 }

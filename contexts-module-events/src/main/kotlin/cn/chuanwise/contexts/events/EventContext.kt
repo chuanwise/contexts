@@ -18,9 +18,9 @@ package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.filters.FilterContext
+import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableBeans
 import cn.chuanwise.contexts.util.NotStableForInheritance
-import cn.chuanwise.contexts.util.Scope
 
 /**
  * 事件上下文。
@@ -57,7 +57,39 @@ interface EventContext<out T : Any> {
     val isIntercepted: Boolean
 
     /**
+     * 是否被监听
+     */
+    val isListened: Boolean
+
+    /**
      * 拦截事件
      */
     fun intercept()
+
+    /**
+     * 标记事件已经被监听
+     */
+    fun listen()
+}
+
+@ContextsInternalApi
+class EventContextImpl<T : Any>(
+    override val event: T,
+    override val context: Context,
+    override val beans: MutableBeans,
+    override val filterContext: FilterContext<T>
+) : EventContext<T> {
+    private var mutableIsIntercepted: Boolean = false
+    override val isIntercepted: Boolean get() = mutableIsIntercepted
+
+    private var mutableIsListened: Boolean = false
+    override val isListened: Boolean get() = mutableIsListened
+
+    override fun intercept() {
+        mutableIsIntercepted = true
+    }
+
+    override fun listen() {
+        mutableIsListened = true
+    }
 }

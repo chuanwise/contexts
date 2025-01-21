@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
+@file:JvmName("OnlineHotBarMenuFactory")
 package cn.chuanwise.contexts.bukkit.ui
 
-/**
- * 快捷栏菜单事件。
- *
- * @author Chuanwise
- * @see HotBarMenu
- */
-interface HotBarMenuEvent {
-    val menu: HotBarMenu
-}
+import cn.chuanwise.contexts.util.ContextsInternalApi
 
-/**
- * 快捷栏菜单按钮聚焦状态改变事件。
- *
- * @author Chuanwise
- */
-interface HotBarMenuFocusStatusChangedEvent {
-    val focusStatus: Boolean
-}
+@OptIn(ContextsInternalApi::class)
+fun createOnlineHotBarMenu(
+    items: List<HotBarItem>
+): OnlineHotBarSurface = OnlineHotBarSurfaceImpl(items)

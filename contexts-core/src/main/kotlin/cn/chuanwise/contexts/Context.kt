@@ -27,14 +27,10 @@ import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
 import cn.chuanwise.contexts.util.add
 import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
-import cn.chuanwise.contexts.util.createChildToParentTopologicalSortingIterator
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
-import cn.chuanwise.contexts.util.withLocks
 import java.lang.reflect.Type
-import java.util.NoSuchElementException
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Supplier
 
 @NotStableForInheritance
 interface Context : MutableBeans, AutoCloseable {
@@ -203,7 +199,7 @@ abstract class AbstractContext : Context {
     }
 
     override fun enterChild(child: Any, key: Any): Context {
-        return enterChild(listOf(child), key, replace = false)!!
+        return enterChild(listOf(child), key)
     }
 
     override fun enterChild(vararg child: Any, key: Any): Context {
@@ -220,7 +216,7 @@ class ContextImpl(
     private inner class AllParentIterable : Iterable<Beans> {
         override fun iterator(): Iterator<Beans> {
             return sequence {
-                yieldAll(allParents.createChildToParentTopologicalSortingIterator())
+                yieldAll(createChildToParentTopologicalIteratorInAllParents())
                 yield(contextManager)
             }.iterator()
         }
@@ -283,7 +279,7 @@ class ContextImpl(
 
     override fun getParentByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? {
         for (parent in createAllParentsBreadthFirstSearchIterator()) {
-            val bean = parent.getBean(beanClass, key = key, primary = primary) ?: continue
+            parent.getBean(beanClass, key = key, primary = primary) ?: continue
             return parent
         }
         return null
@@ -291,7 +287,7 @@ class ContextImpl(
 
     override fun getChildByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? = lock.read {
         for (child in createAllChildrenBreadthFirstSearchIterator()) {
-            val bean = child.getBean(beanClass, key = key, primary = primary) ?: continue
+            child.getBean(beanClass, key = key, primary = primary) ?: continue
             return child
         }
         null
@@ -443,7 +439,11 @@ class ContextImpl(
     }
 
     override fun enterChild(child: Iterable<Any>, key: Any): Context {
-        return doEnterChild(child, key, replace = false)!!
+        val result = doEnterChild(child, key, replace = false)
+        requireNotNull(result) {
+            "Child with same key $key already exists. To replace it, use context.enterChild(child, key, replace = true)."
+        }
+        return result
     }
 
     @Suppress("UNCHECKED_CAST")

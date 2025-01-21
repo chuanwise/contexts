@@ -42,18 +42,24 @@ interface ListenerManager {
      *
      * @param T 事件类型
      * @param eventClass 事件类型
-     * @param listener 事件监听器
+     * @param filter 是否过滤
+     * @param intercept 是否拦截
+     * @param listen 是否在函数正常结束后标记为已监听
+     * @param listener 监听器
+     * @return 监听器
      */
     fun <T : Any> registerListener(
         eventClass: Class<T>,
         filter: Boolean = true,
         intercept: Boolean = false,
+        listen: Boolean = true,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 
     fun <T : Any> registerListener(
         filter: Boolean = true,
         intercept: Boolean = false,
+        listen: Boolean = true,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 

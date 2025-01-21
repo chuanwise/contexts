@@ -88,20 +88,6 @@ class EventModuleImpl @JvmOverloads constructor(
 
     private val eventHandlers = MutableEntries<EventHandlerImpl>()
 
-    private class EventContextImpl<T : Any>(
-        override val event: T,
-        override val context: Context,
-        override val beans: MutableBeans,
-        override val filterContext: FilterContext<T>
-    ) : EventContext<T> {
-        private var mutableIsIntercepted: Boolean = false
-        override val isIntercepted: Boolean get() = mutableIsIntercepted
-
-        override fun intercept() {
-            mutableIsIntercepted = true
-        }
-    }
-
     private class EventProcessorImpl<T : Any>(
         val eventClass: Class<T>,
         val eventProcessor: EventProcessor<T>
@@ -126,8 +112,8 @@ class EventModuleImpl @JvmOverloads constructor(
         eventClass: Class<T>,
         processor: EventProcessor<T>
     ): MutableEntry<EventProcessor<T>> {
-        val finalPublisher = EventProcessorImpl(eventClass, processor) as EventProcessorImpl<Any>
-        return eventProcessors.add(finalPublisher) as MutableEntry<EventProcessor<T>>
+        val finalProcessors = EventProcessorImpl(eventClass, processor) as EventProcessorImpl<Any>
+        return eventProcessors.add(finalProcessors) as MutableEntry<EventProcessor<T>>
     }
 
     private abstract inner class AbstractEventSpreader<T : Any>(

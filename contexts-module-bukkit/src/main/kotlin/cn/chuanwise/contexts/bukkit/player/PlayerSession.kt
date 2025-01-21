@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.bukkit.player
 
 import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.ContextPostEnterEvent
 import cn.chuanwise.contexts.ContextPreEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
@@ -46,8 +47,8 @@ class PlayerSessionImpl(
     override val playerId: UUID = player.uniqueId
 ) : PlayerSession {
     @Listener
-    fun onEnter(event: ContextPreEnterEvent) {
-        event.context.registerBean(player)
+    fun ContextPostEnterEvent.onPostEnter() {
+        context.registerBean(player)
     }
 
     @Filter
@@ -55,8 +56,8 @@ class PlayerSessionImpl(
         return player.name == playerName
     }
 
-    @EventHandler
-    fun PlayerQuitEvent.onPlayerQuit(context: Context) {
-        context.exit()
-    }
+//    @Listener
+//    fun PlayerQuitEvent.onPlayerQuit(context: Context) {
+//        context.exit()
+//    }
 }

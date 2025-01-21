@@ -18,12 +18,20 @@ package cn.chuanwise.contexts.bukkit
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.annotations.createAnnotationModule
+import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
 import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
 import cn.chuanwise.contexts.createContextManager
-import cn.chuanwise.contexts.findAndRegisterModules
+import cn.chuanwise.contexts.registerModules
+import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
+import cn.chuanwise.contexts.events.createContextEventModule
+import cn.chuanwise.contexts.events.createEventModule
+import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
+import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.createJavaLogger
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.logging.Level
 
 class ContextsPlugin : JavaPlugin() {
     lateinit var contextManager: ContextManager
@@ -31,9 +39,20 @@ class ContextsPlugin : JavaPlugin() {
 
     @OptIn(ContextsInternalApi::class)
     override fun onEnable() {
-        contextManager = createContextManager(createJavaLogger(logger)).apply {
-            findAndRegisterModules()
+        val logger = createJavaLogger(logger)
+        logger.logger.level = Level.FINE
+
+        contextManager = createContextManager(logger).apply {
             registerBean(this@ContextsPlugin)
+            registerModules(
+                createAnnotationModule(),
+                createFilterModule(),
+                createFiltersAnnotationsModule(),
+                createEventModule(),
+                createEventAnnotationsModule(),
+                createContextEventModule(),
+                createBukkitEventModule()
+            )
         }
         pluginContext = contextManager.enterRoot(this, key = "Plugin")
 

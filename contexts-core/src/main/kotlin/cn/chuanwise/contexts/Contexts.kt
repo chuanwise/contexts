@@ -18,32 +18,61 @@
 
 package cn.chuanwise.contexts
 
-import cn.chuanwise.contexts.module.Module
-import cn.chuanwise.contexts.module.ModuleEntry
-import java.util.ServiceLoader
+import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.TopologicalIterator
 
-@JvmOverloads
-fun ContextManager.findAndRegisterModules(
-    requireAllEnabled: Boolean = true,
-    ignoreModuleClasses: Set<Class<out Module>> = emptySet()
-) : List<ModuleEntry> {
-    return ServiceLoader.load(Module::class.java).mapNotNull {
-        if (ignoreModuleClasses.any{ ignoreModuleClass -> ignoreModuleClass.isInstance(it) }) {
-            logger.trace { "Ignore module: $it" }
-            return@mapNotNull null
-        }
-        try {
-            registerModule(it)
-        } catch (e: Throwable) {
-            logger.error(e) { "Failed to register module: $it" }
-            null
-        }
-    }.apply {
-        if (requireAllEnabled) {
-            val notEnabledEntries = filterNot { it.isEnabled }
-            check(notEnabledEntries.isEmpty()) {
-                "Not all modules enabled, not yet enabled modules: $notEnabledEntries"
-            }
+private fun Set<Context>.buildParentNeighbors(): Map<Context, List<Context>> {
+    return associateWith {
+        it.parents.filter { parent -> parent in this }
+    }
+}
+private fun Set<Context>.buildChildNeighbors(): Map<Context, List<Context>> {
+    return associateWith {
+        it.children.filter { child -> child in this }
+    }
+}
+private fun Map<Context, List<Context>>.neighborsToParentFunction(): (Context) -> List<Context> {
+    val results = mutableMapOf<Context, MutableList<Context>>()
+    entries.forEach { (context, neighbors) ->
+        for (neighbor in neighbors) {
+            results.computeIfAbsent(neighbor) { mutableListOf() }.add(context)
         }
     }
+    return { results[it] ?: emptyList() }
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createParentToChildTopologicalIteratorInAllParents(): Iterator<Context> {
+    val neighbors = allParents.toSet().buildParentNeighbors()
+    return TopologicalIterator(
+        counts = neighbors.mapValues { it.value.size },
+        parents = neighbors.neighborsToParentFunction()
+    )
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createChildToParentTopologicalIteratorInAllParents(): Iterator<Context> {
+    val neighbors = allParents.toSet().buildChildNeighbors()
+    return TopologicalIterator(
+        counts = neighbors.mapValues { it.value.size },
+        parents = neighbors.neighborsToParentFunction()
+    )
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createParentToChildTopologicalIteratorInAllChildren(): Iterator<Context> {
+    val neighbors = allChildren.toSet().buildParentNeighbors()
+    return TopologicalIterator(
+        counts = neighbors.mapValues { it.value.size },
+        parents = neighbors.neighborsToParentFunction()
+    )
+}
+
+@OptIn(ContextsInternalApi::class)
+fun Context.createChildToParentTopologicalIteratorInAllChildren(): Iterator<Context> {
+    val neighbors = allChildren.toSet().buildChildNeighbors()
+    return TopologicalIterator(
+        counts = neighbors.mapValues { it.value.size },
+        parents = neighbors.neighborsToParentFunction()
+    )
 }

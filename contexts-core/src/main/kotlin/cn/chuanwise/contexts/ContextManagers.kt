@@ -17,6 +17,47 @@
 @file:JvmName("ContextManagers")
 package cn.chuanwise.contexts
 
-fun ContextManager.checkAllRegisteredModuleEnabled() {
-    check(isAllRegisteredModuleEnabled()) { "Not all registered module enabled! " }
+import cn.chuanwise.contexts.module.Module
+import cn.chuanwise.contexts.module.ModuleEntry
+import java.util.ServiceLoader
+
+fun List<ModuleEntry>.checkAllEnabled() {
+    val notEnabledEntries = filterNot { it.isEnabled }
+    check(notEnabledEntries.isEmpty()) {
+        "Not all modules enabled, not yet enabled modules: $notEnabledEntries"
+    }
+}
+
+@JvmOverloads
+fun ContextManager.registerModules(
+    modules: Iterable<Module>,
+    checkAllEnabled: Boolean = true
+) : List<ModuleEntry> {
+    return modules.mapNotNull {
+        try {
+            registerModule(it)
+        } catch (e: Throwable) {
+            logger.error(e) { "Failed to register module: $it." }
+            null
+        }
+    }.apply {
+        if (checkAllEnabled) {
+            checkAllEnabled()
+        }
+    }
+}
+
+@JvmOverloads
+fun ContextManager.registerModules(
+    vararg modules: Module,
+    checkAllEnabled: Boolean = true
+) : List<ModuleEntry> {
+    return registerModules(modules.asIterable(), checkAllEnabled)
+}
+
+@JvmOverloads
+fun ContextManager.findAndRegisterModules(
+    checkAllEnabled: Boolean = true
+) : List<ModuleEntry> {
+    return registerModules(ServiceLoader.load(Module::class.java), checkAllEnabled)
 }

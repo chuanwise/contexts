@@ -18,21 +18,14 @@ package cn.chuanwise.contexts.spigot
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextPostExitEvent
-import cn.chuanwise.contexts.ContextPostRemoveEvent
 import cn.chuanwise.contexts.ContextPreExitEvent
-import cn.chuanwise.contexts.checkAllRegisteredModuleEnabled
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
-import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
 import cn.chuanwise.contexts.events.annotations.listenerManager
-import cn.chuanwise.contexts.events.createContextEventModule
-import cn.chuanwise.contexts.events.createEventModule
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.filters.annotations.Filter
-import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
-import cn.chuanwise.contexts.filters.createFilterModule
-import cn.chuanwise.contexts.findAndRegisterModules
+import cn.chuanwise.contexts.registerModules
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Joint
@@ -95,7 +88,7 @@ class ContextManagerTest {
     fun testContextManager() {
         val logger = ConsoleLoggerImpl()
         val contextManager = createContextManager(logger).apply {
-            findAndRegisterModules()
+            registerModules()
 
 //            registerModule(createAnnotationModule())            // 启动注解扫描管理。
 //

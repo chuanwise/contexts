@@ -20,4 +20,4 @@ package cn.chuanwise.contexts.bukkit.ui
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 @OptIn(ContextsInternalApi::class)
-fun createHotBarMenu(buttons: List<HotBarMenuButton>) : HotBarMenu = HotBarMenuImpl(buttons)
+fun createHotBarMenu(buttons: List<HotBarItem>) : HotBarMenu = HotBarMenuImpl(buttons)
