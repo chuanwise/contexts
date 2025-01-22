@@ -23,7 +23,6 @@ import cn.chuanwise.contexts.annotations.ArgumentResolver
 import cn.chuanwise.contexts.annotations.FunctionProcessor
 import cn.chuanwise.contexts.annotations.annotationModule
 import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.annotations.AnnotationModule
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventProcessor
 import cn.chuanwise.contexts.events.Listener
@@ -33,7 +32,7 @@ import cn.chuanwise.contexts.events.annotations.eventAnnotationModule
 import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.eventModule
 import cn.chuanwise.contexts.events.eventPublisher
-import cn.chuanwise.contexts.filters.annotations.FiltersAnnotationsModule
+import cn.chuanwise.contexts.filters.annotations.FilterAnnotationModule
 import cn.chuanwise.contexts.module.ModulePostDisableEvent
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
@@ -45,7 +44,6 @@ import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScope
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
-import cn.chuanwise.contexts.util.getBeanOrFail
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
@@ -329,7 +327,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
     }
 
     override fun onModulePreEnable(event: ModulePreEnableEvent) {
-        event.addDependencyModuleClass<FiltersAnnotationsModule>()
+        event.addDependencyModuleClass<FilterAnnotationModule>()
         event.addDependencyModuleClass<EventAnnotationModule>()
     }
 

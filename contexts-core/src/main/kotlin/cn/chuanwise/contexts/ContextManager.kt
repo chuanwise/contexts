@@ -127,6 +127,8 @@ interface ContextManager : MutableBeans, AutoCloseable {
      * @return 进入的上下文
      */
     fun enterRoot(context: Iterable<Any> = emptyList(), key: Any? = null): Context
+
+    override fun close()
 }
 
 @ContextsInternalApi
@@ -136,7 +138,7 @@ class ContextManagerImpl(
 ) : ContextManager, MutableBeans by beans {
     private val mutableContexts: MutableList<Context> = CopyOnWriteArrayList()
     override val contexts: List<Context> get() = mutableContexts
-    override val roots: List<Context> get() = mutableContexts.filter { it.parentCount <= 0 }
+    override val roots: List<Context> get() = mutableContexts.filter { it.allParentCount <= 0 }
 
     private val mutableModuleEntries: MutableList<ModuleEntry> = CopyOnWriteArrayList()
     override val modules: List<Module> get() = mutableModuleEntries.map { it.value }
@@ -428,7 +430,7 @@ class ContextManagerImpl(
             onPreEvent { it.onContextPreRemove(event) }
         } finally {
             // event.child.parentCount == 1 的原因是此时还没有真正移除，所以 parentCount 还是 1。
-            if (event.exit && event.child.parentCount == 1 && event.alsoExitChildIfItWillBeRoot) {
+            if (event.child.allParentCount == 1 && event.exitChildIfItWillBeRoot) {
                 event.child.exit()
             }
         }

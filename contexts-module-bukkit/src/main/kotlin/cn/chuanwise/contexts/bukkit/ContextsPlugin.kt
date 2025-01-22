@@ -28,7 +28,7 @@ import cn.chuanwise.contexts.registerModules
 import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
-import cn.chuanwise.contexts.filters.annotations.createFiltersAnnotationsModule
+import cn.chuanwise.contexts.filters.annotations.createFilterAnnotationModule
 import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.createJavaLogger
@@ -50,7 +50,7 @@ class ContextsPlugin : JavaPlugin() {
                 createAnnotationModule(),
 
                 createFilterModule(),
-                createFiltersAnnotationsModule(),
+                createFilterAnnotationModule(),
 
                 createEventModule(),
                 createEventAnnotationsModule(),

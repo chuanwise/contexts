@@ -29,6 +29,7 @@ import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
+import cn.chuanwise.contexts.util.withLocks
 import java.lang.reflect.Type
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -37,20 +38,38 @@ interface Context : MutableBeans, AutoCloseable {
     val key: Any?
     val contextManager: ContextManager
 
-    /**
-     * 若当前上下文只有一个父上下文时，可以用此获取其值。
-     */
-    val parent: Context
     val parents: List<Context>
-    val allParents: List<Context>
     val parentCount: Int
 
+    val singleParent: Context
+    val singleParentOrNull: Context?
+
+    val allParents: List<Context>
+    val allParentCount: Int
+
+    val singleAllParent: Context
+    val singleAllParentOrNull: Context?
+
     val children: List<Context>
-    val allChildren: List<Context>
     val childCount: Int
+
+    val singleChild: Context
+    val singleChildOrNull: Context?
+
+    val allChildren: List<Context>
+    val allChildCount: Int
+
+    val singleAllChild: Context
+    val singleAllChildOrNull: Context?
 
     val contextBeans: List<MutableBean<*>>
     val contextBeanValues: List<*>
+
+    fun inAllParents(context: Context): Boolean
+    fun inAllChildren(context: Context): Boolean
+
+    fun inParents(context: Context): Boolean
+    fun inChildren(context: Context): Boolean
 
     /**
      * 联通分量里的所有上下文，即包括自己和所有父子上下文。
@@ -66,7 +85,6 @@ interface Context : MutableBeans, AutoCloseable {
     fun getParentByKeyOrFail(key: Any): Context {
         return getParentByKey(key) ?: throw NoSuchElementException("Cannot find parent with key $key.")
     }
-
 
     /**
      * 尝试获取一个带有指定对象的子上下文。
@@ -227,17 +245,48 @@ class ContextImpl(
     private val mutableParents: MutableCollection<ContextImpl> = mutableListOf()
     private val mutableParentsByKey: MutableMap<Any, ContextImpl> = mutableMapOf()
 
-    override val parent: Context get() = lock.read { mutableParents.single() }
     override val parents: List<Context> get() = lock.read { mutableParents.toList() }
-    override val allParents: List<Context> get() = createAllParentsBreadthFirstSearchIterator().asSequence().toList()
     override val parentCount: Int get() = lock.read { mutableParents.size }
+
+    override val singleParent: Context get() = lock.read { mutableParents.single() }
+    override val singleParentOrNull: Context? get() = lock.read { mutableParents.singleOrNull() }
+
+    override fun inParents(context: Context): Boolean {
+        return lock.read { context in mutableParents }
+    }
+
+    override val allParents: List<Context> get() = createAllParentsBreadthFirstSearchIterator().asSequence().toList()
+    override val allParentCount: Int get() = lock.read { mutableParents.size }
+
+    override val singleAllParent: Context get() = lock.read { allParents.single() }
+    override val singleAllParentOrNull: Context? get() = lock.read { allParents.singleOrNull() }
+
+    override fun inAllParents(context: Context): Boolean {
+        return context in allParents
+    }
 
     private val mutableChildren: MutableCollection<ContextImpl> = mutableListOf()
     private val mutableChildrenByKey: MutableMap<Any, ContextImpl> = mutableMapOf()
 
     override val children: List<Context> get() = lock.read { mutableChildren.toList() }
-    override val allChildren: List<Context> get() = createAllChildrenBreadthFirstSearchIterator().asSequence().toList()
     override val childCount: Int get() = lock.read { mutableChildren.size }
+
+    override val singleChild: Context get() = lock.read { mutableChildren.single() }
+    override val singleChildOrNull: Context? get() = lock.read { mutableChildren.singleOrNull() }
+
+    override fun inChildren(context: Context): Boolean {
+        return lock.read { context in mutableChildren }
+    }
+
+    override val allChildren: List<Context> get() = createAllChildrenBreadthFirstSearchIterator().asSequence().toList()
+    override val allChildCount: Int get() = lock.read { mutableChildren.size }
+
+    override val singleAllChild: Context get() = lock.read { allChildren.single() }
+    override val singleAllChildOrNull: Context? get() = lock.read { allChildren.singleOrNull() }
+
+    override fun inAllChildren(context: Context): Boolean {
+        return context in allChildren
+    }
 
     override val components: List<Context> get() = allParents + allChildren + this
 
@@ -294,65 +343,34 @@ class ContextImpl(
     }
 
     // 连接两个上下文，不检查是否会成环，不加锁，会通知 context modules: PreAdd, PostAdd。
-    private fun addNoLock(parent: ContextImpl, child: ContextImpl, replace: Boolean, enter: Boolean): Boolean {
-        val key = child.key
+    // 如果 check = true，先确保不是父子关系。否则信任调用者。
+    private fun addNoLock(parent: ContextImpl, child: ContextImpl, replace: Boolean, enter: Boolean, check: Boolean = true): Boolean {
+        val childKey = child.key
+        val parentKey = parent.key
+
+        if (check && parent.inChildren(child)) {
+            return false
+        }
+
         val contextPreAddEvent = ContextPreAddEventImpl(parent, child, enter, contextManager)
-        if (key != null) {
+        if (childKey != null || parentKey != null) {
             if (replace) {
-                val oldChild = parent.mutableChildrenByKey[key]
+                val oldChild = childKey?.let { parent.mutableChildrenByKey[it] }
                 if (oldChild != null) {
-                    // 如果已经是子上下文了，直接返回。
-                    if (oldChild === child) {
-                        return false
-                    }
-
-                    // 否则需要先退出原来的子上下文。
-                    val contextPreRemoveEvent = ContextPreRemoveEventImpl(
-                        parent, child, contextPreAddEvent, exit = false, contextManager
-                    )
-                    contextManager.onContextPreRemove(contextPreRemoveEvent)
-
-                    check(parent.mutableChildren.remove(oldChild))
-                    check(parent.mutableChildrenByKey.remove(key) === oldChild)
-
-                    check(oldChild.mutableParents.remove(parent))
-                    check(oldChild.mutableParentsByKey.remove(key) === parent)
-
-                    val contextPostRemoveEvent = ContextPostRemoveEventImpl(
-                        parent, child, contextPreAddEvent, exit = false, contextManager
-                    )
-                    contextManager.onContextPostRemove(contextPostRemoveEvent)
+                    check(removeNoLock(parent, oldChild, exit = false, check = false))
                 }
 
-                val oldParent = child.mutableParentsByKey[key]
+                val oldParent = parentKey?.let { child.mutableParentsByKey[it] }
                 if (oldParent != null) {
-                    // 如果它们之间有父子关系，在前面就已经退出了。
-                    // 所以此处必定是同键的两个上下文，但是不是父子关系。
-                    check(oldParent !== parent)
-
-                    val contextPreRemoveEvent = ContextPreRemoveEventImpl(
-                        parent, child, contextPreAddEvent, exit = false, contextManager
-                    )
-                    contextManager.onContextPreRemove(contextPreRemoveEvent)
-
-                    check(child.mutableParents.remove(oldParent))
-                    check(child.mutableParentsByKey.remove(key) === oldParent)
-
-                    check(oldParent.mutableChildren.remove(child))
-                    check(oldParent.mutableChildrenByKey.remove(key) === child)
-
-                    val contextPostRemoveEvent = ContextPostRemoveEventImpl(
-                        parent, child, contextPreAddEvent, exit = false, contextManager
-                    )
-                    contextManager.onContextPostRemove(contextPostRemoveEvent)
+                    check(removeNoLock(oldParent, child, exit = false, check = false))
                 }
             } else {
-                val oldChild = parent.mutableChildrenByKey[key]
+                val oldChild = parent.mutableChildrenByKey[childKey]
                 if (oldChild != null) {
                     return false
                 }
 
-                val oldParent = child.mutableParentsByKey[key]
+                val oldParent = child.mutableParentsByKey[childKey]
                 if (oldParent != null) {
                     return false
                 }
@@ -360,8 +378,8 @@ class ContextImpl(
 
             contextManager.onContextPreAdd(contextPreAddEvent)
 
-            parent.mutableChildrenByKey[key] = child
-            child.mutableParentsByKey[key] = parent
+            childKey?.let { parent.mutableChildrenByKey[childKey] = child }
+            parentKey?.let { child.mutableParentsByKey[parentKey] = parent }
         } else {
             contextManager.onContextPreAdd(contextPreAddEvent)
         }
@@ -375,36 +393,43 @@ class ContextImpl(
     }
 
     // 退出一个子上下文，不加锁，会通知 context modules: PreRemove, PostRemove。
-    private fun removeNoLock(parent: ContextImpl, child: ContextImpl, exit: Boolean): Boolean {
-        val key = child.key
-        if (key != null) {
-            val oldChild = parent.mutableChildrenByKey[key]
+    // 如果 check = true，先确保是父子关系。否则信任调用者。
+    private fun removeNoLock(parent: ContextImpl, child: ContextImpl, exit: Boolean, check: Boolean = true): Boolean {
+        val childKey = child.key
+        val parentKey = parent.key
 
-            // 如果它们本来就没有父子关系，则退出。
-            if (oldChild !== child) {
-                return false
+        if (check && !parent.inChildren(child)) {
+            return false
+        }
+
+        if (childKey != null || parentKey != null) {
+            if (childKey != null) {
+                val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
+                contextManager.onContextPreRemove(contextPreRemoveEvent)
+
+                // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
+                val removedChild = parent.mutableChildrenByKey.remove(childKey)
+                check(removedChild === child || removedChild == null)
             }
+            if (parentKey != null) {
+                val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
+                contextManager.onContextPreRemove(contextPreRemoveEvent)
 
-            val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
-            contextManager.onContextPreRemove(contextPreRemoveEvent)
-
-            // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，
-            // 使得 PreRemove 事件发出后可能子已经退出。
-            val removedChild = parent.mutableChildrenByKey.remove(key)
-            check(removedChild === child || removedChild == null)
-
-            val removedParent = child.mutableParentsByKey.remove(key)
-            check(removedParent === parent || removedParent == null)
+                // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
+                val removedParent = child.mutableParentsByKey.remove(parentKey)
+                check(removedParent === parent || removedParent == null)
+            }
         } else {
             val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
             contextManager.onContextPreRemove(contextPreRemoveEvent)
         }
 
-        parent.mutableChildren.remove(child) && child.mutableParents.remove(parent)
-
-        val contextPostRemoveEvent = ContextPostRemoveEventImpl(parent, child, null, exit, contextManager)
-        contextManager.onContextPostRemove(contextPostRemoveEvent)
-
+        // 前面虽然检查了状态，但是因为可能 alsoExitChildIfItWillBeRoot，使得此处不一定能 remove 掉。
+        // 如果能的话再发事件，否则事件已经在此之前发布过了，就不再发送了。
+        if (parent.mutableChildren.remove(child) && child.mutableParents.remove(parent)) {
+            val contextPostRemoveEvent = ContextPostRemoveEventImpl(parent, child, null, exit, contextManager)
+            contextManager.onContextPostRemove(contextPostRemoveEvent)
+        }
         return true
     }
 
@@ -418,7 +443,7 @@ class ContextImpl(
             val contextPreEnterEvent = ContextPreEnterEventImpl(context, contextManager)
             contextManager.onContextPreEnter(contextPreEnterEvent)
 
-            val result = addNoLock(this, context, replace, enter = true)
+            val result = addNoLock(this, context, replace, enter = true, check = false)
             if (result) {
                 val contextPostEnterEvent = ContextPostEnterEventImpl(context, contextManager)
                 contextManager.onContextPostEnter(contextPostEnterEvent)
@@ -449,30 +474,16 @@ class ContextImpl(
     @Suppress("UNCHECKED_CAST")
     override fun addChild(child: Context, replace: Boolean): Boolean {
         require(child is ContextImpl) { "Only ContextImpl is supported." }
+
         checkNotExited()
         child.checkNotExited()
 
-        return lock.add {
-            // 检查是否会形成环。
-            val allParents = allParents as List<ContextImpl>
+        val allParents = allParents as List<ContextImpl>
+        val locks = allParents.map { it.lock.readLock } + lock.addLock
+
+        return locks.withLocks {
             require(child !in allParents) { "Cannot connect child to parent, because it will form a cycle." }
-
-            // 获取整个连通子图的锁
-            val components = (components + child.components) as List<ContextImpl>
-            val componentLocks = components.map { it.lock }
-
-            componentLocks.read {
-                val contextPreAddEvent = ContextPreAddEventImpl(this, child, isEntering = false, contextManager)
-                contextManager.onContextPreAdd(contextPreAddEvent)
-
-                val result = addNoLock(this, child, enter = false, replace = replace)
-                if (result) {
-                    val contextPostAddEvent = ContextPostAddEventImpl(this, child, isEntering = false, contextManager)
-                    contextManager.onContextPostAdd(contextPostAddEvent)
-                }
-
-                result
-            }
+            addNoLock(this, child, enter = false, replace = replace)
         }
     }
 

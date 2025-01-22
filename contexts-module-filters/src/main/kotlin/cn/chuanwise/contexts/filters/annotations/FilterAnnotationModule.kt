@@ -17,7 +17,6 @@
 package cn.chuanwise.contexts.filters.annotations
 
 import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
 import cn.chuanwise.contexts.annotations.AnnotationModule
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.annotations.ArgumentResolver
@@ -44,12 +43,12 @@ import kotlin.reflect.KParameter
  * 过滤器注解模块，在进入状态之前把带 [Filter] 注解的函数注册为过滤器。
  *
  * @author Chuanwise
- * @see createFiltersAnnotationsModule
+ * @see createFilterAnnotationModule
  */
-interface FiltersAnnotationsModule : Module
+interface FilterAnnotationModule : Module
 
 @ContextsInternalApi
-class FiltersAnnotationsModuleImpl : FiltersAnnotationsModule {
+class FilterAnnotationModuleImpl : FilterAnnotationModule {
     private class ReflectFilterImpl(
         private val context: Context,
         private val functionClass: Class<*>,

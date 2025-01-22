@@ -39,7 +39,7 @@ interface FilterModule : Module
 class FilterModuleImpl : FilterModule {
     private object SingleParentFilterResolverImpl : FilterResolver {
         override fun <T : Any> resolveFilter(context: Context, filterContext: FilterContext<T>) {
-            context.parent.filterManager.filter(filterContext)
+            context.singleParent.filterManager.filter(filterContext)
         }
     }
 
@@ -140,7 +140,7 @@ class FilterModuleImpl : FilterModule {
             }
 
             var resolver = resolver
-            val parentCount = context.parentCount
+            val parentCount = context.allParentCount
 
             resolver = resolver ?: when (parentCount) {
                 1 -> SingleParentFilterResolverImpl
@@ -169,7 +169,7 @@ class FilterModuleImpl : FilterModule {
 
     override fun onContextPostAdd(event: ContextPostAddEvent) {
         val filterManager = event.child.filterManagerOrNull ?: return
-        if (event.child.parentCount > 1) {
+        if (event.child.allParentCount > 1) {
             check(filterManager.resolver != null) {
                 "Cannot resolve filters from multiple parents without a resolver."
             }

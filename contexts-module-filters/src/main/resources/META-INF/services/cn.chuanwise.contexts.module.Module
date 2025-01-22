@@ -15,4 +15,4 @@
 #
 
 cn.chuanwise.contexts.filters.FilterModuleImpl
-cn.chuanwise.contexts.filters.annotations.FiltersAnnotationsModuleImpl
+cn.chuanwise.contexts.filters.annotations.FilterAnnotationModuleImpl

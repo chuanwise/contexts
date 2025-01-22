@@ -45,6 +45,7 @@ interface BukkitEventManager {
      * @param ignoreCancelled 是否忽略取消
      * @param filter 是否过滤
      * @param intercept 是否拦截
+     * @param listen 是否监听
      * @param listener 监听器
      * @return 监听器
      */

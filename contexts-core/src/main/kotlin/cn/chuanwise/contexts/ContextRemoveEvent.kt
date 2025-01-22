@@ -32,9 +32,9 @@ interface ContextRemoveEvent : ContextEvent {
 
 interface ContextPreRemoveEvent: ContextRemoveEvent {
     /**
-     * 如果 [exit] 为 `true`，则在移除后也退出那些没有父上下文的子上下文。
+     * 移除后也退出那些没有父上下文的子上下文。
      */
-    var alsoExitChildIfItWillBeRoot: Boolean
+    var exitChildIfItWillBeRoot: Boolean
 }
 interface ContextPostRemoveEvent: ContextRemoveEvent
 
@@ -45,7 +45,7 @@ data class ContextPreRemoveEventImpl(
     override val replace: ContextAddEvent?,
     override val exit: Boolean,
     override val contextManager: ContextManager,
-    override var alsoExitChildIfItWillBeRoot: Boolean = true
+    override var exitChildIfItWillBeRoot: Boolean = true
 ) : ContextPreRemoveEvent
 
 @ContextsInternalApi

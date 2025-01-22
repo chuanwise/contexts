@@ -17,18 +17,27 @@
 package cn.chuanwise.contexts.spigot
 
 import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.ContextPostEnterEvent
 import cn.chuanwise.contexts.ContextPostExitEvent
 import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.annotations.createAnnotationModule
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
+import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
 import cn.chuanwise.contexts.events.annotations.listenerManager
+import cn.chuanwise.contexts.events.createContextEventModule
+import cn.chuanwise.contexts.events.createEventModule
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.filters.annotations.Filter
-import cn.chuanwise.contexts.registerModules
+import cn.chuanwise.contexts.filters.annotations.createFilterAnnotationModule
+import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Joint
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 @OptIn(ContextsInternalApi::class)
@@ -84,22 +93,34 @@ class ContextManagerTest {
         }
     }
 
+    private val logger = ConsoleLoggerImpl()
+    private lateinit var contextManager: ContextManager
+
+    @BeforeEach
+    fun beforeEach() {
+        contextManager = createContextManager(logger).apply {
+//            findAndRegisterModules()
+
+            registerModule(createAnnotationModule())            // 启动注解扫描管理。
+
+            registerModule(createFilterModule())                // 启动过滤器机制。
+            registerModule(createFilterAnnotationModule())    // 把 @Filter 注解的函数注册为过滤器。
+
+            registerModule(createEventModule())                 // 启动事件机制。
+            registerModule(createEventAnnotationsModule())      // 把 @Listener 注解的函数注册为事件监听器。
+
+            registerModule(createContextEventModule())          // 启动上下文生命周期事件。
+        }
+    }
+
+    @AfterEach
+    fun afterEach() {
+        contextManager.close()
+    }
+
     @Test
     fun testContextManager() {
-        val logger = ConsoleLoggerImpl()
-        val contextManager = createContextManager(logger).apply {
-            registerModules()
 
-//            registerModule(createAnnotationModule())            // 启动注解扫描管理。
-//
-//            registerModule(createFilterModule())                // 启动过滤器机制。
-//            registerModule(createFiltersAnnotationsModule())    // 把 @Filter 注解的函数注册为过滤器。
-//
-//            registerModule(createEventModule())                 // 启动事件机制。
-//            registerModule(createEventAnnotationsModule())      // 把 @Listener 注解的函数注册为事件监听器。
-//
-//            registerModule(createContextEventModule())          // 启动上下文生命周期事件。
-        }
 
         val globalContext = contextManager.enterRoot(GlobalContext, key = "Global")
 
@@ -114,5 +135,22 @@ class ContextManagerTest {
         globalContext.eventPublisher.publish(PlayerJumpEvent("Chuanwise"))
 
         contextManager.close()
+    }
+
+    object ContextEventMonitor {
+        @Listener
+        fun ContextPostEnterEvent.onContextPostEnter() {
+            println("ContextEventMonitor Entered!")
+        }
+
+        @Listener
+        fun ContextPreExitEvent.onContextPreExit() {
+            println("ContextEventMonitor Exited!")
+        }
+    }
+
+    @Test
+    fun testListenEvents() {
+        contextManager.enterRoot(ContextEventMonitor)
     }
 }

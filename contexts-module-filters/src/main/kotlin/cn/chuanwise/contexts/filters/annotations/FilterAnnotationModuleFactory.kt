@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-@file:JvmName("FiltersAnnotationsModuleFactory")
+@file:JvmName("FilterAnnotationModuleFactory")
 package cn.chuanwise.contexts.filters.annotations
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 @OptIn(ContextsInternalApi::class)
-fun createFiltersAnnotationsModule(): FiltersAnnotationsModule = FiltersAnnotationsModuleImpl()
+fun createFilterAnnotationModule(): FilterAnnotationModule = FilterAnnotationModuleImpl()
