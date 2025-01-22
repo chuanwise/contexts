@@ -404,9 +404,12 @@ class ContextManagerImpl(
 
     override fun close() {
         if (closeLock.compareAndSet(false, true)) {
-            for (context in roots) {
-                context.exit()
+            // 退出所有上下文。
+            while (true) {
+                val root = roots.firstOrNull() ?: break
+                root.exit()
             }
+
             // 因为启动的顺序是拓扑顺序，所以关闭的顺序是反拓扑顺序。
             for (entry in mutableModuleEntries.reversed()) {
                 try {
