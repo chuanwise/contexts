@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.timer
+package cn.chuanwise.contexts.bukkit.task
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.annotations.ArgumentResolver
@@ -37,10 +37,10 @@ import java.util.function.Consumer
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
-interface BukkitTimerAnnotationModule : Module
+interface BukkitTaskAnnotationModule : Module
 
 @ContextsInternalApi
-class BukkitTimerAnnotationModuleImpl : BukkitTimerAnnotationModule, Module {
+class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
     private class ReflectConsumerImpl(
         private val context: Context,
         private val functionClass: Class<*>,
@@ -105,7 +105,7 @@ class BukkitTimerAnnotationModuleImpl : BukkitTimerAnnotationModule, Module {
     }
 
     override fun onModulePreEnable(event: ModulePreEnableEvent) {
-        event.addDependencyModuleClass<BukkitTimerModule>()
+        event.addDependencyModuleClass<BukkitTaskModule>()
     }
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
@@ -123,9 +123,9 @@ class BukkitTimerAnnotationModuleImpl : BukkitTimerAnnotationModule, Module {
 
             val action = ReflectConsumerImpl(it.context, functionClass, function, argumentResolvers, it.annotation.async)
             if (it.annotation.async) {
-                it.context.bukkitTimerManager.runTaskTimerAsynchronously(it.annotation.delay, it.annotation.period, action)
+                it.context.bukkitTaskManager.runTaskTimerAsynchronously(it.annotation.delay, it.annotation.period, action)
             } else {
-                it.context.bukkitTimerManager.runTaskTimer(it.annotation.delay, it.annotation.period, action)
+                it.context.bukkitTaskManager.runTaskTimer(it.annotation.delay, it.annotation.period, action)
             }
         }
     }

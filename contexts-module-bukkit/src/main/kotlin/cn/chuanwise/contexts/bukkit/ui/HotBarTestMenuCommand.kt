@@ -19,7 +19,7 @@ package cn.chuanwise.contexts.bukkit.ui
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.bukkit.Plugin
 import cn.chuanwise.contexts.bukkit.player.createPlayerSession
-import cn.chuanwise.contexts.bukkit.timer.Timer
+import cn.chuanwise.contexts.bukkit.task.Timer
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.Color

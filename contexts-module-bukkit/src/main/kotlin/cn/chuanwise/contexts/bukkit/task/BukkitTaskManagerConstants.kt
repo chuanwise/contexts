@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.timer
+@file:JvmName("BukkitTaskManagerConstants")
+package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.Context
-import org.bukkit.scheduler.BukkitTask
-import java.util.function.Consumer
-
-interface BukkitTimerManager {
-    val context : Context
-
-    fun runTaskTimer(delay: Long = 0, period: Long = 1, action: Consumer<BukkitTask>): BukkitTask
-    fun runTaskTimerAsynchronously(delay: Long = 0, period: Long = 1, action: Consumer<BukkitTask>): BukkitTask
-}
+const val DEFAULT_DELAY_TICKS: Long = 0
+const val DEFAULT_PERIOD_TICKS: Long = 1

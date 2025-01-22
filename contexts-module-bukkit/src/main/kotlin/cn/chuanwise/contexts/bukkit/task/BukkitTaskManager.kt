@@ -14,10 +14,24 @@
  * limitations under the License.
  */
 
-@file:JvmName("BukkitTimerModuleFactory")
-package cn.chuanwise.contexts.bukkit.timer
+package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.Context
+import org.bukkit.scheduler.BukkitTask
+import java.util.function.Consumer
 
-@OptIn(ContextsInternalApi::class)
-fun createBukkitTimerModule(): BukkitTimerModule = BukkitTimerModuleImpl()
+interface BukkitTaskManager {
+    val context : Context
+
+    fun runTaskTimer(
+        delay: Long = DEFAULT_DELAY_TICKS,
+        period: Long = DEFAULT_PERIOD_TICKS,
+        action: Consumer<BukkitTask>
+    ): BukkitTask
+
+    fun runTaskTimerAsynchronously(
+        delay: Long = DEFAULT_DELAY_TICKS,
+        period: Long = DEFAULT_PERIOD_TICKS,
+        action: Consumer<BukkitTask>
+    ): BukkitTask
+}

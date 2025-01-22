@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-@file:JvmName("BukkitTimerAnnotationModuleFactory")
-package cn.chuanwise.contexts.bukkit.timer
+@file:JvmName("BukkitTaskManagers")
+package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-@OptIn(ContextsInternalApi::class)
-fun createBukkitTimerAnnotationModule(): BukkitTimerAnnotationModule = BukkitTimerAnnotationModuleImpl()
+val Beans.bukkitTaskManager: BukkitTaskManager get() = getBeanValueOrFail()
+val Beans.bukkitTaskManagerOrNull: BukkitTaskManager? get() = getBeanValue()

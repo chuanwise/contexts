@@ -35,20 +35,31 @@ import java.util.UUID
  */
 interface PlayerSession {
     val player: Player
-
     val playerName: String
     val playerId: UUID
+
+    /**
+     * 获取玩家上下文。
+     */
+    val context: Context
+    val contextOrNull: Context?
 }
 
 @ContextsInternalApi
 class PlayerSessionImpl(
-    override val player: Player,
-    override val playerName: String = player.name,
-    override val playerId: UUID = player.uniqueId
+    override val player: Player
 ) : PlayerSession {
+    override val playerName: String = player.name
+    override val playerId: UUID = player.uniqueId
+
+    private var mutableContext: Context? = null
+    override val context: Context get() = mutableContext ?: error("The player session has not been entered.")
+    override val contextOrNull: Context? get() = mutableContext
+
     @Listener
     fun ContextPostEnterEvent.onPostEnter() {
         context.registerBean(player)
+        mutableContext = context
     }
 
     @Filter
@@ -56,8 +67,8 @@ class PlayerSessionImpl(
         return player.name == playerName
     }
 
-//    @Listener
-//    fun PlayerQuitEvent.onPlayerQuit(context: Context) {
-//        context.exit()
-//    }
+    @Listener
+    fun PlayerQuitEvent.onPlayerQuit(context: Context) {
+        context.exit()
+    }
 }

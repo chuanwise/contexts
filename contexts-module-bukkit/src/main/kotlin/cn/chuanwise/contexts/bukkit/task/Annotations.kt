@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.timer
+package cn.chuanwise.contexts.bukkit.task
 
 /**
  * 定时器注解。

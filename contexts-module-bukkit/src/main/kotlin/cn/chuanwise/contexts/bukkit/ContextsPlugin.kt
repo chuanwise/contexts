@@ -20,8 +20,8 @@ import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextManager
 import cn.chuanwise.contexts.annotations.createAnnotationModule
 import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
-import cn.chuanwise.contexts.bukkit.timer.createBukkitTimerAnnotationModule
-import cn.chuanwise.contexts.bukkit.timer.createBukkitTimerModule
+import cn.chuanwise.contexts.bukkit.task.createBukkitTimerAnnotationModule
+import cn.chuanwise.contexts.bukkit.task.createBukkitTimerModule
 import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.registerModules

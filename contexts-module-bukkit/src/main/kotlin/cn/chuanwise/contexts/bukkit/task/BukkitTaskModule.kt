@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.bukkit.timer
+package cn.chuanwise.contexts.bukkit.task
 
 import cn.chuanwise.contexts.Context
 import cn.chuanwise.contexts.ContextPreEnterEvent
@@ -29,14 +29,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Consumer
 
-interface BukkitTimerModule : Module {
+interface BukkitTaskModule : Module {
     val plugin: Plugin
 }
 
 @ContextsInternalApi
-class BukkitTimerModuleImpl @JvmOverloads constructor(
+class BukkitTaskModuleImpl @JvmOverloads constructor(
     private var mutablePlugin: Plugin? = null
-) : BukkitTimerModule {
+) : BukkitTaskModule {
     override val plugin: Plugin get() = mutablePlugin ?: error("Bukkit timer module has not been initialized yet.")
 
     private class BukkitTaskActionImpl(
@@ -49,9 +49,9 @@ class BukkitTimerModuleImpl @JvmOverloads constructor(
         }
     }
 
-    private inner class BukkitTimerManagerImpl(
+    private inner class BukkitTaskManagerImpl(
         override val context: Context
-    ) : BukkitTimerManager {
+    ) : BukkitTaskManager {
         private val bukkitTasks = ConcurrentLinkedDeque<BukkitTask>()
 
         override fun runTaskTimer(delay: Long, period: Long, action: Consumer<BukkitTask>): BukkitTask {
@@ -84,12 +84,12 @@ class BukkitTimerModuleImpl @JvmOverloads constructor(
     }
 
     override fun onContextPreExit(event: ContextPreExitEvent) {
-        val bukkitTimerManager = event.context.bukkitTimerManagerOrNull as? BukkitTimerManagerImpl ?: return
+        val bukkitTimerManager = event.context.bukkitTaskManagerOrNull as? BukkitTaskManagerImpl ?: return
         bukkitTimerManager.cancelTasks()
     }
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
-        val bukkitTimerManager = BukkitTimerManagerImpl(event.context)
+        val bukkitTimerManager = BukkitTaskManagerImpl(event.context)
         event.context.registerBean(bukkitTimerManager)
     }
 }
