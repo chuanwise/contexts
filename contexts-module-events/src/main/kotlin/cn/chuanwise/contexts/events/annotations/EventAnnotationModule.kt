@@ -53,7 +53,7 @@ import kotlin.reflect.KParameter
  * 事件注解模块。
  *
  * @author Chuanwise
- * @see createEventAnnotationsModule
+ * @see createEventAnnotationModule
  */
 @NotStableForInheritance
 interface EventAnnotationModule : Module {

@@ -25,7 +25,7 @@ import cn.chuanwise.contexts.annotations.createAnnotationModule
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
-import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
+import cn.chuanwise.contexts.events.annotations.createEventAnnotationModule
 import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
@@ -107,7 +107,7 @@ class ContextManagerTest {
             registerModule(createFilterAnnotationModule())    // 把 @Filter 注解的函数注册为过滤器。
 
             registerModule(createEventModule())                 // 启动事件机制。
-            registerModule(createEventAnnotationsModule())      // 把 @Listener 注解的函数注册为事件监听器。
+            registerModule(createEventAnnotationModule())      // 把 @Listener 注解的函数注册为事件监听器。
 
             registerModule(createContextEventModule())          // 启动上下文生命周期事件。
         }

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-@file:JvmName("EventAnnotationsModuleFactory")
+@file:JvmName("EventAnnotationModuleFactory")
 package cn.chuanwise.contexts.events.annotations
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 @OptIn(ContextsInternalApi::class)
-fun createEventAnnotationsModule(): EventAnnotationModule = EventAnnotationModuleImpl()
+fun createEventAnnotationModule(): EventAnnotationModule = EventAnnotationModuleImpl()

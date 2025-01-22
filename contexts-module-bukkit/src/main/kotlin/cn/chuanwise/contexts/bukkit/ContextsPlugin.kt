@@ -25,7 +25,7 @@ import cn.chuanwise.contexts.bukkit.timer.createBukkitTimerModule
 import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
 import cn.chuanwise.contexts.createContextManager
 import cn.chuanwise.contexts.registerModules
-import cn.chuanwise.contexts.events.annotations.createEventAnnotationsModule
+import cn.chuanwise.contexts.events.annotations.createEventAnnotationModule
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
 import cn.chuanwise.contexts.filters.annotations.createFilterAnnotationModule
@@ -53,7 +53,7 @@ class ContextsPlugin : JavaPlugin() {
                 createFilterAnnotationModule(),
 
                 createEventModule(),
-                createEventAnnotationsModule(),
+                createEventAnnotationModule(),
 
                 createContextEventModule(),
 
