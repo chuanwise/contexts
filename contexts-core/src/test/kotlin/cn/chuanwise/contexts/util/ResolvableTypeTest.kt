@@ -111,8 +111,12 @@ class ResolvableTypeTest {
 
         val nullableIntArray = createResolvableType<Array<Int?>>()
         val nullableDoubleArray = createResolvableType<Array<Double?>>()
+        val doubleArray = createResolvableType<Array<Double>>()
 
         assertFalse(nullableIntArray.isAssignableFrom(nullableDoubleArray))
         assertFalse(nullableDoubleArray.isAssignableFrom(nullableIntArray))
+        assertFalse(doubleArray.isAssignableFrom(nullableDoubleArray))
+
+        assertFalse(nullableDoubleArray.isAssignableFrom(doubleArray))
     }
 }
