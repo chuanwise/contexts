@@ -16,12 +16,12 @@
 
 package cn.chuanwise.contexts.filters.annotations
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.annotations.AnnotationModule
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.annotation.AnnotationModule
 import cn.chuanwise.contexts.module.Module
-import cn.chuanwise.contexts.annotations.ArgumentResolver
-import cn.chuanwise.contexts.annotations.FunctionProcessor
-import cn.chuanwise.contexts.annotations.annotationModule
+import cn.chuanwise.contexts.annotation.ArgumentResolver
+import cn.chuanwise.contexts.annotation.AnnotationFunctionProcessor
+import cn.chuanwise.contexts.annotation.annotationModule
 import cn.chuanwise.contexts.filters.FilterContext
 import cn.chuanwise.contexts.filters.FilterModule
 import cn.chuanwise.contexts.filters.filterManagerOrNull
@@ -30,7 +30,7 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
@@ -61,25 +61,25 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
                 return null
             }
 
-            val beans = InheritedMutableBeans(context, filterContext.beans)
+            val beans = InheritedMutableBeanFactory(context, filterContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             return if (function.isSuspend) runBlocking {
                 try {
                     function.callSuspendByAndRethrowException(arguments)
                 } catch (e: Throwable) {
-                    onExceptionOccurred(e, filterContext.value)
+                    onException(e, filterContext.value)
                 }
             } else {
                 try {
                     function.callByAndRethrowException(arguments)
                 } catch (e: Throwable) {
-                    onExceptionOccurred(e, filterContext.value)
+                    onException(e, filterContext.value)
                 }
             } as Boolean?
         }
 
-        private fun onExceptionOccurred(e: Throwable, value: Any) {
+        private fun onException(e: Throwable, value: Any) {
             context.contextManager.logger.error(e) {
                 "Exception occurred while filtering value $value by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
@@ -91,7 +91,7 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
         }
     }
 
-    private lateinit var functionProcessor: MutableEntry<FunctionProcessor<Filter>>
+    private lateinit var annotationFunctionProcessor: MutableEntry<AnnotationFunctionProcessor<Filter>>
 
     override fun onModulePreEnable(event: ModulePreEnableEvent) {
         event.addDependencyModuleClass<AnnotationModule>()
@@ -100,7 +100,7 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
         val annotationModule = event.contextManager.annotationModule
-        functionProcessor = annotationModule.registerFunctionProcessor(Filter::class.java) {
+        annotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Filter::class.java) {
             val function = it.function
             val value = it.value
             val context = it.context
@@ -118,6 +118,6 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
     }
 
     override fun onModulePostDisable(event: ModulePostDisableEvent) {
-        functionProcessor.remove()
+        annotationFunctionProcessor.remove()
     }
 }

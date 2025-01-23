@@ -16,14 +16,17 @@
 
 package cn.chuanwise.contexts.module
 
-import cn.chuanwise.contexts.ContextPostAddEvent
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPostExitEvent
-import cn.chuanwise.contexts.ContextPostRemoveEvent
-import cn.chuanwise.contexts.ContextPreAddEvent
-import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.ContextPreExitEvent
-import cn.chuanwise.contexts.ContextPreRemoveEvent
+import cn.chuanwise.contexts.context.ContextBeanPostAddEvent
+import cn.chuanwise.contexts.context.ContextBeanPreAddEvent
+import cn.chuanwise.contexts.context.ContextInitEvent
+import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
+import cn.chuanwise.contexts.context.ContextPostExitEvent
+import cn.chuanwise.contexts.context.ContextPostEdgeRemoveEvent
+import cn.chuanwise.contexts.context.ContextPreEdgeAddEvent
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.ContextPreExitEvent
+import cn.chuanwise.contexts.context.ContextPreEdgeRemoveEvent
 
 interface Module {
     fun onModulePreEnable(event: ModulePreEnableEvent): Unit = Unit
@@ -32,15 +35,23 @@ interface Module {
     fun onModulePreDisable(event: ModulePreDisableEvent): Unit = Unit
     fun onModulePostDisable(event: ModulePostDisableEvent): Unit = Unit
 
-    fun onContextPreAdd(event: ContextPreAddEvent): Unit = Unit
-    fun onContextPostAdd(event: ContextPostAddEvent): Unit = Unit
+    fun onContextEdgePreAdd(event: ContextPreEdgeAddEvent): Unit = Unit
+    fun onContextEdgePostAdd(event: ContextPostEdgeAddEvent): Unit = Unit
 
-    fun onContextPreRemove(event: ContextPreRemoveEvent): Unit = Unit
-    fun onContextPostRemove(event: ContextPostRemoveEvent): Unit = Unit
+    fun onContextEdgePreRemove(event: ContextPreEdgeRemoveEvent): Unit = Unit
+    fun onContextEdgePostRemove(event: ContextPostEdgeRemoveEvent): Unit = Unit
+
+    fun onContextInit(event: ContextInitEvent): Unit = Unit
 
     fun onContextPreEnter(event: ContextPreEnterEvent): Unit = Unit
     fun onContextPostEnter(event: ContextPostEnterEvent): Unit = Unit
 
     fun onContextPreExit(event: ContextPreExitEvent): Unit = Unit
     fun onContextPostExit(event: ContextPostExitEvent): Unit = Unit
+
+    fun onContextBeanPreAdd(event: ContextBeanPreAddEvent<*>): Unit = Unit
+    fun onContextBeanPostAdd(event: ContextBeanPostAddEvent<*>): Unit = Unit
+
+    fun onContextBeanPreRemove(event: ContextBeanPreAddEvent<*>): Unit = Unit
+    fun onContextBeanPostRemove(event: ContextBeanPostAddEvent<*>): Unit = Unit
 }

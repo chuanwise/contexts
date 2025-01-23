@@ -16,12 +16,14 @@
 
 package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_FILTER
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.Listener
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.Entry
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
@@ -50,16 +52,16 @@ interface ListenerManager {
      */
     fun <T : Any> registerListener(
         eventClass: Class<T>,
-        filter: Boolean = true,
-        intercept: Boolean = false,
-        listen: Boolean = true,
+        filter: Boolean = DEFAULT_LISTENER_FILTER,
+        intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
+        listen: Boolean = DEFAULT_LISTENER_LISTEN,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 
     fun <T : Any> registerListener(
-        filter: Boolean = true,
-        intercept: Boolean = false,
-        listen: Boolean = true,
+        filter: Boolean = DEFAULT_LISTENER_FILTER,
+        intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
+        listen: Boolean = DEFAULT_LISTENER_LISTEN,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 
@@ -72,5 +74,5 @@ interface ListenerManager {
     fun publishToContext(eventContext: EventContext<Any>)
 }
 
-val Beans.listenerManager: ListenerManager get() = getBeanValueOrFail()
-val Beans.listenerManagerOrNull: ListenerManager? get() = getBeanValue()
+val BeanFactory.listenerManager: ListenerManager get() = getBeanValueOrFail()
+val BeanFactory.listenerManagerOrNull: ListenerManager? get() = getBeanValue()

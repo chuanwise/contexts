@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
+@file:JvmName("BukkitEventConstants")
+package cn.chuanwise.contexts.bukkit.event
 
-import cn.chuanwise.contexts.util.Beans
+import org.bukkit.event.EventPriority
 
-/**
- * 参数工厂。用于在基于反射自动注册的某种对象时，自动创建参数。
- *
- * @author Chuanwise
- */
-interface ArgumentResolver {
-    fun resolveArgument(beans: Beans): Any?
-}
+val DEFAULT_BUKKIT_EVENT_HANDLER_PRIORITY: EventPriority = EventPriority.NORMAL
+const val DEFAULT_BUKKIT_EVENT_HANDLER_IGNORE_CANCELLED: Boolean = false

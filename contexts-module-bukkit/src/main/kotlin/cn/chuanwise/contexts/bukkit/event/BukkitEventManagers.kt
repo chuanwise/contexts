@@ -17,23 +17,26 @@
 @file:JvmName("BukkitEventManagers")
 package cn.chuanwise.contexts.bukkit.event
 
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_FILTER
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.Listener
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
-val Beans.bukkitEventManager: BukkitEventManager get() = getBeanValueOrFail()
-val Beans.bukkitEventManagerOrNull: BukkitEventManager? get() = getBeanValue()
+val BeanFactory.bukkitEventManager: BukkitEventManager get() = getBeanValueOrFail()
+val BeanFactory.bukkitEventManagerOrNull: BukkitEventManager? get() = getBeanValue()
 
 inline fun <reified T : Event> BukkitEventManager.registerListener(
     priority: EventPriority = EventPriority.NORMAL,
     ignoreCancelled: Boolean = false,
-    filter: Boolean = true,
-    intercept: Boolean = false,
-    listen: Boolean = false,
+    filter: Boolean = DEFAULT_LISTENER_FILTER,
+    intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
+    listen: Boolean = DEFAULT_LISTENER_LISTEN,
     listener: Listener<T>
 ) : MutableEntry<Listener<T>> {
     return registerListener(

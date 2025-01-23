@@ -15,7 +15,7 @@
  */
 
 @file:JvmName("ContextManagers")
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModuleEntry

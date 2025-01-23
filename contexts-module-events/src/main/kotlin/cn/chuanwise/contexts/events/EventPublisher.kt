@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
 

@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
+package cn.chuanwise.contexts.annotation
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import kotlin.reflect.KFunction
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-interface FunctionProcessContext<T> {
-    val function: KFunction<*>
-    val annotation: T
-    val value: Any
+/**
+ * 反射管理器。
+ *
+ * @author Chuanwise
+ */
+interface AnnotationManager {
+    /**
+     * 上下文。
+     */
     val context: Context
+
+    /**
+     * 扫描一个对象。
+     *
+     * @param value 对象
+     */
+    fun scan(value: Any)
 }
 
-fun interface FunctionProcessor<T> {
-    fun process(context: FunctionProcessContext<T>)
-}
-
-@ContextsInternalApi
-class FunctionProcessContextImpl<T>(
-    override val function: KFunction<*>,
-    override val annotation: T,
-    override val value: Any,
-    override val context: Context
-) : FunctionProcessContext<T>
+val BeanFactory.annotationManager: AnnotationManager get() = getBeanValueOrFail()
+val BeanFactory.annotationManagerOrNull: AnnotationManager? get() = getBeanValue()

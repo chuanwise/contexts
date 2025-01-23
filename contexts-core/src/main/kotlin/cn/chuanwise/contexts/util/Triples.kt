@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-@file:JvmName("AnnotationModules")
-package cn.chuanwise.contexts.annotations
+@file:JvmName("Triples")
+package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.util.Beans
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
-
-val Beans.annotationModule: AnnotationModule get() = getBeanValueOrFail()
-val Beans.annotationModuleOrNull: AnnotationModule? get() = getBeanValue()
+fun Boolean?.toTriple(): Triple {
+    return when (this) {
+        true -> Triple.TRUE
+        false -> Triple.FALSE
+        null -> Triple.NULL
+    }
+}

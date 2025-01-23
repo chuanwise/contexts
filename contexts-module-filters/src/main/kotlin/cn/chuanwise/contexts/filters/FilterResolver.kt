@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.filters
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 
 /**
  * 过滤器解析器，将多个父上下文的过滤器结果解析为一个结果。

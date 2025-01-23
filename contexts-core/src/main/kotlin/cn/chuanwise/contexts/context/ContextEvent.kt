@@ -14,30 +14,16 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
-
-import cn.chuanwise.contexts.util.ContextsInternalApi
+package cn.chuanwise.contexts.context
 
 /**
- * 上下文进入事件。
+ * 上下文事件。
  *
  * @author Chuanwise
  */
-interface ContextEnterEvent : ContextEvent {
-    val context: Context
+interface ContextEvent {
+    /**
+     * 上下文管理器。
+     */
+    val contextManager: ContextManager
 }
-
-interface ContextPreEnterEvent : ContextEnterEvent
-interface ContextPostEnterEvent : ContextEnterEvent
-
-@ContextsInternalApi
-data class ContextPreEnterEventImpl(
-    override val context: Context,
-    override val contextManager: ContextManager,
-) : ContextPreEnterEvent
-
-@ContextsInternalApi
-data class ContextPostEnterEventImpl(
-    override val context: Context,
-    override val contextManager: ContextManager,
-) : ContextPostEnterEvent

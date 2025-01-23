@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 
 /**
  * 事件处理器，负责把一个事件发送给一个上下文。

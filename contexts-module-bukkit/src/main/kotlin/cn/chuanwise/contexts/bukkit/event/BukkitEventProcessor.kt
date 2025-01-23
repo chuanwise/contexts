@@ -18,10 +18,8 @@ package cn.chuanwise.contexts.bukkit.event
 
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventProcessor
-import cn.chuanwise.contexts.events.annotations.listenerManager
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.MutableBean
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
@@ -36,7 +34,7 @@ object BukkitEventProcessor : EventProcessor<Event> {
     @OptIn(ContextsInternalApi::class)
     override fun process(eventContext: EventContext<Event>) {
         for (priority in priorities) {
-            eventContext.beans.registerBean(priority).use {
+            eventContext.beans.addBean(priority).use {
                 eventContext.context.eventPublisher.publish(eventContext)
             }
         }

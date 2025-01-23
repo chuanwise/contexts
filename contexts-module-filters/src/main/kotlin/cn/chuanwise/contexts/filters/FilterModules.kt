@@ -17,9 +17,9 @@
 @file:JvmName("FilterModules")
 package cn.chuanwise.contexts.filters
 
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-val Beans.filterModule: FilterModule get() = getBeanValueOrFail()
-val Beans.filterModuleOrNull: FilterModule? get() = getBeanValue()
+val BeanFactory.filterModule: FilterModule get() = getBeanValueOrFail()
+val BeanFactory.filterModuleOrNull: FilterModule? get() = getBeanValue()

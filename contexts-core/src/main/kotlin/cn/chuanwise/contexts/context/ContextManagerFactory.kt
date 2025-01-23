@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-@file:JvmName("AnnotationModuleFactory")
+@file:JvmName("ContextManagerFactory")
 
-package cn.chuanwise.contexts.annotations
+package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Logger
+import cn.chuanwise.contexts.util.createJavaLogger
 
 @OptIn(ContextsInternalApi::class)
-fun createAnnotationModule(): AnnotationModule = AnnotationModuleImpl()
+fun createContextManager(logger: Logger): ContextManager {
+    return ContextManagerImpl(logger)
+}
+
+fun createContextManager(): ContextManager {
+    val logger = java.util.logging.Logger.getLogger("ContextManager")
+    return createContextManager(createJavaLogger(logger))
+}

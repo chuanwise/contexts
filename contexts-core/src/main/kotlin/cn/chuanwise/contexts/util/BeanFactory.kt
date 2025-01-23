@@ -23,7 +23,7 @@ import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 表示一个在 [Beans] 内的对象。
+ * 表示一个在 [BeanFactory] 内的对象。
  *
  * @param T 对象的类型
  */
@@ -56,7 +56,7 @@ interface Bean<out T : Any> {
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface Beans {
+interface BeanFactory {
     /**
      * 获取一个对象。
      *
@@ -180,17 +180,21 @@ interface Beans {
     fun <T : Any> getBeanValues(beanClass: Class<T>): List<T>
 }
 
-inline fun <reified T : Any> Beans.getBean(): Bean<T>? {
+inline fun <reified T : Any> BeanFactory.getBean(): Bean<T>? {
     return getBean(T::class.java)
 }
-inline fun <reified T : Any> Beans.getBeanOrFail(): Bean<T> {
+inline fun <reified T : Any> BeanFactory.getBeanOrFail(): Bean<T> {
     return getBeanOrFail(T::class.java)
 }
 
-inline fun <reified T : Any> Beans.getBeanValue(): T? {
-    return getBeanValue(T::class.java)
+@JvmOverloads
+inline fun <reified T : Any> BeanFactory.getBeanValue(
+    key: Any? = DEFAULT_BEAN_KEY, primary: Boolean? = DEFAULT_BEAN_PRIMARY
+): T? {
+    return getBeanValue(T::class.java, key = key, primary = primary)
 }
-inline fun <reified T : Any> Beans.getBeanValueOrFail(): T {
+
+inline fun <reified T : Any> BeanFactory.getBeanValueOrFail(): T {
     return getBeanValueOrFail(T::class.java)
 }
 
@@ -203,7 +207,7 @@ private fun getJavaType(type: Type): JavaType = types.computeIfAbsent(type.typeN
 
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
-abstract class AbstractBeans : Beans {
+abstract class AbstractBeanFactory : BeanFactory {
     override fun getBean(type: Type, primary: Boolean?, key: Any?): Bean<*>? {
         require(type is Class<*>) { "Type must be a class." }
         return getBean(type, primary, key)

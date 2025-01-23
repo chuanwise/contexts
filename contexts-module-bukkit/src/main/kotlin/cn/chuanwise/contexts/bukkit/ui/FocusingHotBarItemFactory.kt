@@ -17,7 +17,7 @@
 @file:JvmName("FocusingHotBarItemFactory")
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.inventory.ItemStack
 import java.util.function.Function

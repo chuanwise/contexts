@@ -16,8 +16,8 @@
 
 package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.createContextManager
+import cn.chuanwise.contexts.context.ContextManager
+import cn.chuanwise.contexts.context.createContextManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach

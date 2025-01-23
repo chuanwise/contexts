@@ -16,9 +16,9 @@
 
 package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.ContextPreExitEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
@@ -70,6 +70,18 @@ class BukkitTaskModuleImpl @JvmOverloads constructor(
             return bukkitTask
         }
 
+        override fun runTaskLater(delay: Long, action: Consumer<BukkitTask>): BukkitTask {
+            val finalAction = BukkitTaskActionImpl(action)
+            val bukkitTask = plugin.server.scheduler.runTaskLater(plugin, finalAction, delay)
+            finalAction.bukkitTaskFuture.complete(bukkitTask)
+            bukkitTasks.add(bukkitTask)
+            return bukkitTask
+        }
+
+        override fun cancelTaskOnExit(task: BukkitTask) {
+            bukkitTasks.add(task)
+        }
+
         fun cancelTasks() {
             val iterator = bukkitTasks.iterator()
             while (iterator.hasNext()) {
@@ -90,6 +102,6 @@ class BukkitTaskModuleImpl @JvmOverloads constructor(
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val bukkitTimerManager = BukkitTaskManagerImpl(event.context)
-        event.context.registerBean(bukkitTimerManager)
+        event.context.addBean(bukkitTimerManager)
     }
 }

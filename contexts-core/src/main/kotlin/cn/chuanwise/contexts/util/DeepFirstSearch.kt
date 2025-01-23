@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import java.util.Deque
 import java.util.ArrayDeque
 

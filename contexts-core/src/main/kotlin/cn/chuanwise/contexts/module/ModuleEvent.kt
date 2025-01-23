@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.module
 
-import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.context.ContextManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
 
 /**

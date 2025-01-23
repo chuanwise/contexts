@@ -16,10 +16,10 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.filters.FilterContext
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.MutableBeanFactory
 import cn.chuanwise.contexts.util.NotStableForInheritance
 
 /**
@@ -49,7 +49,7 @@ interface EventContext<out T : Any> {
      * 和事件发布相关的上下文，用于存储一些和事件发布相关的数据。
      * 继承了 [context] 内的所有数据。
      */
-    val beans: MutableBeans
+    val beans: MutableBeanFactory
 
     /**
      * 是否被拦截
@@ -76,7 +76,7 @@ interface EventContext<out T : Any> {
 class EventContextImpl<T : Any>(
     override val event: T,
     override val context: Context,
-    override val beans: MutableBeans,
+    override val beans: MutableBeanFactory,
     override val filterContext: FilterContext<T>
 ) : EventContext<T> {
     private var mutableIsIntercepted: Boolean = false

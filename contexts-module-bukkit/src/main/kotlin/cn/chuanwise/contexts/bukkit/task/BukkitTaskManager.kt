@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import org.bukkit.scheduler.BukkitTask
 import java.util.function.Consumer
 
@@ -34,4 +34,11 @@ interface BukkitTaskManager {
         period: Long = DEFAULT_PERIOD_TICKS,
         action: Consumer<BukkitTask>
     ): BukkitTask
+
+    fun runTaskLater(
+        delay: Long = DEFAULT_DELAY_TICKS,
+        action: Consumer<BukkitTask>
+    ): BukkitTask
+
+    fun cancelTaskOnExit(task: BukkitTask)
 }

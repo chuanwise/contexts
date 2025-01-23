@@ -18,16 +18,16 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
 /**
  * 获取事件管理器。
  */
-val Beans.eventPublisherOrNull: EventPublisher<Any>? get() = getBeanValue()
+val BeanFactory.eventPublisherOrNull: EventPublisher<Any>? get() = getBeanValue()
 
 /**
  * 获取事件管理器。
  */
-val Beans.eventPublisher: EventPublisher<Any> get() = getBeanValueOrFail()
+val BeanFactory.eventPublisher: EventPublisher<Any> get() = getBeanValueOrFail()

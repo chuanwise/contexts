@@ -16,15 +16,15 @@
 
 package cn.chuanwise.contexts.bukkit
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.annotations.createAnnotationModule
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextManager
+import cn.chuanwise.contexts.annotation.createAnnotationModule
 import cn.chuanwise.contexts.bukkit.event.createBukkitEventModule
 import cn.chuanwise.contexts.bukkit.task.createBukkitTimerAnnotationModule
 import cn.chuanwise.contexts.bukkit.task.createBukkitTimerModule
 import cn.chuanwise.contexts.bukkit.ui.HotBarTestMenuCommand
-import cn.chuanwise.contexts.createContextManager
-import cn.chuanwise.contexts.registerModules
+import cn.chuanwise.contexts.context.createContextManager
+import cn.chuanwise.contexts.context.registerModules
 import cn.chuanwise.contexts.events.annotations.createEventAnnotationModule
 import cn.chuanwise.contexts.events.createContextEventModule
 import cn.chuanwise.contexts.events.createEventModule
@@ -45,7 +45,7 @@ class ContextsPlugin : JavaPlugin() {
         logger.logger.level = Level.FINE
 
         contextManager = createContextManager(logger).apply {
-            registerBean(this@ContextsPlugin)
+            addBean(this@ContextsPlugin)
             registerModules(
                 createAnnotationModule(),
 

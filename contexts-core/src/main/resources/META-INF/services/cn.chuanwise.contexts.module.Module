@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-cn.chuanwise.contexts.annotations.AnnotationModuleImpl
+cn.chuanwise.contexts.annotation.AnnotationModuleImpl

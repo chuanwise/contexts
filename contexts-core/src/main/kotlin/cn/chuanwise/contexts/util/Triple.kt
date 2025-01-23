@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
-
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
+package cn.chuanwise.contexts.util
 
 /**
- * 对象解析上下文。
+ * 三态布尔值。
  *
+ * @property value 布尔值
  * @author Chuanwise
  */
-interface ArgumentResolveContext {
-    val functionClass: Class<*>
-    val function: KFunction<*>
-    val parameter: KParameter
-    val context: Context
-}
+enum class Triple(
+    private val value: Boolean?
+) {
+    TRUE(value = true),
+    FALSE(value = false),
+    NULL(value = null);
 
-@ContextsInternalApi
-class ArgumentResolveContextImpl(
-    override val functionClass: Class<*>,
-    override val function: KFunction<*>,
-    override val parameter: KParameter,
-    override val context: Context
-) : ArgumentResolveContext
+    fun toBooleanOrNull(): Boolean? = value
+    fun toBoolean(): Boolean = value ?: error("This triple is NULL.")
+}

@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+@file:JvmName("BeanConstants")
+package cn.chuanwise.contexts.util
 
-import cn.chuanwise.contexts.ContextManager
-
-/**
- * 上下文事件。
- *
- * @author Chuanwise
- */
-interface ContextEvent {
-    /**
-     * 上下文管理器。
-     */
-    val contextManager: ContextManager
-}
+val DEFAULT_BEAN_KEY: Any? = null
+val DEFAULT_BEAN_PRIMARY: Boolean? = null

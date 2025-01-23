@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
+package cn.chuanwise.contexts.annotation
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.module.Module
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.module.ModulePreEnableEvent
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
@@ -43,9 +41,9 @@ interface AnnotationModule : Module {
      * @param processor 扫描器
      * @return 扫描器
      */
-    fun <T : Annotation> registerFunctionProcessor(
-        annotationClass: Class<T>, processor: FunctionProcessor<T>
-    ): MutableEntry<FunctionProcessor<T>>
+    fun <T : Annotation> registerAnnotationFunctionProcessor(
+        annotationClass: Class<T>, processor: AnnotationFunctionProcessor<T>
+    ): MutableEntry<AnnotationFunctionProcessor<T>>
 
     /**
      * 注册一个参数解析器工厂。
@@ -69,24 +67,24 @@ interface AnnotationModule : Module {
 @Suppress("UNCHECKED_CAST")
 @ContextsInternalApi
 class AnnotationModuleImpl : AnnotationModule {
-    private class FunctionProcessorImpl<T : Annotation>(
+    private class AnnotationFunctionProcessorImpl<T : Annotation>(
         val annotationClass: Class<T>,
-        val processor: FunctionProcessor<T>
-    ) : FunctionProcessor<T> {
-        override fun process(context: FunctionProcessContext<T>) {
+        val processor: AnnotationFunctionProcessor<T>
+    ) : AnnotationFunctionProcessor<T> {
+        override fun process(context: AnnotationFunctionProcessContext<T>) {
             processor.process(context)
         }
     }
 
-    private val functionProcessors = MutableEntries<FunctionProcessorImpl<Annotation>>()
+    private val functionProcessors = MutableEntries<AnnotationFunctionProcessorImpl<Annotation>>()
     private val argumentResolverFactories = MutableEntries<ArgumentResolverFactory>()
 
-    override fun <T : Annotation> registerFunctionProcessor(
+    override fun <T : Annotation> registerAnnotationFunctionProcessor(
         annotationClass: Class<T>,
-        processor: FunctionProcessor<T>
-    ): MutableEntry<FunctionProcessor<T>> {
-        val finalFunctionProcessor = FunctionProcessorImpl(annotationClass, processor) as FunctionProcessorImpl<Annotation>
-        return functionProcessors.add(finalFunctionProcessor) as MutableEntry<FunctionProcessor<T>>
+        processor: AnnotationFunctionProcessor<T>
+    ): MutableEntry<AnnotationFunctionProcessor<T>> {
+        val finalFunctionProcessor = AnnotationFunctionProcessorImpl(annotationClass, processor) as AnnotationFunctionProcessorImpl<Annotation>
+        return functionProcessors.add(finalFunctionProcessor) as MutableEntry<AnnotationFunctionProcessor<T>>
     }
 
     override fun registerArgumentResolverFactory(
@@ -121,7 +119,7 @@ class AnnotationModuleImpl : AnnotationModule {
                 for (annotation in function.annotations) {
                     for (entry in functionProcessors) {
                         if (entry.value.annotationClass.isInstance(annotation)) {
-                            val annotationContext = FunctionProcessContextImpl(function, annotation, value, context)
+                            val annotationContext = AnnotationFunctionProcessContextImpl(function, annotation, value, context)
                             try {
                                 entry.value.process(annotationContext)
                             } catch (e: Throwable) {

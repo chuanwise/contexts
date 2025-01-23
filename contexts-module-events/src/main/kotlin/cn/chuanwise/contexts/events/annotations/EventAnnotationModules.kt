@@ -17,9 +17,9 @@
 @file:JvmName("EventAnnotationModules")
 package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-val Beans.eventAnnotationModule: EventAnnotationModule get() = getBeanValueOrFail()
-val Beans.eventAnnotationModuleOrNull: EventAnnotationModule? get() = getBeanValue()
+val BeanFactory.eventAnnotationModule: EventAnnotationModule get() = getBeanValueOrFail()
+val BeanFactory.eventAnnotationModuleOrNull: EventAnnotationModule? get() = getBeanValue()

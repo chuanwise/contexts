@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
+package cn.chuanwise.contexts.annotation
 
-import cn.chuanwise.contexts.util.Beans
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.BeanFactory
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -37,14 +36,14 @@ interface ArgumentResolverFactory {
 
 object DefaultArgumentResolverFactory : ArgumentResolverFactory {
     private class OptionalArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
-        override fun resolveArgument(beans: Beans): Any? {
-            return beans.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)
+        override fun resolveArgument(beanFactory: BeanFactory): Any? {
+            return beanFactory.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)
         }
     }
 
     private class RequiredArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
-        override fun resolveArgument(beans: Beans): Any {
-            beans.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)?.let { return it }
+        override fun resolveArgument(beanFactory: BeanFactory): Any {
+            beanFactory.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)?.let { return it }
 
             error("Cannot resolve argument for parameter ${context.parameter.name} of type ${context.parameter.type} " +
                     "caused by missing bean. " +

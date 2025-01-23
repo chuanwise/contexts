@@ -16,8 +16,7 @@
 
 package cn.chuanwise.contexts.commands
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.util.ContextsInternalApi
 

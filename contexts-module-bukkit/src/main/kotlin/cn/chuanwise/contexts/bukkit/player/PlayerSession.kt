@@ -16,14 +16,12 @@
 
 package cn.chuanwise.contexts.bukkit.player
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.UUID
@@ -58,7 +56,7 @@ class PlayerSessionImpl(
 
     @Listener
     fun ContextPostEnterEvent.onPostEnter() {
-        context.registerBean(player)
+        context.addBean(player)
         mutableContext = context
     }
 

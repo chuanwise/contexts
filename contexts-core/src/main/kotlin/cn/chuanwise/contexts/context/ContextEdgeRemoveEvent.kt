@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
@@ -23,36 +23,36 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
  *
  * @author Chuanwise
  */
-interface ContextRemoveEvent : ContextEvent {
+interface ContextEdgeRemoveEvent : ContextEvent {
     val parent: Context
     val child: Context
-    val replace: ContextAddEvent?
+    val replace: ContextEdgeAddEvent?
     val exit: Boolean
 }
 
-interface ContextPreRemoveEvent: ContextRemoveEvent {
+interface ContextPreEdgeRemoveEvent: ContextEdgeRemoveEvent {
     /**
      * 移除后也退出那些没有父上下文的子上下文。
      */
     var exitChildIfItWillBeRoot: Boolean
 }
-interface ContextPostRemoveEvent: ContextRemoveEvent
+interface ContextPostEdgeRemoveEvent: ContextEdgeRemoveEvent
 
 @ContextsInternalApi
-data class ContextPreRemoveEventImpl(
+data class ContextPreEdgeRemoveEventImpl(
     override val parent: Context,
     override val child: Context,
-    override val replace: ContextAddEvent?,
+    override val replace: ContextEdgeAddEvent?,
     override val exit: Boolean,
     override val contextManager: ContextManager,
     override var exitChildIfItWillBeRoot: Boolean = true
-) : ContextPreRemoveEvent
+) : ContextPreEdgeRemoveEvent
 
 @ContextsInternalApi
-data class ContextPostRemoveEventImpl(
+data class ContextPostEdgeRemoveEventImpl(
     override val parent: Context,
     override val child: Context,
-    override val replace: ContextAddEvent?,
+    override val replace: ContextEdgeAddEvent?,
     override val exit: Boolean,
     override val contextManager: ContextManager,
-) : ContextPostRemoveEvent
+) : ContextPostEdgeRemoveEvent

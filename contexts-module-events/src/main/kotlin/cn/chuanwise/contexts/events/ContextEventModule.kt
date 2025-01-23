@@ -16,14 +16,14 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.ContextPostAddEvent
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPostExitEvent
-import cn.chuanwise.contexts.ContextPostRemoveEvent
-import cn.chuanwise.contexts.ContextPreAddEvent
-import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.ContextPreExitEvent
-import cn.chuanwise.contexts.ContextPreRemoveEvent
+import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
+import cn.chuanwise.contexts.context.ContextPostExitEvent
+import cn.chuanwise.contexts.context.ContextPostEdgeRemoveEvent
+import cn.chuanwise.contexts.context.ContextPreEdgeAddEvent
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.ContextPreExitEvent
+import cn.chuanwise.contexts.context.ContextPreEdgeRemoveEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
@@ -45,22 +45,22 @@ class ContextEventModuleImpl : ContextEventModule {
         event.addDependencyModuleClass<EventModule>()
     }
 
-    override fun onContextPreAdd(event: ContextPreAddEvent) {
+    override fun onContextEdgePreAdd(event: ContextPreEdgeAddEvent) {
         event.parent.eventPublisherOrNull?.publishToContext(event)
         event.child.eventPublisherOrNull?.publishToContext(event)
     }
 
-    override fun onContextPostAdd(event: ContextPostAddEvent) {
+    override fun onContextEdgePostAdd(event: ContextPostEdgeAddEvent) {
         event.parent.eventPublisherOrNull?.publishToContext(event)
         event.child.eventPublisherOrNull?.publishToContext(event)
     }
 
-    override fun onContextPreRemove(event: ContextPreRemoveEvent) {
+    override fun onContextEdgePreRemove(event: ContextPreEdgeRemoveEvent) {
         event.parent.eventPublisherOrNull?.publishToContext(event)
         event.child.eventPublisherOrNull?.publishToContext(event)
     }
 
-    override fun onContextPostRemove(event: ContextPostRemoveEvent) {
+    override fun onContextEdgePostRemove(event: ContextPostEdgeRemoveEvent) {
         event.parent.eventPublisherOrNull?.publishToContext(event)
         event.child.eventPublisherOrNull?.publishToContext(event)
     }

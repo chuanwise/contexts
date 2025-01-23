@@ -16,26 +16,24 @@
 
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.events.annotations.ListenerManager
-import cn.chuanwise.contexts.filters.FilterContext
 import cn.chuanwise.contexts.filters.FilterModule
 import cn.chuanwise.contexts.filters.filterManager
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
-import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 
 /**
  * 事件模块。
  *
- * 事件通过 [Beans.eventPublisher] 的 [EventPublisher.publish] 发布。
+ * 事件通过 [BeanFactory.eventPublisher] 的 [EventPublisher.publish] 发布。
  * 模块首先检查事件的类型，找到传播器 [EventProcessor]。若为特殊类型事件，例如 Bukkit
  * 的事件有不同优先级，则应当按照从高到低的顺序激活监听器。
  *
@@ -123,11 +121,11 @@ class EventModuleImpl @JvmOverloads constructor(
             try {
                 spread(currentContext, eventContext)
             } catch (e: Throwable) {
-                onExceptionOccurred(e, currentContext, eventContext)
+                onException(e, currentContext, eventContext)
             }
         }
 
-        protected abstract fun onExceptionOccurred(e: Throwable, currentContext: Context, eventContext: EventContext<T>)
+        protected abstract fun onException(e: Throwable, currentContext: Context, eventContext: EventContext<T>)
     }
 
     private inner class EventSpreaderImpl<T : Any>(
@@ -137,7 +135,7 @@ class EventModuleImpl @JvmOverloads constructor(
             eventSpreader.spread(currentContext, eventContext)
         }
 
-        override fun onExceptionOccurred(e: Throwable, currentContext: Context, eventContext: EventContext<T>) {
+        override fun onException(e: Throwable, currentContext: Context, eventContext: EventContext<T>) {
             currentContext.contextManager.logger.error(e) {
                 "Failed to spread event $eventContext with event spreader $eventSpreader. " +
                         "Details: " +
@@ -155,7 +153,7 @@ class EventModuleImpl @JvmOverloads constructor(
             eventSpreader.spread(currentContext, eventContext)
         }
 
-        override fun onExceptionOccurred(e: Throwable, currentContext: Context, eventContext: EventContext<T>) {
+        override fun onException(e: Throwable, currentContext: Context, eventContext: EventContext<T>) {
             currentContext.contextManager.logger.error(e) {
                 "Failed to spread event $eventContext with event spreader $eventSpreader. " +
                         "Details: " +
@@ -175,12 +173,12 @@ class EventModuleImpl @JvmOverloads constructor(
 
         private fun createEventContext(event: Any): EventContext<Any> {
             val filterContext = context.filterManager.filter(event)
-            val beans = InheritedMutableBeans(context).apply {
-                registerBean(filterContext, primary = true)
-                registerBean(event, primary = true)
+            val beans = InheritedMutableBeanFactory(context).apply {
+                addBean(filterContext, primary = true)
+                addBean(event, primary = true)
             }
             return EventContextImpl(event, context, beans, filterContext).apply {
-                beans.registerBean(this, primary = true)
+                beans.addBean(this, primary = true)
             }
         }
 
@@ -291,7 +289,7 @@ class EventModuleImpl @JvmOverloads constructor(
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val eventPublisher = EventPublisherImpl(event.context, defaultEventSpreader)
-        event.context.registerBean(eventPublisher)
+        event.context.addBean(eventPublisher)
     }
 
     override fun registerEventHandler(eventHandler: EventHandler): MutableEntry<EventHandler> {

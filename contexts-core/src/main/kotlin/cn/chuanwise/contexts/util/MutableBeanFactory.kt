@@ -19,18 +19,15 @@ package cn.chuanwise.contexts.util
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.locks.ReentrantLock
-import java.util.function.Supplier
-import kotlin.concurrent.withLock
 
 /**
- * 表示一个在 [Beans] 内的对象。
+ * 表示一个在 [BeanFactory] 内的对象。
  *
  * @param T 对象类型
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface MutableBean<T : Any> : Bean<T>, AutoCloseable {
+interface MutableBean<out T : Any> : Bean<T>, AutoCloseable {
     override val value: T
     override var keys: MutableSet<Any>?
 
@@ -50,7 +47,7 @@ interface MutableBean<T : Any> : Bean<T>, AutoCloseable {
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface MutableBeans : Beans {
+interface MutableBeanFactory : BeanFactory {
     override fun getBean(type: Type, primary: Boolean?, key: Any?): Bean<*>?
     override fun getBeanOrFail(type: Type, primary: Boolean?, key: Any?): Bean<*>
 
@@ -60,31 +57,17 @@ interface MutableBeans : Beans {
     override fun getBeans(type: Type): List<Bean<*>>
     override fun <T : Any> getBeans(beanClass: Class<T>): List<Bean<T>>
 
-    fun <T : Any> registerBean(value: T, keys: MutableSet<Any>, primary: Boolean = false): MutableBean<T>
-    fun <T : Any> registerBean(value: T, key: Any, primary: Boolean = false): MutableBean<T>
-    fun <T : Any> registerBean(value: T, primary: Boolean = false): MutableBean<T>
+    fun <T : Any> addBean(value: T, keys: MutableSet<Any>, primary: Boolean = false): MutableBean<T>
+    fun <T : Any> addBean(value: T, key: Any, primary: Boolean = false): MutableBean<T>
+    fun <T : Any> addBean(value: T, primary: Boolean = false): MutableBean<T>
 
-    fun <T : Any> registerBeans(values: Iterable<T>): List<Bean<T>> {
-        return values.map { registerBean(it) }
+    fun <T : Any> addBeans(values: Iterable<T>): List<Bean<T>> {
+        return values.map { addBean(it) }
     }
 }
 
-inline fun <reified T : Any> MutableBeans.getBean(): Bean<T>? {
-    return getBean(T::class.java)
-}
-inline fun <reified T : Any> MutableBeans.getBeanOrFail(): Bean<T> {
-    return getBeanOrFail(T::class.java)
-}
-
-inline fun <reified T : Any> MutableBeans.getBeanValue(): T? {
-    return getBeanValue(T::class.java)
-}
-inline fun <reified T : Any> MutableBeans.getBeanValueOrFail(): T {
-    return getBeanValueOrFail(T::class.java)
-}
-
 @ContextsInternalApi
-abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
+abstract class AbstractMutableBeanFactory : AbstractBeanFactory(), MutableBeanFactory {
     private abstract inner class AbstractMutableBean<T : Any>(
         override var keys: MutableSet<Any>?,
         override var isPrimary: Boolean,
@@ -109,15 +92,15 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
         }
     }
 
-    override fun <T : Any> registerBean(value: T, primary: Boolean): MutableBean<T> {
+    override fun <T : Any> addBean(value: T, primary: Boolean): MutableBean<T> {
         return LiteralMutableBeanImpl(value, null, primary).apply { registerBean(this) }
     }
 
-    override fun <T : Any> registerBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
+    override fun <T : Any> addBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
         return LiteralMutableBeanImpl(value, mutableSetOf(key), primary).apply { registerBean(this) }
     }
 
-    override fun <T : Any> registerBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
+    override fun <T : Any> addBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
         return LiteralMutableBeanImpl(value, keys, primary).apply { registerBean(this) }
     }
 
@@ -131,9 +114,9 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
             val bean = joint.beanClass.java.getInstanceOrFail()
             val keys = joint.keys.takeIf { it.isNotEmpty() }
             if (keys == null) {
-                registerBean(bean, primary = joint.primary)
+                addBean(bean, primary = joint.primary)
             } else {
-                registerBean(bean, keys = keys.toMutableSet(), primary = joint.primary)
+                addBean(bean, keys = keys.toMutableSet(), primary = joint.primary)
             }
         }
     }
@@ -141,7 +124,7 @@ abstract class AbstractMutableBeans : AbstractBeans(), MutableBeans {
 
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
-class MutableBeanImpl: AbstractMutableBeans() {
+class MutableBeanImpl: AbstractMutableBeanFactory() {
     private val beans = ConcurrentLinkedDeque<Bean<*>>()
 
     override fun registerBean(bean: MutableBean<*>) {

@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.bukkit.Plugin
 import cn.chuanwise.contexts.bukkit.player.createPlayerSession
 import cn.chuanwise.contexts.bukkit.task.Timer

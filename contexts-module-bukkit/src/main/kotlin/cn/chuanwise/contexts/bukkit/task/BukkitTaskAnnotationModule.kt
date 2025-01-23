@@ -16,17 +16,17 @@
 
 package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.annotations.ArgumentResolver
-import cn.chuanwise.contexts.annotations.ArgumentResolveContextImpl
-import cn.chuanwise.contexts.annotations.DefaultArgumentResolverFactory
-import cn.chuanwise.contexts.annotations.annotationModule
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.annotation.ArgumentResolver
+import cn.chuanwise.contexts.annotation.ArgumentResolveContextImpl
+import cn.chuanwise.contexts.annotation.DefaultArgumentResolverFactory
+import cn.chuanwise.contexts.annotation.annotationModule
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
 import kotlinx.coroutines.CoroutineScope
@@ -49,8 +49,8 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
         private val async: Boolean
     ) : Consumer<BukkitTask> {
         override fun accept(t: BukkitTask) {
-            val beans = InheritedMutableBeans(context).apply {
-                registerBean(t)
+            val beans = InheritedMutableBeanFactory(context).apply {
+                addBean(t)
             }
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
@@ -59,7 +59,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
                     try {
                         function.callSuspendByAndRethrowException(arguments)
                     } catch (e: Throwable) {
-                        onExceptionOccurred(e, t)
+                        onException(e, t)
                     }
                 }
 
@@ -88,12 +88,12 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
                 try {
                     function.callBy(arguments)
                 } catch (e: Throwable) {
-                    onExceptionOccurred(e, t)
+                    onException(e, t)
                 }
             }
         }
 
-        private fun onExceptionOccurred(e: Throwable, t: BukkitTask) {
+        private fun onException(e: Throwable, t: BukkitTask) {
             context.contextManager.logger.error(e) {
                 "Exception occurred when running timer by calling function ${function.name} " +
                         "declared in ${functionClass.simpleName}, and its bukkit task id is ${t.taskId}. " +
@@ -110,7 +110,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
         val annotationModule = event.contextManager.annotationModule
-        annotationModule.registerFunctionProcessor(Timer::class.java) {
+        annotationModule.registerAnnotationFunctionProcessor(Timer::class.java) {
             val function = it.function
             val functionClass = it.value::class.java
 

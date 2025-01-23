@@ -16,12 +16,12 @@
 
 package cn.chuanwise.contexts.bukkit.event
 
-import cn.chuanwise.contexts.Context
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_FILTER
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
+import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.Listener
-import cn.chuanwise.contexts.util.Beans
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
@@ -51,11 +51,11 @@ interface BukkitEventManager {
      */
     fun <T : Event> registerListener(
         eventClass: Class<T>,
-        priority: EventPriority = EventPriority.NORMAL,
-        ignoreCancelled: Boolean = false,
-        filter: Boolean = true,
-        intercept: Boolean = false,
-        listen: Boolean = false,
+        priority: EventPriority = DEFAULT_BUKKIT_EVENT_HANDLER_PRIORITY,
+        ignoreCancelled: Boolean = DEFAULT_BUKKIT_EVENT_HANDLER_IGNORE_CANCELLED,
+        filter: Boolean = DEFAULT_LISTENER_FILTER,
+        intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
+        listen: Boolean = DEFAULT_LISTENER_LISTEN,
         listener: Listener<T>
     ) : MutableEntry<Listener<T>>
 }

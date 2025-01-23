@@ -16,11 +16,7 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.events.annotations.Listener
-import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.inventory.ItemStack
-import java.util.function.Function
 
 /**
  * 快捷栏菜单按钮。

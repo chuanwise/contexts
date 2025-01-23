@@ -16,8 +16,8 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPostEnterEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.inventory.ItemStack
@@ -42,7 +42,7 @@ class FocusingHotBarItemImpl(
 
     @Listener
     fun ContextPostEnterEvent.onPostEnter(context: Context) {
-        context.registerBean(itemStack)
+        context.addBean(itemStack)
     }
 
     @Listener

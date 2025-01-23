@@ -16,13 +16,12 @@
 
 package cn.chuanwise.contexts.events.annotations
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.module.Module
-import cn.chuanwise.contexts.annotations.ArgumentResolver
-import cn.chuanwise.contexts.annotations.FunctionProcessor
-import cn.chuanwise.contexts.annotations.annotationModule
-import cn.chuanwise.contexts.ContextPreEnterEvent
-import cn.chuanwise.contexts.annotations.AnnotationModule
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
+import cn.chuanwise.contexts.annotation.AnnotationModule
+import cn.chuanwise.contexts.annotation.ArgumentResolver
+import cn.chuanwise.contexts.annotation.AnnotationFunctionProcessor
+import cn.chuanwise.contexts.annotation.annotationModule
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventHandler
 import cn.chuanwise.contexts.events.EventModule
@@ -30,12 +29,13 @@ import cn.chuanwise.contexts.events.EventSpreader
 import cn.chuanwise.contexts.events.eventModule
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.filters.filterManager
+import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePostDisableEvent
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.NotStableForInheritance
@@ -140,7 +140,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         listen: Boolean
     ) : AbstractListener<Any>(context, eventClass, filter, intercept, listen) {
         override fun onEvent0(eventContext: EventContext<Any>) {
-            val beans = InheritedMutableBeans(context, eventContext.beans)
+            val beans = InheritedMutableBeanFactory(context, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             if (function.isSuspend) {
@@ -149,7 +149,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                         function.callSuspendByAndRethrowException(arguments)
                         onEventPosted(eventContext)
                     } catch (e: Throwable) {
-                        onExceptionOccurred(e, eventContext)
+                        onException(e, eventContext)
                     }
                 }
 
@@ -171,12 +171,12 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                     function.callByAndRethrowException(arguments)
                     onEventPosted(eventContext)
                 } catch (e: Throwable) {
-                    onExceptionOccurred(e, eventContext)
+                    onException(e, eventContext)
                 }
             }
         }
 
-        private fun onExceptionOccurred(e: Throwable, eventContext: EventContext<Any>) {
+        private fun onException(e: Throwable, eventContext: EventContext<Any>) {
             context.contextManager.logger.error(e) {
                 "Exception occurred while processing event ${eventContext.event} by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
@@ -201,7 +201,8 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             listen: Boolean,
             listener: cn.chuanwise.contexts.events.Listener<T>
         ): MutableEntry<cn.chuanwise.contexts.events.Listener<T>> {
-            val finalListener = ListenerImpl(listener, context, eventClass, filter, intercept, listen) as AbstractListener<Any>
+            val finalListener =
+                ListenerImpl(listener, context, eventClass, filter, intercept, listen) as AbstractListener<Any>
             return listeners.add(finalListener) as MutableEntry<cn.chuanwise.contexts.events.Listener<T>>
         }
 
@@ -211,7 +212,8 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             listen: Boolean,
             listener: cn.chuanwise.contexts.events.Listener<T>
         ): MutableEntry<cn.chuanwise.contexts.events.Listener<T>> {
-            val finalListener = ListenerImpl(listener, context, eventClass = null, filter, intercept, listen) as AbstractListener<Any>
+            val finalListener =
+                ListenerImpl(listener, context, eventClass = null, filter, intercept, listen) as AbstractListener<Any>
             return listeners.add(finalListener) as MutableEntry<cn.chuanwise.contexts.events.Listener<T>>
         }
 
@@ -243,7 +245,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         val eventClass: Class<T>,
         val processor: ListenerFunctionProcessor<T>
     ) : ListenerFunctionProcessor<T> by processor {
-        fun safeProcess(context: ListenerFunctionProcessContext<T>) {
+        fun safeProcess(context: ListenerAnnotationFunctionProcessContext<T>) {
             try {
                 process(context)
             } catch (e: Throwable) {
@@ -268,11 +270,14 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val listenerManager = ListenerManagerImpl(event.context)
-        event.context.registerBean(listenerManager)
+        event.context.addBean(listenerManager)
     }
 
-    private lateinit var listenerFunctionProcessor: MutableEntry<FunctionProcessor<Listener>>
-    private lateinit var spreaderFunctionProcessor: MutableEntry<FunctionProcessor<Spreader>>
+    private lateinit var listenerAnnotationFunctionProcessor: MutableEntry<AnnotationFunctionProcessor<Listener>>
+    private lateinit var eventSpreaderAnnotationFunctionProcessor: MutableEntry<
+            AnnotationFunctionProcessor<cn.chuanwise.contexts.events.annotations.EventSpreader>
+            >
+
     private lateinit var eventHandler: MutableEntry<EventHandler>
 
     private class ReflectEventSpreaderImpl<T : Any>(
@@ -282,7 +287,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         val argumentResolvers: Map<KParameter, ArgumentResolver>
     ) : EventSpreader<T> {
         override fun spread(currentContext: Context, eventContext: EventContext<T>) {
-            val beans = InheritedMutableBeans(context, currentContext, eventContext.beans)
+            val beans = InheritedMutableBeanFactory(context, currentContext, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             if (function.isSuspend) {
@@ -290,7 +295,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                     try {
                         function.callSuspendByAndRethrowException(arguments)
                     } catch (e: Throwable) {
-                        onExceptionOccurred(e, eventContext)
+                        onException(e, eventContext)
                     }
                 }
 
@@ -311,12 +316,12 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 try {
                     function.callByAndRethrowException(arguments)
                 } catch (e: Throwable) {
-                    onExceptionOccurred(e, eventContext)
+                    onException(e, eventContext)
                 }
             }
         }
 
-        private fun onExceptionOccurred(e: Throwable, eventContext: EventContext<T>) {
+        private fun onException(e: Throwable, eventContext: EventContext<T>) {
             context.contextManager.logger.error(e) {
                 "Exception occurred while spreading event ${eventContext.event} by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
@@ -351,7 +356,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         eventHandler = eventModule.registerEventHandler(ListenerManagerEventHandlerImpl)
 
         val annotationModule = contextManager.annotationModule
-        listenerFunctionProcessor = annotationModule.registerFunctionProcessor(Listener::class.java) {
+        listenerAnnotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Listener::class.java) {
             val function = it.function
             val value = it.value
             val context = it.context
@@ -359,7 +364,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             val annotations = it.function.annotations
             for (annotation in annotations) {
                 if (ignoreListenerAnnotationClasses.any { cls -> cls.value.isInstance(annotation) }) {
-                    return@registerFunctionProcessor
+                    return@registerAnnotationFunctionProcessor
                 }
             }
 
@@ -373,9 +378,10 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
 
             for (entry in listenerFunctionProcessors) {
                 if (entry.value.eventClass.isAssignableFrom(eventClass)) {
-                    val listenerFunctionProcessContext = ListenerFunctionProcessContextImpl(eventClass, argumentResolvers, it)
-                    entry.value.safeProcess(listenerFunctionProcessContext as ListenerFunctionProcessContext<Any>)
-                    return@registerFunctionProcessor
+                    val listenerFunctionProcessContext =
+                        ListenerAnnotationFunctionProcessContextImpl(eventClass, argumentResolvers, it)
+                    entry.value.safeProcess(listenerFunctionProcessContext as ListenerAnnotationFunctionProcessContext<Any>)
+                    return@registerAnnotationFunctionProcessor
                 }
             }
 
@@ -387,7 +393,9 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             val listenerManager = context.listenerManager as ListenerManagerImpl
             listenerManager.registerListener(listener)
         }
-        spreaderFunctionProcessor = annotationModule.registerFunctionProcessor(Spreader::class.java) {
+        eventSpreaderAnnotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(
+            cn.chuanwise.contexts.events.annotations.EventSpreader::class.java
+        ) {
             val function = it.function
             val value = it.value
             val context = it.context
@@ -407,8 +415,8 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
     }
 
     override fun onModulePostDisable(event: ModulePostDisableEvent) {
-        listenerFunctionProcessor.remove()
-        spreaderFunctionProcessor.remove()
+        listenerAnnotationFunctionProcessor.remove()
+        eventSpreaderAnnotationFunctionProcessor.remove()
         eventHandler.remove()
     }
 }

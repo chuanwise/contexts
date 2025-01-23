@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotations
-
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.util.Beans
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+package cn.chuanwise.contexts.util
 
 /**
- * 反射管理器。
+ * 指定一个基于反射的挂起回调函数的协程作用域。
  *
+ * @property key 作用域的键
+ * @property runBlocking 如果找不到协程上下文，是否可以阻塞当前线程。
  * @author Chuanwise
  */
-interface AnnotationManager {
-    /**
-     * 上下文。
-     */
-    val context: Context
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class CoroutineScope(
+    val key: String = "",
+    val primary: Triple = Triple.NULL,
+    val runBlocking: Triple = Triple.NULL
+)
 
-    /**
-     * 扫描一个对象。
-     *
-     * @param value 对象
-     */
-    fun scan(value: Any)
-}
-
-val Beans.annotationManager: AnnotationManager get() = getBeanValueOrFail()
-val Beans.annotationManagerOrNull: AnnotationManager? get() = getBeanValue()

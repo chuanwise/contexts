@@ -16,13 +16,13 @@
 
 package cn.chuanwise.contexts.spigot
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextManager
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPostExitEvent
-import cn.chuanwise.contexts.ContextPreExitEvent
-import cn.chuanwise.contexts.annotations.createAnnotationModule
-import cn.chuanwise.contexts.createContextManager
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextManager
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
+import cn.chuanwise.contexts.context.ContextPostExitEvent
+import cn.chuanwise.contexts.context.ContextPreExitEvent
+import cn.chuanwise.contexts.annotation.createAnnotationModule
+import cn.chuanwise.contexts.context.createContextManager
 import cn.chuanwise.contexts.events.annotations.Event
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.events.annotations.createEventAnnotationModule

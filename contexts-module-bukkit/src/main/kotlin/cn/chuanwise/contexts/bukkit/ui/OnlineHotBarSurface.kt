@@ -16,13 +16,12 @@
 
 package cn.chuanwise.contexts.bukkit.ui
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPostEnterEvent
-import cn.chuanwise.contexts.ContextPreExitEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPostEnterEvent
+import cn.chuanwise.contexts.context.ContextPreExitEvent
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.annotations.Listener
-import cn.chuanwise.contexts.events.annotations.Spreader
-import cn.chuanwise.contexts.events.annotations.listenerManager
+import cn.chuanwise.contexts.events.annotations.EventSpreader
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.entity.Player
@@ -118,12 +117,12 @@ class OnlineHotBarSurfaceImpl(
         override val surface: OnlineHotBarSurface get() = this@OnlineHotBarSurfaceImpl
     }
 
-    private inner class OnlineOnlineHotBarSurfaceButtonFocusStatusChangedEvent(
+    private inner class OnlineHotBarSurfaceFocusStatusChangedEventImpl(
         override val focusStatus: Boolean
     ) : AbstractOnlineHotBarSurfaceEvent(), OnlineHotBarSurfaceFocusStatusChangedEvent
 
-    private val hotBarMenuButtonFocusStatusChangedToFalseEvent = OnlineOnlineHotBarSurfaceButtonFocusStatusChangedEvent(false)
-    private val hotBarMenuButtonFocusStatusChangedToTrueEvent = OnlineOnlineHotBarSurfaceButtonFocusStatusChangedEvent(true)
+    private val hotBarSurfaceItemFocusStatusChangedToFalseEvent = OnlineHotBarSurfaceFocusStatusChangedEventImpl(false)
+    private val hotBarSurfaceItemFocusStatusChangedToTrueEvent = OnlineHotBarSurfaceFocusStatusChangedEventImpl(true)
 
     private fun getButtonContext(button: HotBarItem): Context {
         return mutableButtonContexts.computeIfAbsent(button) {
@@ -153,7 +152,7 @@ class OnlineHotBarSurfaceImpl(
         mutableFocusedItem = focusedItem
 
         val buttonContext = getButtonContext(focusedItem)
-        buttonContext.eventPublisher.publishToContext(hotBarMenuButtonFocusStatusChangedToTrueEvent)
+        buttonContext.eventPublisher.publishToContext(hotBarSurfaceItemFocusStatusChangedToTrueEvent)
     }
 
     @Listener
@@ -163,7 +162,7 @@ class OnlineHotBarSurfaceImpl(
         // 向当前的按钮发送退出事件。
         mutableFocusedItem?.let {
             val buttonContext = getButtonContext(it)
-            buttonContext.eventPublisher.publishToContext(hotBarMenuButtonFocusStatusChangedToFalseEvent)
+            buttonContext.eventPublisher.publishToContext(hotBarSurfaceItemFocusStatusChangedToFalseEvent)
         }
         mutableFocusedItem = null
 
@@ -193,20 +192,21 @@ class OnlineHotBarSurfaceImpl(
         // 向原来的按钮发送聚焦改变为 False 事件。
         if (previouslyFocusedItem != null) {
             getButtonContext(previouslyFocusedItem).eventPublisher.publishToContext(
-                hotBarMenuButtonFocusStatusChangedToFalseEvent
+                hotBarSurfaceItemFocusStatusChangedToFalseEvent
             )
         }
 
         mutableFocusedItem = currentlyFocusedItem
 
         // 向新的按钮发送聚焦改变为 True 事件。
-        getButtonContext(currentlyFocusedItem).eventPublisher.publishToContext(hotBarMenuButtonFocusStatusChangedToTrueEvent)
+        getButtonContext(currentlyFocusedItem).eventPublisher.publishToContext(hotBarSurfaceItemFocusStatusChangedToTrueEvent)
     }
 
-    @Spreader
+    @EventSpreader
     fun PlayerEvent.spread(eventContext: EventContext<PlayerEvent>) {
         // 只把事件发给当前正在聚焦的按钮上。
         focusedItemContext.eventPublisher.publish(eventContext)
+        eventContext.context.children.randomOrNull()
     }
 
     override fun close() {

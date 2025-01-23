@@ -14,36 +14,29 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.annotation
 
+import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 
 /**
- * 上下文添加事件。
+ * 对象解析上下文。
  *
  * @author Chuanwise
  */
-interface ContextAddEvent : ContextEvent {
-    val parent: Context
-    val child: Context
-    val isEntering: Boolean
+interface ArgumentResolveContext {
+    val functionClass: Class<*>
+    val function: KFunction<*>
+    val parameter: KParameter
+    val context: Context
 }
 
-interface ContextPreAddEvent: ContextAddEvent
-interface ContextPostAddEvent: ContextAddEvent
-
 @ContextsInternalApi
-data class ContextPreAddEventImpl(
-    override val parent: Context,
-    override val child: Context,
-    override val isEntering: Boolean,
-    override val contextManager: ContextManager
-) : ContextPreAddEvent
-
-@ContextsInternalApi
-data class ContextPostAddEventImpl(
-    override val parent: Context,
-    override val child: Context,
-    override val isEntering: Boolean,
-    override val contextManager: ContextManager
-) : ContextPostAddEvent
+class ArgumentResolveContextImpl(
+    override val functionClass: Class<*>,
+    override val function: KFunction<*>,
+    override val parameter: KParameter,
+    override val context: Context
+) : ArgumentResolveContext

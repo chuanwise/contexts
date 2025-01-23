@@ -17,12 +17,12 @@
 package cn.chuanwise.contexts.util
 
 @ContextsInternalApi
-class InheritedMutableBeans(
-    private val parents: Iterable<Beans>,
-    val beans: AbstractMutableBeans = MutableBeanImpl()
-): AbstractMutableBeans() {
-    constructor(parent: Beans) : this(listOf(parent))
-    constructor(vararg parents: Beans) : this(parents.toList())
+class InheritedMutableBeanFactory(
+    private val parents: Iterable<BeanFactory>,
+    val beans: AbstractMutableBeanFactory = MutableBeanImpl()
+): AbstractMutableBeanFactory() {
+    constructor(parent: BeanFactory) : this(listOf(parent))
+    constructor(vararg parents: BeanFactory) : this(parents.toList())
 
     override fun registerBean(bean: MutableBean<*>) {
         beans.registerBean(bean)

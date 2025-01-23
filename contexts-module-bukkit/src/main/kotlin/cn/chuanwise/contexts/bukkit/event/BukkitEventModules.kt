@@ -17,9 +17,9 @@
 @file:JvmName("BukkitEventModules")
 package cn.chuanwise.contexts.bukkit.event
 
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-val Beans.bukkitEventModule: BukkitEventModule get() = getBeanValueOrFail()
-val Beans.bukkitEventModuleOrNull: BukkitEventModule? get() = getBeanValue()
+val BeanFactory.bukkitEventModule: BukkitEventModule get() = getBeanValueOrFail()
+val BeanFactory.bukkitEventModuleOrNull: BukkitEventModule? get() = getBeanValue()

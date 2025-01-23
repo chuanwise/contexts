@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.Bean
-import cn.chuanwise.contexts.util.Beans
+import cn.chuanwise.contexts.util.BeanFactory
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.MutableBeanFactory
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
 import cn.chuanwise.contexts.util.add
@@ -31,12 +31,43 @@ import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
 import cn.chuanwise.contexts.util.withLocks
 import java.lang.reflect.Type
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * 上下文，是一个存储数据和函数的、具有生命周期的对象。
+ *
+ * 上下文通常和具体的实体关联在一起，并绑定和这些实体相关的对象（如监听器），
+ * 以实现各种对象生命周期的自动管理。例如：
+ *
+ * 1. 表示一个系统用户的上下文，其将在用户上线时进入，下线时退出。
+ * 2. 表示一个协作编辑会话，其将在协作开始时进入，结束时退出。每一个协作用户的上下文都是其子上下文。
+ *
+ * 通过在进入上下文时创建资源，在退出上下文时销毁资源，可以实现资源的自动管理。
+ *
+ * ## 生命周期
+ *
+ * 上下文的生命周期有三个阶段：
+ *
+ * 1. 初始化：对应的事件是 [ContextInitEvent]，**只有**模块可以监听此事件。只能注册上下文对象，
+ *    其他操作将会抛出异常。
+ * 2. 进入：对应的事件是 [ContextPreEnterEvent] 和 [ContextPostEnterEvent]。上下文对象可以收到这些事件。
+ * 3. 退出：对应的事件是 [ContextPreExitEvent] 和 [ContextPostExitEvent]。上下文对象可以收到这些事件。
+ *
+ * **注意**：如果通过 [enterChild] 进入子上下文，那么在进入其之前，上下文还没有将其和父上下文连接，
+ * 故如果监听 [ContextPreEnterEvent]，不能获取父上下文中的对象，否则会执行时出现异常。类似地，如果在
+ * [ContextPostExitEvent] 中获取父上下文中的对象，也会出现异常，因为那时上下文的父子关系全部被解除。
+ * 因此一般建议监听 [ContextPostEnterEvent] 和 [ContextPreExitEvent]。
+ *
+ * @author Chuanwise
+ */
 @NotStableForInheritance
-interface Context : MutableBeans, AutoCloseable {
+interface Context : MutableBeanFactory, AutoCloseable {
     val key: Any?
     val contextManager: ContextManager
+
+    val isInitialized: Boolean
+    val isEntered: Boolean
+    val isExited: Boolean
 
     val parents: List<Context>
     val parentCount: Int
@@ -190,11 +221,6 @@ interface Context : MutableBeans, AutoCloseable {
      */
     fun exit()
 
-    /**
-     * 检查是否已经退出。
-     */
-    val isExited: Boolean
-
     override fun close() = exit()
 }
 
@@ -231,15 +257,15 @@ class ContextImpl(
     override val contextManager: ContextManagerImpl,
     override val key: Any?,
 ) : AbstractContext() {
-    private inner class AllParentIterable : Iterable<Beans> {
-        override fun iterator(): Iterator<Beans> {
+    private inner class AllParentIterable : Iterable<BeanFactory> {
+        override fun iterator(): Iterator<BeanFactory> {
             return sequence {
                 yieldAll(createChildToParentTopologicalIteratorInAllParents())
                 yield(contextManager)
             }.iterator()
         }
     }
-    private val beans: InheritedMutableBeans = InheritedMutableBeans(AllParentIterable())
+    private val beans: InheritedMutableBeanFactory = InheritedMutableBeanFactory(AllParentIterable())
     private val lock = ReadWriteLockBasedReadAddRemoveLock()
 
     private val mutableParents: MutableCollection<ContextImpl> = mutableListOf()
@@ -293,10 +319,16 @@ class ContextImpl(
     override val contextBeanValues: List<*> get() = beans.beans.getBeanValues(Any::class.java)
     override val contextBeans: List<MutableBean<*>> get() = beans.beans.getBeans(Any::class.java) as List<MutableBean<Any>>
 
-    private val exitLock = AtomicBoolean(false)
-    override val isExited: Boolean get() = exitLock.get()
+    private enum class State {
+        INITIALIZED, ENTERED, EXITED
+    }
 
-    private val contextBean = registerBean(this)
+    private val state = AtomicReference(State.INITIALIZED)
+    override val isExited: Boolean get() = state.get() == State.EXITED
+    override val isInitialized: Boolean get() = state.get() == State.INITIALIZED
+    override val isEntered: Boolean get() = state.get() == State.ENTERED
+
+    private val contextBean = addBean(this)
 
     override fun getChildByKey(key: Any): Context? = lock.read {
         mutableChildrenByKey[key]
@@ -352,7 +384,7 @@ class ContextImpl(
             return false
         }
 
-        val contextPreAddEvent = ContextPreAddEventImpl(parent, child, enter, contextManager)
+        val contextPreAddEvent = ContextPreEdgeAddEventImpl(parent, child, enter, contextManager)
         if (childKey != null || parentKey != null) {
             if (replace) {
                 val oldChild = childKey?.let { parent.mutableChildrenByKey[it] }
@@ -387,7 +419,7 @@ class ContextImpl(
         parent.mutableChildren.add(child)
         child.mutableParents.add(parent)
 
-        val contextPostAddEvent = ContextPostAddEventImpl(parent, child, enter, contextManager)
+        val contextPostAddEvent = ContextPostEdgeAddEventImpl(parent, child, enter, contextManager)
         contextManager.onContextPostAdd(contextPostAddEvent)
         return true
     }
@@ -404,7 +436,7 @@ class ContextImpl(
 
         if (childKey != null || parentKey != null) {
             if (childKey != null) {
-                val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
+                val contextPreRemoveEvent = ContextPreEdgeRemoveEventImpl(parent, child, null, exit, contextManager)
                 contextManager.onContextPreRemove(contextPreRemoveEvent)
 
                 // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
@@ -412,7 +444,7 @@ class ContextImpl(
                 check(removedChild === child || removedChild == null)
             }
             if (parentKey != null) {
-                val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
+                val contextPreRemoveEvent = ContextPreEdgeRemoveEventImpl(parent, child, null, exit, contextManager)
                 contextManager.onContextPreRemove(contextPreRemoveEvent)
 
                 // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
@@ -420,14 +452,14 @@ class ContextImpl(
                 check(removedParent === parent || removedParent == null)
             }
         } else {
-            val contextPreRemoveEvent = ContextPreRemoveEventImpl(parent, child, null, exit, contextManager)
+            val contextPreRemoveEvent = ContextPreEdgeRemoveEventImpl(parent, child, null, exit, contextManager)
             contextManager.onContextPreRemove(contextPreRemoveEvent)
         }
 
         // 前面虽然检查了状态，但是因为可能 alsoExitChildIfItWillBeRoot，使得此处不一定能 remove 掉。
         // 如果能的话再发事件，否则事件已经在此之前发布过了，就不再发送了。
         if (parent.mutableChildren.remove(child) && child.mutableParents.remove(parent)) {
-            val contextPostRemoveEvent = ContextPostRemoveEventImpl(parent, child, null, exit, contextManager)
+            val contextPostRemoveEvent = ContextPostEdgeRemoveEventImpl(parent, child, null, exit, contextManager)
             contextManager.onContextPostRemove(contextPostRemoveEvent)
         }
         return true
@@ -435,9 +467,12 @@ class ContextImpl(
 
     private fun doEnterChild(child: Iterable<Any>, key: Any?, replace: Boolean): Context? {
         checkNotExited()
+
         val context = ContextImpl(contextManager, key).apply {
-            registerBeans(child)
+            addBeans(child)
         }
+        val contextInitEvent = ContextInitEventImpl(context, contextManager)
+        contextManager.onContextInit(contextInitEvent)
 
         listOf(lock, context.lock).add {
             val contextPreEnterEvent = ContextPreEnterEventImpl(context, contextManager)
@@ -501,7 +536,7 @@ class ContextImpl(
     override fun removeParent(parent: Context): Boolean = parent.removeChild(this)
 
     override fun exit() {
-        if (exitLock.compareAndSet(false, true)) {
+        if (state.compareAndSet(State.ENTERED, State.EXITED)) {
             // 不加 addLock 的原因是在 exitLock = true 的时候其他线程不可能对他 add。
 
             val contextPreExitEvent = ContextPreExitEventImpl(this, contextManager)
@@ -554,16 +589,16 @@ class ContextImpl(
         return beans.getBeans(beanClass)
     }
 
-    override fun <T : Any> registerBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
-        return beans.registerBean(value, keys, primary)
+    override fun <T : Any> addBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
+        return beans.addBean(value, keys, primary)
     }
 
-    override fun <T : Any> registerBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
-        return beans.registerBean(value, key, primary)
+    override fun <T : Any> addBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
+        return beans.addBean(value, key, primary)
     }
 
-    override fun <T : Any> registerBean(value: T, primary: Boolean): MutableBean<T> {
-        return beans.registerBean(value, primary)
+    override fun <T : Any> addBean(value: T, primary: Boolean): MutableBean<T> {
+        return beans.addBean(value, primary)
     }
 
     override fun getBeanValue(type: Type, primary: Boolean?, key: Any?): Any? {

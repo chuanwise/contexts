@@ -16,14 +16,14 @@
 
 package cn.chuanwise.contexts.filters
 
-import cn.chuanwise.contexts.Context
-import cn.chuanwise.contexts.ContextPostAddEvent
-import cn.chuanwise.contexts.ContextPreEnterEvent
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
+import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeans
+import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
 import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.MutableBeanFactory
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 
@@ -54,10 +54,10 @@ class FilterModuleImpl : FilterModule {
                 } else {
                     val resolverBeanLocal = resolverBean
                     if (resolverBeanLocal == null) {
-                        context.registerBean(value).let { resolverBean = it }
+                        context.addBean(value).let { resolverBean = it }
                     } else if (value != resolverBeanLocal.value) {
                         resolverBeanLocal.remove()
-                        context.registerBean(value).let { resolverBean = it }
+                        context.addBean(value).let { resolverBean = it }
                     }
                 }
             }
@@ -105,16 +105,16 @@ class FilterModuleImpl : FilterModule {
         class FilterContextImpl<T : Any>(
             override val value: T,
             override val context: Context,
-            override val beans: MutableBeans,
+            override val beans: MutableBeanFactory,
             override val caches: MutableMap<Filter<T>, Boolean?> = mutableMapOf(),
             override var result: Boolean? = null
         ) : FilterContext<T>
 
         override fun <T : Any> filter(value: T): FilterContext<T> {
-            val beans = InheritedMutableBeans(context).apply {
-                registerBean(value, primary = true)
+            val beans = InheritedMutableBeanFactory(context).apply {
+                addBean(value, primary = true)
             }
-            val context = FilterContextImpl(value, context, beans).apply { beans.registerBean(this) }
+            val context = FilterContextImpl(value, context, beans).apply { beans.addBean(this) }
             return filter(context)
         }
 
@@ -164,10 +164,10 @@ class FilterModuleImpl : FilterModule {
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val filterManager = FilterManagerImpl(event.context)
-        event.context.registerBean(filterManager)
+        event.context.addBean(filterManager)
     }
 
-    override fun onContextPostAdd(event: ContextPostAddEvent) {
+    override fun onContextEdgePostAdd(event: ContextPostEdgeAddEvent) {
         val filterManager = event.child.filterManagerOrNull ?: return
         if (event.child.allParentCount > 1) {
             check(filterManager.resolver != null) {

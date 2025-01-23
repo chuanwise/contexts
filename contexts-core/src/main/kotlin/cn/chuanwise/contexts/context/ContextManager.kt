@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts
+package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModuleEntry
@@ -27,7 +27,7 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Logger
 import cn.chuanwise.contexts.util.MutableBean
 import cn.chuanwise.contexts.util.MutableBeanImpl
-import cn.chuanwise.contexts.util.MutableBeans
+import cn.chuanwise.contexts.util.MutableBeanFactory
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @see createContextManager
  */
 @NotStableForInheritance
-interface ContextManager : MutableBeans, AutoCloseable {
+interface ContextManager : MutableBeanFactory, AutoCloseable {
     /**
      * 日志记录器。
      */
@@ -134,8 +134,8 @@ interface ContextManager : MutableBeans, AutoCloseable {
 @ContextsInternalApi
 class ContextManagerImpl(
     override val logger: Logger,
-    private val beans: MutableBeans = MutableBeanImpl()
-) : ContextManager, MutableBeans by beans {
+    private val beans: MutableBeanFactory = MutableBeanImpl()
+) : ContextManager, MutableBeanFactory by beans {
     private val mutableContexts: MutableList<Context> = CopyOnWriteArrayList()
     override val contexts: List<Context> get() = mutableContexts
     override val roots: List<Context> get() = mutableContexts.filter { it.allParentCount <= 0 }
@@ -184,7 +184,7 @@ class ContextManagerImpl(
             try {
                 val event = ModulePostEnableEventImpl(id, value, this@ContextManagerImpl)
                 value.onModulePostEnable(event)
-                bean = beans.registerBean(value)
+                bean = beans.addBean(value)
             } catch (e: Throwable) {
                 tryEnableLock.set(false)
             }
@@ -367,7 +367,7 @@ class ContextManagerImpl(
 
     override fun enterRoot(context: Iterable<Any>, key: Any?): Context {
         val newContext = ContextImpl(this, key).apply {
-            registerBeans(context)
+            addBeans(context)
         }
 
         val contextPreEnterEvent = ContextPreEnterEventImpl(newContext, this)
@@ -424,13 +424,27 @@ class ContextManagerImpl(
         }
     }
 
-    fun onContextPreAdd(event: ContextPreAddEvent) = onPreEvent { it.onContextPreAdd(event) }
-    fun onContextPostAdd(event: ContextPostAddEvent) = onPostEvent(event) { it.onContextPostAdd(event) }
+    fun onContextPreAdd(event: ContextPreEdgeAddEvent) {
+        onPreEvent {
+            it.onContextEdgePreAdd(event)
+        }
+    }
+    fun onContextPostAdd(event: ContextPostEdgeAddEvent) {
+        onPostEvent(event) {
+            it.onContextEdgePostAdd(event)
+        }
+    }
 
-    fun onContextPostRemove(event: ContextPostRemoveEvent) = onPostEvent(event) { it.onContextPostRemove(event) }
-    fun onContextPreRemove(event: ContextPreRemoveEvent) {
+    fun onContextPostRemove(event: ContextPostEdgeRemoveEvent) {
+        onPostEvent(event) {
+            it.onContextEdgePostRemove(event)
+        }
+    }
+    fun onContextPreRemove(event: ContextPreEdgeRemoveEvent) {
         try {
-            onPreEvent { it.onContextPreRemove(event) }
+            onPreEvent {
+                it.onContextEdgePreRemove(event)
+            }
         } finally {
             // event.child.parentCount == 1 的原因是此时还没有真正移除，所以 parentCount 还是 1。
             if (event.child.allParentCount == 1 && event.exitChildIfItWillBeRoot) {
@@ -439,15 +453,31 @@ class ContextManagerImpl(
         }
     }
 
-    fun onContextPreEnter(event: ContextPreEnterEvent) = onPreEvent { it.onContextPreEnter(event) }
+    fun onContextPreEnter(event: ContextPreEnterEvent) {
+        onPreEvent {
+            it.onContextPreEnter(event)
+        }
+    }
     fun onContextPostEnter(event: ContextPostEnterEvent) {
         mutableContexts.add(event.context)
         onPostEvent(event) { it.onContextPostEnter(event) }
     }
 
-    fun onContextPreExit(event: ContextPreExitEvent) = onPreEvent { it.onContextPreExit(event) }
+    fun onContextPreExit(event: ContextPreExitEvent) {
+        onPreEvent {
+            it.onContextPreExit(event)
+        }
+    }
     fun onContextPostExit(event: ContextPostExitEvent) {
         mutableContexts.remove(event.context)
-        onPostEvent(event) { it.onContextPostExit(event) }
+        onPostEvent(event) {
+            it.onContextPostExit(event)
+        }
+    }
+
+    fun onContextInit(event: ContextInitEvent) {
+        onPreEvent {
+            it.onContextInit(event)
+        }
     }
 }
