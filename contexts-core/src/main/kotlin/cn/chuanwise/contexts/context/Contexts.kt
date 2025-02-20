@@ -19,10 +19,12 @@
 package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.TopologicalIterator
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
+import cn.chuanwise.contexts.util.createResolvableType
 import cn.chuanwise.contexts.util.getBean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -31,6 +33,35 @@ import java.util.function.Consumer
 import java.util.function.Function
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.typeOf
+
+inline fun <reified T> Context.getChildByBean(bean: T, id: String? = null, primary: Boolean? = null): Context? {
+    return getChildByBean(bean, createResolvableType<T>(), id, primary)
+}
+inline fun <reified T> Context.getChildByBeanOrFail(bean: T, id: String? = null, primary: Boolean? = null): Context {
+    return getChildByBeanOrFail(bean, createResolvableType<T>(), id, primary)
+}
+
+inline fun <reified T> Context.getParentByBean(bean: T, id: String? = null, primary: Boolean? = null): Context? {
+    return getParentByBean(bean, createResolvableType<T>(), id, primary)
+}
+inline fun <reified T> Context.getParentByBeanOrFail(bean: T, id: String? = null, primary: Boolean? = null): Context {
+    return getParentByBeanOrFail(bean, createResolvableType<T>(), id, primary)
+}
+
+inline fun <reified T> Context.getParentByBeanType(id: String? = null, primary: Boolean? = null): Context? {
+    return getParentByBeanType(createResolvableType<T>(), id, primary)
+}
+inline fun <reified T> Context.getParentByBeanTypeOrFail(id: String? = null, primary: Boolean? = null): Context {
+    return getParentByBeanTypeOrFail(createResolvableType<T>(), id, primary)
+}
+
+inline fun <reified T> Context.getChildByBeanType(id: String? = null, primary: Boolean? = null): Context? {
+    return getChildByBeanType(createResolvableType<T>(), id, primary)
+}
+inline fun <reified T> Context.getChildByBeanTypeOrFail(id: String? = null, primary: Boolean? = null): Context {
+    return getChildByBeanTypeOrFail(createResolvableType<T>(), id, primary)
+}
 
 private fun Set<Context>.buildParentNeighbors(): Map<Context, List<Context>> {
     return associateWith {

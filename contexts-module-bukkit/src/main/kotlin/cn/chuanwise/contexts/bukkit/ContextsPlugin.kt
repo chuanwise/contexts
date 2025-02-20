@@ -31,6 +31,7 @@ import cn.chuanwise.contexts.events.createEventModule
 import cn.chuanwise.contexts.filters.annotations.createFilterAnnotationModule
 import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.addBean
 import cn.chuanwise.contexts.util.createJavaLogger
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.logging.Level

@@ -34,7 +34,9 @@ import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
@@ -86,7 +88,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         val listen: Boolean
     ) : Listener<T> {
         override fun listen(eventContext: EventContext<T>) {
-            val priority = eventContext.beans.getBeanValueOrFail<EventPriority>()
+            val priority = eventContext.beans.getBeanOrFail<EventPriority>()
             if (this.priority != priority) {
                 return
             }

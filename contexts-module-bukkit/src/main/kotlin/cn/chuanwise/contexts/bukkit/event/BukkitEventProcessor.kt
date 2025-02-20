@@ -20,6 +20,7 @@ import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventProcessor
 import cn.chuanwise.contexts.events.eventPublisher
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.addBean
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 

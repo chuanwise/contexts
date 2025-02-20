@@ -25,7 +25,6 @@ import cn.chuanwise.contexts.events.Listener
 import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValueOrFail
 
 /**
  * 监听器管理器。
@@ -72,6 +71,3 @@ interface ListenerManager {
     @ContextsInternalApi
     fun publishToContext(eventContext: EventContext<Any>)
 }
-
-val BeanManager.listenerManager: ListenerManager get() = getBeanValueOrFail()
-val BeanManager.listenerManagerOrNull: ListenerManager? get() = getBean()

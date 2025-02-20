@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-@file:JvmName("PlayerSessionFactory")
-package cn.chuanwise.contexts.bukkit.player
+@file:JvmName("ListenerManagers")
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import org.bukkit.entity.Player
-import java.util.UUID
+package cn.chuanwise.contexts.events.annotations
 
-@OptIn(ContextsInternalApi::class)
-fun createPlayerSession(player: Player): PlayerSession = PlayerSessionImpl(player)
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
+
+val BeanManager.listenerManager: ListenerManager get() = getBeanOrFail()
+val BeanManager.listenerManagerOrNull: ListenerManager? get() = getBean()

@@ -18,7 +18,8 @@
 package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.util.BeanManager
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
-val BeanManager.eventModule: EventModule get() = getBeanValueOrFail()
+val BeanManager.eventModule: EventModule get() = getBeanOrFail()
 val BeanManager.eventModuleOrNull: EventModule? get() = getBean()

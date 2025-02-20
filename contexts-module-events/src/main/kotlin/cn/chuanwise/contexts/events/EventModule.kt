@@ -29,6 +29,7 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
+import cn.chuanwise.contexts.util.addBean
 
 /**
  * 事件模块。

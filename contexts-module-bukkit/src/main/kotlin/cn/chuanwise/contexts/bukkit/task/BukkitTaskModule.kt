@@ -22,7 +22,8 @@ import cn.chuanwise.contexts.context.ContextPreExitEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
 import java.util.concurrent.CompletableFuture
@@ -92,7 +93,7 @@ class BukkitTaskModuleImpl @JvmOverloads constructor(
     }
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
-        mutablePlugin = event.contextManager.getBeanValueOrFail()
+        mutablePlugin = event.contextManager.getBeanOrFail()
     }
 
     override fun onContextPreExit(event: ContextPreExitEvent) {

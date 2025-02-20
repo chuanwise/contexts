@@ -23,11 +23,12 @@ import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.Listener
 import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.getBeanOrFail
+import cn.chuanwise.contexts.util.getBean
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
-val BeanManager.bukkitEventManager: BukkitEventManager get() = getBeanValueOrFail()
+val BeanManager.bukkitEventManager: BukkitEventManager get() = getBeanOrFail()
 val BeanManager.bukkitEventManagerOrNull: BukkitEventManager? get() = getBean()
 
 inline fun <reified T : Event> BukkitEventManager.registerListener(

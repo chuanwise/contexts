@@ -18,7 +18,8 @@
 package cn.chuanwise.contexts.events.annotations
 
 import cn.chuanwise.contexts.util.BeanManager
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
-val BeanManager.eventAnnotationModule: EventAnnotationModule get() = getBeanValueOrFail()
+val BeanManager.eventAnnotationModule: EventAnnotationModule get() = getBeanOrFail()
 val BeanManager.eventAnnotationModuleOrNull: EventAnnotationModule? get() = getBean()

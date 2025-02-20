@@ -20,6 +20,9 @@ import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.bukkit.Plugin
 import cn.chuanwise.contexts.bukkit.player.createPlayerSession
 import cn.chuanwise.contexts.bukkit.task.Timer
+import cn.chuanwise.contexts.context.getChildByBean
+import cn.chuanwise.contexts.context.getChildByBeanType
+import cn.chuanwise.contexts.context.getParentByBeanTypeOrFail
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.Color
@@ -61,7 +64,7 @@ object HotBarTestMenuCommand : CommandExecutor {
         @EventHandler(ignoreCancelled = true)
         fun PlayerInteractEvent.onInteract(context: Context) {
             println("QUIT clicked, goodbye!")
-            context.getParentByBeanClass(OnlineHotBarSurface::class.java)!!.exit()
+            context.getParentByBeanTypeOrFail<OnlineHotBarSurface>().exit()
         }
     }
 
@@ -102,9 +105,9 @@ object HotBarTestMenuCommand : CommandExecutor {
         }
 
         val playerContext = Plugin.pluginContext.getChildByBean(sender)
-            ?: Plugin.pluginContext.enterChild(createPlayerSession(sender), key = "Player[${sender.name}]")
+            ?: Plugin.pluginContext.enterChild(createPlayerSession(sender), id = "Player[${sender.name}]")
 
-        var onlineHotBarSurfaceContext = playerContext.getChildByBeanClass(OnlineHotBarSurface::class.java)
+        var onlineHotBarSurfaceContext = playerContext.getChildByBeanType<OnlineHotBarSurface>()
         if (onlineHotBarSurfaceContext != null) {
             onlineHotBarSurfaceContext.exit()
             return
@@ -112,7 +115,8 @@ object HotBarTestMenuCommand : CommandExecutor {
 
         onlineHotBarSurfaceContext = playerContext.enterChild(createOnlineHotBarMenu(
             generateButtons()
-        ), key = "HotBarMenu[${sender.name}]")
+        ), id = "HotBarMenu[${sender.name}]")
+
         sender.sendMessage("Hot bar menu opened.")
     }
 }

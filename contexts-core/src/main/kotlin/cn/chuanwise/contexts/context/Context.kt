@@ -19,7 +19,6 @@ package cn.chuanwise.contexts.context
 import cn.chuanwise.contexts.util.AbstractInheritedMutableBeanManager
 import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableBeanEntry
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
@@ -30,7 +29,6 @@ import cn.chuanwise.contexts.util.addBean
 import cn.chuanwise.contexts.util.addBeans
 import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
-import cn.chuanwise.contexts.util.getBeans
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
 import cn.chuanwise.contexts.util.withLocks
@@ -111,14 +109,14 @@ interface Context : MutableBeanManager, AutoCloseable {
     fun isParent(context: Context): Boolean
     fun isChild(context: Context): Boolean
 
-    fun getChildById(key: Any): Context?
-    fun getChildByIdOrFail(key: Any): Context {
-        return getChildById(key) ?: throw NoSuchElementException("Cannot find child with key $key.")
+    fun getChildById(id: Any): Context?
+    fun getChildByIdOrFail(id: Any): Context {
+        return getChildById(id) ?: throw NoSuchElementException("Cannot find child with key $id.")
     }
 
-    fun getParentById(key: Any): Context?
-    fun getParentByIdOrFail(key: Any): Context {
-        return getParentById(key) ?: throw NoSuchElementException("Cannot find parent with key $key.")
+    fun getParentById(id: Any): Context?
+    fun getParentByIdOrFail(id: Any): Context {
+        return getParentById(id) ?: throw NoSuchElementException("Cannot find parent with key $id.")
     }
 
     /**
@@ -129,15 +127,21 @@ interface Context : MutableBeanManager, AutoCloseable {
      * @return 子上下文
      */
     fun <T> getChildByBean(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
-    fun <T> getChildByBean(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getChildByBeanOrFail(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context
+
+    fun <T> getChildByBeanType(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getChildByBeanTypeOrFail(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context
 
     fun <T> getParentByBean(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
-    fun <T> getParentByBean(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getParentByBeanOrFail(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context
+
+    fun <T> getParentByBeanType(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getParentByBeanTypeOrFail(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context
 
     /**
      * 进入一个子上下文。
      *
-     * @param id 上下文键。
+     * @param id 上下文 ID。
      * @param child 子上下文对象。
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
@@ -149,7 +153,7 @@ interface Context : MutableBeanManager, AutoCloseable {
     /**
      * 进入一个子上下文。
      *
-     * @param key 上下文键。
+     * @param id 上下文 ID。
      * @param child 子上下文对象。
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
@@ -161,7 +165,7 @@ interface Context : MutableBeanManager, AutoCloseable {
     /**
      * 进入一个子上下文。
      *
-     * @param key 上下文键。
+     * @param id 上下文 ID。
      * @param child 子上下文对象。
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
@@ -299,7 +303,7 @@ class ContextImpl private constructor(
     private val lock = ReadWriteLockBasedReadAddRemoveLock()
 
     private val mutableParents: MutableCollection<ContextImpl> = mutableListOf()
-    private val mutableParentsByKey: MutableMap<Any, ContextImpl> = mutableMapOf()
+    private val mutableParentsById: MutableMap<Any, ContextImpl> = mutableMapOf()
 
     override val parents: List<Context> get() = lock.read { mutableParents.toList() }
     override val parentCount: Int get() = lock.read { mutableParents.size }
@@ -322,7 +326,7 @@ class ContextImpl private constructor(
     }
 
     private val mutableChildren: MutableCollection<ContextImpl> = mutableListOf()
-    private val mutableChildrenByKey: MutableMap<Any, ContextImpl> = mutableMapOf()
+    private val mutableChildrenById: MutableMap<Any, ContextImpl> = mutableMapOf()
 
     override val children: List<Context> get() = lock.read { mutableChildren.toList() }
     override val childCount: Int get() = lock.read { mutableChildren.size }
@@ -360,20 +364,24 @@ class ContextImpl private constructor(
         addBean(this)
     }
 
-    override fun getChildById(key: Any): Context? = lock.read {
-        mutableChildrenByKey[key]
+    override fun getChildById(id: Any): Context? = lock.read {
+        mutableChildrenById[id]
     }
 
-    override fun getParentById(key: Any): Context? = lock.read {
-        mutableParentsByKey[key]
+    override fun getParentById(id: Any): Context? = lock.read {
+        mutableParentsById[id]
     }
 
-    override fun <T> getParentByBean(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
+    override fun <T> getParentByBeanType(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
         for (parent in createAllParentsBreadthFirstSearchIterator()) {
             parent.getBeanEntry(beanType, id = id, primary = primary) ?: continue
             return parent
         }
         return null
+    }
+
+    override fun <T> getParentByBeanTypeOrFail(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context {
+        return getParentByBeanType(beanType, id, primary) ?: throw NoSuchElementException("Cannot find parent with bean type $beanType.")
     }
 
     override fun <T> getParentByBean(bean: T, beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
@@ -386,12 +394,25 @@ class ContextImpl private constructor(
         return null
     }
 
-    override fun <T> getChildByBean(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
+    override fun <T> getParentByBeanOrFail(
+        bean: T,
+        beanType: ResolvableType<T>,
+        id: String?,
+        primary: Boolean?
+    ): Context {
+        return getParentByBean(bean, beanType, id, primary) ?: throw NoSuchElementException("Cannot find parent with bean $bean.")
+    }
+
+    override fun <T> getChildByBeanType(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
         for (child in createAllChildrenBreadthFirstSearchIterator()) {
             child.getBeanEntry(beanType, id = id, primary = primary) ?: continue
             return child
         }
         return null
+    }
+
+    override fun <T> getChildByBeanTypeOrFail(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context {
+        return getChildByBeanType(beanType, id, primary) ?: throw NoSuchElementException("Cannot find child with bean type $beanType.")
     }
 
     override fun <T> getChildByBean(bean: T, beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
@@ -402,6 +423,15 @@ class ContextImpl private constructor(
             }
         }
         return null
+    }
+
+    override fun <T> getChildByBeanOrFail(
+        bean: T,
+        beanType: ResolvableType<T>,
+        id: String?,
+        primary: Boolean?
+    ): Context {
+        return getChildByBean(bean, beanType, id, primary) ?: throw NoSuchElementException("Cannot find child with bean $bean.")
     }
 
     // 连接两个上下文，不检查是否会成环，不加锁，会通知 context modules: PreAdd, PostAdd。
@@ -417,22 +447,22 @@ class ContextImpl private constructor(
         val contextPreAddEvent = ContextPreEdgeAddEventImpl(parent, child, enter, contextManager)
         if (childKey != null || parentKey != null) {
             if (replace) {
-                val oldChild = childKey?.let { parent.mutableChildrenByKey[it] }
+                val oldChild = childKey?.let { parent.mutableChildrenById[it] }
                 if (oldChild != null) {
                     check(removeNoLock(parent, oldChild, exit = false, check = false))
                 }
 
-                val oldParent = parentKey?.let { child.mutableParentsByKey[it] }
+                val oldParent = parentKey?.let { child.mutableParentsById[it] }
                 if (oldParent != null) {
                     check(removeNoLock(oldParent, child, exit = false, check = false))
                 }
             } else {
-                val oldChild = parent.mutableChildrenByKey[childKey]
+                val oldChild = parent.mutableChildrenById[childKey]
                 if (oldChild != null) {
                     return false
                 }
 
-                val oldParent = child.mutableParentsByKey[childKey]
+                val oldParent = child.mutableParentsById[childKey]
                 if (oldParent != null) {
                     return false
                 }
@@ -440,8 +470,8 @@ class ContextImpl private constructor(
 
             contextManager.onContextPreAdd(contextPreAddEvent)
 
-            childKey?.let { parent.mutableChildrenByKey[childKey] = child }
-            parentKey?.let { child.mutableParentsByKey[parentKey] = parent }
+            childKey?.let { parent.mutableChildrenById[childKey] = child }
+            parentKey?.let { child.mutableParentsById[parentKey] = parent }
         } else {
             contextManager.onContextPreAdd(contextPreAddEvent)
         }
@@ -470,7 +500,7 @@ class ContextImpl private constructor(
                 contextManager.onContextPreRemove(contextPreRemoveEvent)
 
                 // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
-                val removedChild = parent.mutableChildrenByKey.remove(childKey)
+                val removedChild = parent.mutableChildrenById.remove(childKey)
                 check(removedChild === child || removedChild == null)
             }
             if (parentKey != null) {
@@ -478,7 +508,7 @@ class ContextImpl private constructor(
                 contextManager.onContextPreRemove(contextPreRemoveEvent)
 
                 // 它可能为 null 的原因是 alsoExitChildIfItWillBeRoot，使得 PreRemove 事件发出后可能子已经退出。
-                val removedParent = child.mutableParentsByKey.remove(parentKey)
+                val removedParent = child.mutableParentsById.remove(parentKey)
                 check(removedParent === parent || removedParent == null)
             }
         } else {

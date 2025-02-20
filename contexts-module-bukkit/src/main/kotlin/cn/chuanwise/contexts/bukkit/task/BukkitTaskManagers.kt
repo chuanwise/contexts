@@ -18,7 +18,8 @@
 package cn.chuanwise.contexts.bukkit.task
 
 import cn.chuanwise.contexts.util.BeanManager
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
-val BeanManager.bukkitTaskManager: BukkitTaskManager get() = getBeanValueOrFail()
+val BeanManager.bukkitTaskManager: BukkitTaskManager get() = getBeanOrFail()
 val BeanManager.bukkitTaskManagerOrNull: BukkitTaskManager? get() = getBean()
