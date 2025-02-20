@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-@file:JvmName("BeanConstants")
 package cn.chuanwise.contexts.util
 
-val DEFAULT_BEAN_KEY: Any? = null
-val DEFAULT_BEAN_PRIMARY: Boolean? = null
+/**
+ * 用在函数参数上，控制获取该参数对象的方式。
+ *
+ * @property id 对象的 ID。
+ * @property primary 是否为主要对象。
+ * @author Chuanwise
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Bean(
+    val id: String = "",
+    val primary: Triple = Triple.NULL
+)

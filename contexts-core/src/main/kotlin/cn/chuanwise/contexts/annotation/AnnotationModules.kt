@@ -17,9 +17,10 @@
 @file:JvmName("AnnotationModules")
 package cn.chuanwise.contexts.annotation
 
-import cn.chuanwise.contexts.util.BeanFactory
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
-val BeanFactory.annotationModule: AnnotationModule get() = getBeanValueOrFail()
-val BeanFactory.annotationModuleOrNull: AnnotationModule? get() = getBeanValue()
+
+val BeanManager.annotationModule: AnnotationModule get() = getBeanOrFail()
+val BeanManager.annotationModuleOrNull: AnnotationModule? get() = getBean()

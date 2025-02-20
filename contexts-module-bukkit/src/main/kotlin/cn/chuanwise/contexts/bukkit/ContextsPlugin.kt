@@ -63,7 +63,7 @@ class ContextsPlugin : JavaPlugin() {
                 createBukkitTimerAnnotationModule()
             )
         }
-        pluginContext = contextManager.enterRoot(this, key = "Plugin")
+        pluginContext = contextManager.enterRoot(this, id = "Plugin")
 
         getCommand("contexts")!!.setExecutor(HotBarTestMenuCommand)
     }

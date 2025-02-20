@@ -17,9 +17,8 @@
 @file:JvmName("EventModules")
 package cn.chuanwise.contexts.events
 
-import cn.chuanwise.contexts.util.BeanFactory
-import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-val BeanFactory.eventModule: EventModule get() = getBeanValueOrFail()
-val BeanFactory.eventModuleOrNull: EventModule? get() = getBeanValue()
+val BeanManager.eventModule: EventModule get() = getBeanValueOrFail()
+val BeanManager.eventModuleOrNull: EventModule? get() = getBean()

@@ -16,7 +16,11 @@
 
 package cn.chuanwise.contexts.annotation
 
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.Bean
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.createResolvableType
+import cn.chuanwise.contexts.util.getBean
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -35,15 +39,40 @@ interface ArgumentResolverFactory {
 }
 
 object DefaultArgumentResolverFactory : ArgumentResolverFactory {
-    private class OptionalArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
-        override fun resolveArgument(beanFactory: BeanFactory): Any? {
-            return beanFactory.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)
+    private interface BeanResolver {
+        fun resolve(beanManager: BeanManager, context: ArgumentResolveContext): Any?
+    }
+
+    private object DefaultBeanResolver : BeanResolver {
+        override fun resolve(beanManager: BeanManager, context: ArgumentResolveContext): Any? {
+            val beanType = createResolvableType(context.parameter.type)
+            beanManager.getBean(beanType, context.parameter.name)?.let { return it }
+            beanManager.getBean(beanType)?.let { return it }
+            return null
         }
     }
 
-    private class RequiredArgumentResolverImpl(private val context: ArgumentResolveContext) : ArgumentResolver {
-        override fun resolveArgument(beanFactory: BeanFactory): Any {
-            beanFactory.getBeanValue(context.parameter.type.javaType, key = context.parameter.name)?.let { return it }
+    private class AnnotatedBeanResolver(
+        private val id: String?, private val primary: Boolean?
+    ) : BeanResolver {
+        override fun resolve(beanManager: BeanManager, context: ArgumentResolveContext): Any? {
+            return beanManager.getBean(id, primary)
+        }
+    }
+
+    private class OptionalArgumentResolverImpl(
+        private val resolver: BeanResolver,
+        private val context: ArgumentResolveContext
+    ) : ArgumentResolver {
+        override fun resolveArgument(beanManager: BeanManager): Any? = resolver.resolve(beanManager, context)
+    }
+
+    private class RequiredArgumentResolverImpl(
+        private val resolver: BeanResolver,
+        private val context: ArgumentResolveContext
+    ) : ArgumentResolver {
+        override fun resolveArgument(beanManager: BeanManager): Any {
+            resolver.resolve(beanManager, context)?.let { return it }
 
             error("Cannot resolve argument for parameter ${context.parameter.name} of type ${context.parameter.type} " +
                     "caused by missing bean. " +
@@ -55,10 +84,17 @@ object DefaultArgumentResolverFactory : ArgumentResolverFactory {
     }
 
     override fun tryCreateArgumentResolver(context: ArgumentResolveContext): ArgumentResolver {
-        return if (context.parameter.isOptional) {
-            OptionalArgumentResolverImpl(context)
+        val beanAnnotation = context.parameter.findAnnotation<Bean>()
+        val resolver: BeanResolver = if (beanAnnotation == null) {
+            DefaultBeanResolver
         } else {
-            RequiredArgumentResolverImpl(context)
+            AnnotatedBeanResolver(beanAnnotation.id.ifEmpty { null }, beanAnnotation.primary.toBooleanOrNull())
+        }
+
+        return if (context.parameter.isOptional) {
+            OptionalArgumentResolverImpl(resolver, context)
+        } else {
+            RequiredArgumentResolverImpl(resolver, context)
         }
     }
 }

@@ -22,10 +22,9 @@ import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
 import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.Listener
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
 /**
@@ -74,5 +73,5 @@ interface ListenerManager {
     fun publishToContext(eventContext: EventContext<Any>)
 }
 
-val BeanFactory.listenerManager: ListenerManager get() = getBeanValueOrFail()
-val BeanFactory.listenerManagerOrNull: ListenerManager? get() = getBeanValue()
+val BeanManager.listenerManager: ListenerManager get() = getBeanValueOrFail()
+val BeanManager.listenerManagerOrNull: ListenerManager? get() = getBean()

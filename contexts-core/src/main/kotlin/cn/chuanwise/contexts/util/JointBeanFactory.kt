@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotation
-
-import cn.chuanwise.contexts.util.BeanManager
+package cn.chuanwise.contexts.util
 
 /**
- * 参数工厂。用于在基于反射自动注册的某种对象时，自动创建参数。
+ * 联合对象工厂。
  *
  * @author Chuanwise
+ * @see JointFactory
  */
-interface ArgumentResolver {
-    fun resolveArgument(beanManager: BeanManager): Any?
+fun interface JointBeanFactory {
+    fun createJointBean(beanManager: BeanManager, bean: BeanEntry<*>): Any?
 }

@@ -30,7 +30,7 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
@@ -61,7 +61,7 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
                 return null
             }
 
-            val beans = InheritedMutableBeanFactory(context, filterContext.beans)
+            val beans = InheritedMutableBeanManagerImpl(context, filterContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             return if (function.isSuspend) runBlocking {

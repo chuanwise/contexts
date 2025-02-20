@@ -35,7 +35,7 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.NotStableForInheritance
@@ -140,7 +140,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         listen: Boolean
     ) : AbstractListener<Any>(context, eventClass, filter, intercept, listen) {
         override fun onEvent0(eventContext: EventContext<Any>) {
-            val beans = InheritedMutableBeanFactory(context, eventContext.beans)
+            val beans = InheritedMutableBeanManagerImpl(context, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             if (function.isSuspend) {
@@ -287,7 +287,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         val argumentResolvers: Map<KParameter, ArgumentResolver>
     ) : EventSpreader<T> {
         override fun spread(currentContext: Context, eventContext: EventContext<T>) {
-            val beans = InheritedMutableBeanFactory(context, currentContext, eventContext.beans)
+            val beans = InheritedMutableBeanManagerImpl(context, currentContext, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             if (function.isSuspend) {

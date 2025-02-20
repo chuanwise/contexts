@@ -23,7 +23,7 @@ import cn.chuanwise.contexts.util.TopologicalIterator
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
-import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.getBean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -90,7 +90,7 @@ fun Context.createChildToParentTopologicalIteratorInAllChildren(): Iterator<Cont
 
 @ContextsInternalApi
 data class CoroutineScopeConfiguration(
-    val key: String?,
+    val id: String?,
     val primary: Boolean?,
     val runBlocking: Boolean?
 )
@@ -98,7 +98,7 @@ data class CoroutineScopeConfiguration(
 @ContextsInternalApi
 fun cn.chuanwise.contexts.util.CoroutineScope.toConfiguration() : CoroutineScopeConfiguration {
     return CoroutineScopeConfiguration(
-        key = key,
+        id = key,
         primary = primary.toBooleanOrNull(),
         runBlocking = runBlocking.toBooleanOrNull()
     )
@@ -159,9 +159,7 @@ fun callFunctionAsync(
             }
         } else {
             val coroutineScope = coroutineScopeConfiguration.let {
-                context.getBeanValue<CoroutineScope>(
-                    key = it.key, primary = it.primary
-                )
+                context.getBean<CoroutineScope>(id = it.id, primary = it.primary)
             } ?: context.coroutineScopeOrNull
 
             if (coroutineScope == null) {
@@ -171,7 +169,7 @@ fun callFunctionAsync(
                             context.contextManager.logger.warn {
                                 "Suspend callback function ${function.name} declared in ${functionClass.simpleName} " +
                                         "for context $context can not find a default coroutine scope. " +
-                                        "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.key} " +
+                                        "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.id} " +
                                         "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                         "But it can be run in blocking mode, it still works but may cause performance issues. " +
                                         "Details: " +
@@ -184,7 +182,7 @@ fun callFunctionAsync(
                             onException.accept(IllegalStateException(
                                 "Suspend callback function ${function.name} declared in ${functionClass.simpleName} " +
                                         "for context $context can not find a default coroutine scope. " +
-                                        "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.key} " +
+                                        "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.id} " +
                                         "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                         "It CAN NOT be called in blocking mode (caused by runBlocking = false), so it will be ignored. " +
                                         "Details: " +
@@ -198,7 +196,7 @@ fun callFunctionAsync(
                     onException.accept(IllegalStateException(
                         "Suspend callback function ${function.name} declared in ${functionClass.simpleName} " +
                                 "for context $context can not find a default coroutine scope. " +
-                                "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.key} " +
+                                "Make sure there is a coroutine scope with key = ${coroutineScopeConfiguration.id} " +
                                 "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                 "But it CAN NOT BE run in blocking mode (caused by caller), so it will be ignored. " +
                                 "Details: " +
@@ -250,7 +248,7 @@ fun <T> callFunctionSync(
                         "Details: " +
                         "function class: ${functionClass.name}, " +
                         "function: $function. " +
-                        "coroutine scope key: ${coroutineScopeConfiguration.key}, " +
+                        "coroutine scope key: ${coroutineScopeConfiguration.id}, " +
                         "coroutine scope primary: ${coroutineScopeConfiguration.primary}, " +
                         "coroutine scope runBlocking: ${coroutineScopeConfiguration.runBlocking}."
             }

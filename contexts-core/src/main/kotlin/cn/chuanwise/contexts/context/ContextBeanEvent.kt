@@ -17,57 +17,76 @@
 package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.MutableBean
+import cn.chuanwise.contexts.util.MutableBeanEntry
+import cn.chuanwise.contexts.util.ResolvableType
 
-interface ContextBeanEvent<out T : Any> : ContextEvent {
-    val context: Context
-}
-
-interface ContextBeanAddEvent<T : Any>: ContextBeanEvent<T> {
+interface ContextBeanEvent<out T> : ContextEvent {
     val value: T
+    val context: Context
+    
+    val id: String?
+    val isPrimary: Boolean
+    val type: ResolvableType<*>
 }
 
-interface ContextBeanPreAddEvent<T : Any> : ContextBeanAddEvent<T>
-interface ContextBeanPostAddEvent<T : Any> : ContextBeanAddEvent<T> {
+interface ContextBeanAddEvent<T>: ContextBeanEvent<T>
+
+interface ContextBeanPreAddEvent<T> : ContextBeanAddEvent<T> {
+    override var id: String?
+    override var isPrimary: Boolean
+    override var type: ResolvableType<*>
+}
+
+interface ContextBeanPostAddEvent<T> : ContextBeanAddEvent<T> {
     override val value: T
-    val bean: MutableBean<T>
+    val bean: MutableBeanEntry<T>
+
+    override val id: String? get() = bean.id
+    override val isPrimary: Boolean get() = bean.isPrimary
+    override val type: ResolvableType<*> get() = bean.type
 }
 
 @ContextsInternalApi
-class ContextBeanAddEventImpl<T : Any>(
+class ContextBeanPostAddEventImpl<T>(
     override val context: Context,
     override val value: T,
-    override val bean: MutableBean<T>,
+    override val bean: MutableBeanEntry<T>,
     override val contextManager: ContextManager
 ) : ContextBeanPostAddEvent<T>
 
 @ContextsInternalApi
-class ContextBeanPreAddEventImpl<T : Any>(
+class ContextBeanPreAddEventImpl<T>(
     override val context: Context,
     override var value: T,
-    override val contextManager: ContextManager
+    override val contextManager: ContextManager,
+    override var id: String?,
+    override var isPrimary: Boolean,
+    override var type: ResolvableType<*>
 ) : ContextBeanPreAddEvent<T>
 
-interface ContextBeanRemoveEvent<out T : Any> : ContextBeanEvent<T> {
-    val value: T
-    val bean: MutableBean<T>
+interface ContextBeanRemoveEvent<out T> : ContextBeanEvent<T> {
+    val bean: MutableBeanEntry<T>
+
+    override val id: String? get() = bean.id
+    override val isPrimary: Boolean get() = bean.isPrimary
+    override val type: ResolvableType<*> get() = bean.type
+
+    override val value: T get() = bean.value
 }
 
-interface ContextBeanPreRemoveEvent<T : Any> : ContextBeanRemoveEvent<T>
-interface ContextBeanPostRemoveEvent<T : Any> : ContextBeanRemoveEvent<T>
+interface ContextBeanPreRemoveEvent<T> : ContextBeanRemoveEvent<T>
+interface ContextBeanPostRemoveEvent<T> : ContextBeanRemoveEvent<T>
 
 @ContextsInternalApi
-class ContextBeanRemoveEventImpl<T : Any>(
+class ContextBeanPostRemoveEventImpl<T>(
     override val context: Context,
-    override val value: T,
-    override val bean: MutableBean<T>,
+    override val bean: MutableBeanEntry<T>,
     override val contextManager: ContextManager
 ) : ContextBeanPostRemoveEvent<T>
 
 @ContextsInternalApi
-class ContextBeanPreRemoveEventImpl<T : Any>(
+class ContextBeanPreRemoveEventImpl<T>(
     override val context: Context,
-    override val value: T,
-    override val bean: MutableBean<T>,
+    override val bean: MutableBeanEntry<T>,
     override val contextManager: ContextManager
 ) : ContextBeanPreRemoveEvent<T>

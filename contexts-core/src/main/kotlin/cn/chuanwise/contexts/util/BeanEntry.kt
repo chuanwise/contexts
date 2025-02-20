@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotation
-
-import cn.chuanwise.contexts.util.BeanManager
+package cn.chuanwise.contexts.util
 
 /**
- * 参数工厂。用于在基于反射自动注册的某种对象时，自动创建参数。
+ * 表示一个在 [BeanManager] 内的对象。
  *
- * @author Chuanwise
+ * @param T 对象的类型
  */
-interface ArgumentResolver {
-    fun resolveArgument(beanManager: BeanManager): Any?
+@NotStableForInheritance
+interface BeanEntry<out T> : Entry<T> {
+    /**
+     * 对象的 ID。
+     */
+    val id: String?
+
+    /**
+     * 对象的类型。
+     */
+    val type: ResolvableType<@UnsafeVariance T>
+
+    /**
+     * 是否为主要对象。
+     */
+    val isPrimary: Boolean
 }

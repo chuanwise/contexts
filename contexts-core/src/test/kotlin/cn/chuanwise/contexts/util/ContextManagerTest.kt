@@ -38,8 +38,8 @@ class ContextManagerTest {
 
     @Test
     fun testAddParent() {
-        val a = contextManager.enterRoot(key = "A")
-        val b = contextManager.enterRoot(key = "B")
+        val a = contextManager.enterRoot(id = "A")
+        val b = contextManager.enterRoot(id = "B")
 
         b.addParent(a)
 
@@ -49,32 +49,32 @@ class ContextManagerTest {
 
     @Test
     fun testAddTwoChildren() {
-        val a = contextManager.enterRoot(key = "A")
+        val a = contextManager.enterRoot(id = "A")
 
-        val b = a.enterChild(key = "B")
-        val c = a.enterChild(key = "C")
+        val b = a.enterChild(id = "B")
+        val c = a.enterChild(id = "C")
 
         assertEquals(2, a.childCount)
-        assertEquals(b, a.getChildByKey("B"))
-        assertEquals(c, a.getChildByKey("C"))
+        assertEquals(b, a.getChildById("B"))
+        assertEquals(c, a.getChildById("C"))
     }
 
     @Test
     fun testAddTwoChildrenDeeper() {
-        val a = contextManager.enterRoot(key = "A")
+        val a = contextManager.enterRoot(id = "A")
 
-        val b = a.enterChild(key = "B")
-        val c = b.enterChild(key = "C")
-        val d = b.enterChild(key = "D")
-        val e = b.enterChild(key = "E")
+        val b = a.enterChild(id = "B")
+        val c = b.enterChild(id = "C")
+        val d = b.enterChild(id = "D")
+        val e = b.enterChild(id = "E")
 
         assertEquals(1, a.childCount)
-        assertEquals(b, a.getChildByKey("B"))
+        assertEquals(b, a.getChildById("B"))
 
         assertEquals(3, b.childCount)
-        assertEquals(c, b.getChildByKey("C"))
-        assertEquals(d, b.getChildByKey("D"))
-        assertEquals(e, b.getChildByKey("E"))
+        assertEquals(c, b.getChildById("C"))
+        assertEquals(d, b.getChildById("D"))
+        assertEquals(e, b.getChildById("E"))
 
         assertEquals(setOf(b, c, d, e), a.allChildren.toSet())
         assertEquals(setOf(c, d, e), b.allChildren.toSet())
@@ -86,10 +86,10 @@ class ContextManagerTest {
 
     @Test
     fun testAddTwoParent() {
-        val a = contextManager.enterRoot(key = "A")
-        val b = contextManager.enterRoot(key = "B")
+        val a = contextManager.enterRoot(id = "A")
+        val b = contextManager.enterRoot(id = "B")
 
-        val c = contextManager.enterRoot(key = "C")
+        val c = contextManager.enterRoot(id = "C")
 
         c.addParent(a)
         c.addParent(b)
@@ -97,8 +97,8 @@ class ContextManagerTest {
         assertEquals(1, a.childCount)
         assertEquals(1, b.childCount)
 
-        assertEquals(c, a.getChildByKey("C"))
-        assertEquals(c, b.getChildByKey("C"))
+        assertEquals(c, a.getChildById("C"))
+        assertEquals(c, b.getChildById("C"))
 
         assertEquals(setOf(a, b), c.allParents.toSet())
         assertEquals(setOf(a, b), c.parents.toSet())

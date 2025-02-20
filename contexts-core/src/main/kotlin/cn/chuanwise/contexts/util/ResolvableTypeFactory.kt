@@ -18,6 +18,7 @@
 package cn.chuanwise.contexts.util
 
 import com.fasterxml.jackson.databind.util.LRUMap
+import java.lang.reflect.Type
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -67,3 +68,6 @@ inline fun <reified T> createResolvableType(): ResolvableType<T> {
     return createResolvableType(typeOf<T>()) as ResolvableType<T>
 }
 
+fun <T : Any> KClass<T>.toResolvableType(): ResolvableType<T> {
+    return createResolvableType(this)
+}

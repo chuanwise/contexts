@@ -17,9 +17,9 @@
 package cn.chuanwise.contexts.annotation
 
 import cn.chuanwise.contexts.context.Context
-import cn.chuanwise.contexts.util.BeanFactory
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
 /**
  * 反射管理器。
@@ -40,5 +40,5 @@ interface AnnotationManager {
     fun scan(value: Any)
 }
 
-val BeanFactory.annotationManager: AnnotationManager get() = getBeanValueOrFail()
-val BeanFactory.annotationManagerOrNull: AnnotationManager? get() = getBeanValue()
+val BeanManager.annotationManager: AnnotationManager get() = getBeanOrFail()
+val BeanManager.annotationManagerOrNull: AnnotationManager? get() = getBean()

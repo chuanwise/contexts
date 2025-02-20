@@ -16,8 +16,13 @@
 
 package cn.chuanwise.contexts.util
 
-interface MutableEntry<out T> : Entry<T> {
+interface MutableEntry<out T> : Entry<T>, AutoCloseable {
     override val value: T
 
-    fun remove()
+    fun tryRemove(): Boolean
+
+    fun remove() {
+        check(tryRemove()) { "The entry has been removed: $this." }
+    }
+    override fun close() = remove()
 }

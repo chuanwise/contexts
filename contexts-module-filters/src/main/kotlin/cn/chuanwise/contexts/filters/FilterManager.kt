@@ -17,10 +17,10 @@
 package cn.chuanwise.contexts.filters
 
 import cn.chuanwise.contexts.context.Context
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValue
-import cn.chuanwise.contexts.util.getBeanValueOrFail
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
 
 /**
  * 过滤器管理器。
@@ -87,5 +87,5 @@ interface FilterManager {
     fun registerFilter(cache: Boolean = false, filter: Filter<Any>) : MutableEntry<Filter<Any>>
 }
 
-val BeanFactory.filterManagerOrNull: FilterManager? get() = getBeanValue()
-val BeanFactory.filterManager: FilterManager get() = getBeanValueOrFail()
+val BeanManager.filterManagerOrNull: FilterManager? get() = getBean()
+val BeanManager.filterManager: FilterManager get() = getBeanOrFail()

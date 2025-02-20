@@ -210,7 +210,7 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
     val argumentResolvers = mutableMapOf<KParameter, ArgumentResolver>()
 
     var subjectClass: Class<*>? = defaultSubjectClass
-    val annotationModule = contextManager.getBeanValueOrFail<AnnotationModule>()
+    val annotationModule = contextManager.getBeanOrFail<AnnotationModule>()
     for (parameter in parameters) {
         val annotations = parameter.annotations
 

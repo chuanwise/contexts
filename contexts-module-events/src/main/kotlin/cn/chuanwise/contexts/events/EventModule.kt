@@ -24,16 +24,16 @@ import cn.chuanwise.contexts.filters.FilterModule
 import cn.chuanwise.contexts.filters.filterManager
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 
 /**
  * 事件模块。
  *
- * 事件通过 [BeanFactory.eventPublisher] 的 [EventPublisher.publish] 发布。
+ * 事件通过 [BeanManager.eventPublisher] 的 [EventPublisher.publish] 发布。
  * 模块首先检查事件的类型，找到传播器 [EventProcessor]。若为特殊类型事件，例如 Bukkit
  * 的事件有不同优先级，则应当按照从高到低的顺序激活监听器。
  *
@@ -173,7 +173,7 @@ class EventModuleImpl @JvmOverloads constructor(
 
         private fun createEventContext(event: Any): EventContext<Any> {
             val filterContext = context.filterManager.filter(event)
-            val beans = InheritedMutableBeanFactory(context).apply {
+            val beans = InheritedMutableBeanManagerImpl(context).apply {
                 addBean(filterContext, primary = true)
                 addBean(event, primary = true)
             }

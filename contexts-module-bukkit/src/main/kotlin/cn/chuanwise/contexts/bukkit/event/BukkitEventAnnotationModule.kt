@@ -32,7 +32,7 @@ import cn.chuanwise.contexts.module.ModulePostDisableEvent
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.context.toConfiguration
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import org.bukkit.event.Event
@@ -66,7 +66,7 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
         private val listen: Boolean = DEFAULT_LISTENER_LISTEN
     ) : Listener<Event> {
         override fun listen(eventContext: EventContext<Event>) {
-            val beans = InheritedMutableBeanFactory(context, eventContext.beans)
+            val beans = InheritedMutableBeanManagerImpl(context, eventContext.beans)
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 
             callFunctionAsync(

@@ -34,7 +34,6 @@ import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
@@ -72,7 +71,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         val policy = EventHandlerPolicy(eventClass, priority)
         eventHandlers.computeIfAbsent(policy) {
             bukkitEventHandlerInjector.registerEventHandler(policy.eventClass, policy.priority) {
-                for (root in getContextManager().roots) {
+                for (root in getContextManager().rootContexts) {
                     root.eventPublisher.publish(it)
                 }
             } as MutableEntry<Consumer<Event>>
@@ -148,7 +147,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
     private fun getPlugin() : Plugin {
         var pluginLocal = plugin
         if (pluginLocal == null) {
-            pluginLocal = getContextManager().getBeanValue<Plugin>() ?: error(
+            pluginLocal = getContextManager().getBean<Plugin>() ?: error(
                 "Plugin is not found. Set it in the related context or in BukkitEventModule, please."
             )
             plugin = pluginLocal

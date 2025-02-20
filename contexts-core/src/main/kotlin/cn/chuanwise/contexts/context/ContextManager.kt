@@ -25,10 +25,12 @@ import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.util.ContextPostActionEventException
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.Logger
-import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeanImpl
-import cn.chuanwise.contexts.util.MutableBeanFactory
+import cn.chuanwise.contexts.util.MutableBeanEntry
+import cn.chuanwise.contexts.util.MutableBeanManagerImpl
+import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
+import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeans
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.CopyOnWriteArrayList
@@ -41,21 +43,21 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @see createContextManager
  */
 @NotStableForInheritance
-interface ContextManager : MutableBeanFactory, AutoCloseable {
+interface ContextManager : MutableBeanManager, AutoCloseable {
     /**
      * 日志记录器。
      */
     val logger: Logger
 
     /**
-     * 全局所有还没有退出的上下文。
+     * 内部上下文。
      */
-    val contexts: List<Context>
+    val contexts: Set<Context>
 
     /**
-     * 全局所有根上下文，即那些没有父节点的上下文。
+     * 内部所有根上下文，即那些没有内部父节点的上下文。
      */
-    val roots: List<Context>
+    val rootContexts: Set<Context>
 
     /**
      * 所有已经注册的模块。
@@ -71,13 +73,6 @@ interface ContextManager : MutableBeanFactory, AutoCloseable {
      * 是否已经关闭。
      */
     val isClosed: Boolean
-
-    /**
-     * 检查是否所有已经注册的模块都已经启用。
-     *
-     * @return 是否所有已经注册的模块都已经启用
-     */
-    fun isAllRegisteredModuleEnabled(): Boolean
 
     /**
      * 根据 ID 获取一个模块。
@@ -105,28 +100,28 @@ interface ContextManager : MutableBeanFactory, AutoCloseable {
      * 进入一个根上下文。
      *
      * @param context 上下文
-     * @param key 上下文的键
+     * @param id 上下文的 ID
      * @return 进入的上下文
      */
-    fun enterRoot(context: Any, key: Any? = null): Context
+    fun enterRoot(context: Any, id: String? = null): Context
 
     /**
      * 进入一个根上下文。
      *
      * @param context 上下文
-     * @param key 上下文的键
+     * @param id 上下文的 ID
      * @return 进入的上下文
      */
-    fun enterRoot(vararg context: Any, key: Any? = null): Context
+    fun enterRoot(vararg context: Any, id: String? = null): Context
 
     /**
      * 进入一个根上下文。
      *
      * @param context 上下文
-     * @param key 上下文的键
+     * @param id 上下文的键
      * @return 进入的上下文
      */
-    fun enterRoot(context: Iterable<Any> = emptyList(), key: Any? = null): Context
+    fun enterRoot(context: Iterable<Any> = emptyList(), id: String? = null): Context
 
     override fun close()
 }
@@ -134,11 +129,11 @@ interface ContextManager : MutableBeanFactory, AutoCloseable {
 @ContextsInternalApi
 class ContextManagerImpl(
     override val logger: Logger,
-    private val beans: MutableBeanFactory = MutableBeanImpl()
-) : ContextManager, MutableBeanFactory by beans {
-    private val mutableContexts: MutableList<Context> = CopyOnWriteArrayList()
-    override val contexts: List<Context> get() = mutableContexts
-    override val roots: List<Context> get() = mutableContexts.filter { it.allParentCount <= 0 }
+    private val beans: MutableBeanManager = MutableBeanManagerImpl()
+) : ContextManager, MutableBeanManager by beans {
+    private val mutableContexts: MutableSet<Context> = ConcurrentHashMap.newKeySet()
+    override val contexts: Set<Context> get() = mutableContexts
+    override val rootContexts: Set<Context> get() = mutableContexts.filter { it.allParentCount <= 0 }.toSet()
 
     private val mutableModuleEntries: MutableList<ModuleEntry> = CopyOnWriteArrayList()
     override val modules: List<Module> get() = mutableModuleEntries.map { it.value }
@@ -177,7 +172,7 @@ class ContextManagerImpl(
         val tryEnableLock = AtomicBoolean(false)
         override val isEnabled: Boolean get() = tryEnableLock.get()
 
-        private var bean: MutableBean<Module>? = null
+        private var bean: MutableBeanEntry<Module>? = null
 
         fun enableNoCheck() {
             require(!isRemoved) { "Cannot enable a removed module." }
@@ -191,8 +186,9 @@ class ContextManagerImpl(
         }
 
         // PreRemove 是安全的，PostRemove 不安全。
-        override fun remove() {
-            if (mutableIsRemoved.compareAndSet(false, true)) {
+        override fun tryRemove(): Boolean {
+            val result = mutableIsRemoved.compareAndSet(false, true)
+            if (result) {
                 try {
                     onPreRemove()
                 } catch (e: Throwable) {
@@ -208,6 +204,7 @@ class ContextManagerImpl(
                     onPostRemove()
                 }
             }
+            return result
         }
 
         private fun onPreRemove() {
@@ -295,9 +292,9 @@ class ContextManagerImpl(
     // 依赖关系还不满足的那些模块的启动事件。
     private val dependencyModuleNotEnabledEntries = ConcurrentLinkedDeque<ModuleEntryImpl>()
 
-    override fun isAllRegisteredModuleEnabled(): Boolean {
-        return dependencyModuleNotEnabledEntries.isEmpty()
-    }
+//    override fun isAllRegisteredModuleEnabled(): Boolean {
+//        return dependencyModuleNotEnabledEntries.isEmpty()
+//    }
 
     override fun registerModule(module: Module, id: String?): ModuleEntry {
         val preEnableEvent = ModulePreEnableEventImpl(module, this, id)
@@ -361,17 +358,26 @@ class ContextManagerImpl(
         return entry
     }
 
-    override fun enterRoot(context: Any, key: Any?): Context = enterRoot(listOf(context), key)
+    override fun enterRoot(context: Any, id: String?): Context = enterRoot(listOf(context), id)
 
-    override fun enterRoot(vararg context: Any, key: Any?): Context = enterRoot(context.toList(), key)
+    override fun enterRoot(vararg context: Any, id: String?): Context = enterRoot(context.toList(), id)
 
-    override fun enterRoot(context: Iterable<Any>, key: Any?): Context {
-        val newContext = ContextImpl(this, key).apply {
-            addBeans(context)
+    override fun enterRoot(context: Iterable<Any>, id: String?): Context {
+        val newContext = ContextImpl(this, id)
+        val contextInitEvent = ContextInitEventImpl(newContext, this)
+        onContextInit(contextInitEvent)
+
+        check(newContext.trySetInitialized()) {
+            "Context $newContext was exited by a module."
         }
+        newContext.addBeans(context)
 
         val contextPreEnterEvent = ContextPreEnterEventImpl(newContext, this)
         onContextPreEnter(contextPreEnterEvent)
+
+        check(newContext.trySetEntered()) {
+            "Context $newContext was exited by a module."
+        }
 
         // 下面的操作会在 onContextPostEnter 里自动完成，所以无需添加两次。
         // mutableContexts.add(newContext)
@@ -406,7 +412,7 @@ class ContextManagerImpl(
         if (closeLock.compareAndSet(false, true)) {
             // 退出所有上下文。
             while (true) {
-                val root = roots.firstOrNull() ?: break
+                val root = rootContexts.firstOrNull() ?: break
                 root.exit()
             }
 
@@ -447,8 +453,9 @@ class ContextManagerImpl(
             }
         } finally {
             // event.child.parentCount == 1 的原因是此时还没有真正移除，所以 parentCount 还是 1。
+            // 使用 tryExit 而不是 exit 的原因是如果正在删除的恰好是当前节点，则此时再执行 exit() 会出错。
             if (event.child.allParentCount == 1 && event.exitChildIfItWillBeRoot) {
-                event.child.exit()
+                event.child.tryExit()
             }
         }
     }
@@ -478,6 +485,28 @@ class ContextManagerImpl(
     fun onContextInit(event: ContextInitEvent) {
         onPreEvent {
             it.onContextInit(event)
+        }
+    }
+
+    fun onContextBeanPreAdd(event: ContextBeanPreAddEvent<*>) {
+        onPreEvent {
+            it.onContextBeanPreAdd(event)
+        }
+    }
+    fun onContextBeanPostAdd(event: ContextBeanPostAddEvent<*>) {
+        onPostEvent(event) {
+            it.onContextBeanPostAdd(event)
+        }
+    }
+
+    fun onContextBeanPreRemove(event: ContextBeanPreRemoveEvent<*>) {
+        onPreEvent {
+            it.onContextBeanPreRemove(event)
+        }
+    }
+    fun onContextBeanPostRemove(event: ContextBeanPostRemoveEvent<*>) {
+        onPostEvent(event) {
+            it.onContextBeanPostRemove(event)
         }
     }
 }

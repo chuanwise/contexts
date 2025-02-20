@@ -17,7 +17,7 @@
 package cn.chuanwise.contexts.filters
 
 import cn.chuanwise.contexts.context.Context
-import cn.chuanwise.contexts.util.MutableBeanFactory
+import cn.chuanwise.contexts.util.MutableBeanManager
 
 /**
  * 过滤器上下文。
@@ -44,7 +44,7 @@ interface FilterContext<out T : Any> {
     /**
      * 事件发布相关的上下文，用于存储一些和事件发布相关的数据。
      */
-    val beans: MutableBeanFactory
+    val beans: MutableBeanManager
 
     /**
      * 过滤器缓存结果。

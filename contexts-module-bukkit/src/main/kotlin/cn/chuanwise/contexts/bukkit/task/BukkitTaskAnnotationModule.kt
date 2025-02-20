@@ -26,7 +26,7 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +49,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
         private val async: Boolean
     ) : Consumer<BukkitTask> {
         override fun accept(t: BukkitTask) {
-            val beans = InheritedMutableBeanFactory(context).apply {
+            val beans = InheritedMutableBeanManagerImpl(context).apply {
                 addBean(t)
             }
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
@@ -78,7 +78,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
                         coroutineScope.launch(block = block)
                     }
                 } else {
-                    val coroutineScope = beans.getBeanValue(CoroutineScope::class.java, key = "minecraft")
+                    val coroutineScope = beans.getBean(CoroutineScope::class.java, key = "minecraft")
                     requireNotNull(coroutineScope) {
                         "Suspend timer must have a context CoroutineScope bean named 'minecraft' to run in server thread."
                     }

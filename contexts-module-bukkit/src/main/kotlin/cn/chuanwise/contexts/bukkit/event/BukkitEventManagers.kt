@@ -21,15 +21,14 @@ import cn.chuanwise.contexts.events.DEFAULT_LISTENER_FILTER
 import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
 import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.events.Listener
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.getBeanValue
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 
-val BeanFactory.bukkitEventManager: BukkitEventManager get() = getBeanValueOrFail()
-val BeanFactory.bukkitEventManagerOrNull: BukkitEventManager? get() = getBeanValue()
+val BeanManager.bukkitEventManager: BukkitEventManager get() = getBeanValueOrFail()
+val BeanManager.bukkitEventManagerOrNull: BukkitEventManager? get() = getBean()
 
 inline fun <reified T : Event> BukkitEventManager.registerListener(
     priority: EventPriority = EventPriority.NORMAL,

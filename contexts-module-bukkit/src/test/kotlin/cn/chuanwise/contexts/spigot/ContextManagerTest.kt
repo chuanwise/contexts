@@ -35,6 +35,7 @@ import cn.chuanwise.contexts.filters.annotations.createFilterAnnotationModule
 import cn.chuanwise.contexts.filters.createFilterModule
 import cn.chuanwise.contexts.util.ConsoleLoggerImpl
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.Bean
 import cn.chuanwise.contexts.util.Joint
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -122,11 +123,11 @@ class ContextManagerTest {
     fun testContextManager() {
 
 
-        val globalContext = contextManager.enterRoot(GlobalContext, key = "Global")
+        val globalContext = contextManager.enterRoot(GlobalContext, id = "Global")
 
-        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), key = "Chuanwise")
-        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), key = "404E")
-        fourZeroFourEContext.enterChild(JumpToolContext, key = "Jump")
+        val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), id = "Chuanwise")
+        val fourZeroFourEContext = globalContext.enterChild(PlayerContext("404E"), id = "404E")
+        fourZeroFourEContext.enterChild(JumpToolContext, id = "Jump")
 
         val listenerManager = chuanwiseContext.listenerManager
         globalContext.eventPublisher.publish(PlayerJoinEvent("Chuanwise"))

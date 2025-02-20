@@ -29,8 +29,9 @@ class MutableEntries<T>(
         private val mutableIsRemoved = AtomicBoolean(false)
         override val isRemoved: Boolean get() = mutableIsRemoved.get()
 
-        override fun remove() {
-            if (mutableIsRemoved.compareAndSet(false, true)) {
+        override fun tryRemove(): Boolean {
+            val result = mutableIsRemoved.compareAndSet(false, true)
+            if (result) {
                 try {
                     onPreRemove?.accept(this)
                 } finally {
@@ -38,6 +39,7 @@ class MutableEntries<T>(
                     onPostRemove?.accept(this)
                 }
             }
+            return result
         }
     }
 

@@ -21,11 +21,14 @@ import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
 import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
-import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
+import cn.chuanwise.contexts.util.MutableBeanEntry
+import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
+import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.toResolvableType
 
 /**
  * 过滤器模块。
@@ -44,7 +47,7 @@ class FilterModuleImpl : FilterModule {
     }
 
     private class FilterManagerImpl(override val context: Context) : FilterManager {
-        private var resolverBean: MutableBean<FilterResolver>? = null
+        private var resolverBean: MutableBeanEntry<FilterResolver>? = null
         override var resolver: FilterResolver?
             get() = resolverBean?.value
             set(value) {
@@ -105,14 +108,14 @@ class FilterModuleImpl : FilterModule {
         class FilterContextImpl<T : Any>(
             override val value: T,
             override val context: Context,
-            override val beans: MutableBeanFactory,
+            override val beans: MutableBeanManager,
             override val caches: MutableMap<Filter<T>, Boolean?> = mutableMapOf(),
             override var result: Boolean? = null
         ) : FilterContext<T>
 
         override fun <T : Any> filter(value: T): FilterContext<T> {
-            val beans = InheritedMutableBeanFactory(context).apply {
-                addBean(value, primary = true)
+            val beans = InheritedMutableBeanManagerImpl(context).apply {
+                addBean(value, type = value::class.toResolvableType() as ResolvableType<T>, primary = true)
             }
             val context = FilterContextImpl(value, context, beans).apply { beans.addBean(this) }
             return filter(context)

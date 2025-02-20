@@ -16,21 +16,24 @@
 
 package cn.chuanwise.contexts.context
 
-import cn.chuanwise.contexts.util.Bean
-import cn.chuanwise.contexts.util.BeanFactory
+import cn.chuanwise.contexts.util.AbstractInheritedMutableBeanManager
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.InheritedMutableBeanFactory
-import cn.chuanwise.contexts.util.MutableBean
-import cn.chuanwise.contexts.util.MutableBeanFactory
+import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
+import cn.chuanwise.contexts.util.MutableBeanEntry
+import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
+import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.add
+import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeans
 import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
+import cn.chuanwise.contexts.util.getBeans
 import cn.chuanwise.contexts.util.read
 import cn.chuanwise.contexts.util.remove
 import cn.chuanwise.contexts.util.withLocks
-import java.lang.reflect.Type
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -61,8 +64,17 @@ import java.util.concurrent.atomic.AtomicReference
  * @author Chuanwise
  */
 @NotStableForInheritance
-interface Context : MutableBeanFactory, AutoCloseable {
-    val key: Any?
+interface Context : MutableBeanManager, AutoCloseable {
+    /**
+     * 上下文的 ID。
+     *
+     * 此 ID 并不一定唯一，只能确保在它的直接邻居中唯一。
+     */
+    val id: Any?
+
+    /**
+     * 该上下文对应的上下文管理器。
+     */
     val contextManager: ContextManager
 
     val isInitialized: Boolean
@@ -93,67 +105,45 @@ interface Context : MutableBeanFactory, AutoCloseable {
     val singleAllChild: Context
     val singleAllChildOrNull: Context?
 
-    val contextBeans: List<MutableBean<*>>
-    val contextBeanValues: List<*>
+    fun isInAllParents(context: Context): Boolean
+    fun isInAllChildren(context: Context): Boolean
 
-    fun inAllParents(context: Context): Boolean
-    fun inAllChildren(context: Context): Boolean
+    fun isParent(context: Context): Boolean
+    fun isChild(context: Context): Boolean
 
-    fun inParents(context: Context): Boolean
-    fun inChildren(context: Context): Boolean
-
-    /**
-     * 联通分量里的所有上下文，即包括自己和所有父子上下文。
-     */
-    val components: List<Context>
-
-    fun getChildByKey(key: Any): Context?
-    fun getChildByKeyOrFail(key: Any): Context {
-        return getChildByKey(key) ?: throw NoSuchElementException("Cannot find child with key $key.")
+    fun getChildById(key: Any): Context?
+    fun getChildByIdOrFail(key: Any): Context {
+        return getChildById(key) ?: throw NoSuchElementException("Cannot find child with key $key.")
     }
 
-    fun getParentByKey(key: Any): Context?
-    fun getParentByKeyOrFail(key: Any): Context {
-        return getParentByKey(key) ?: throw NoSuchElementException("Cannot find parent with key $key.")
+    fun getParentById(key: Any): Context?
+    fun getParentByIdOrFail(key: Any): Context {
+        return getParentById(key) ?: throw NoSuchElementException("Cannot find parent with key $key.")
     }
 
     /**
      * 尝试获取一个带有指定对象的子上下文。
      *
      * @param bean 对象
-     * @param key 键
+     * @param id 对象 ID
      * @return 子上下文
      */
-    fun getChildByBean(bean: Any, key: Any? = null, primary: Boolean? = null): Context?
-    fun getChildByBeanOrFail(bean: Any, key: Any? = null, primary: Boolean? = null): Context {
-        return getChildByBean(bean, key, primary) ?: throw NoSuchElementException("Cannot find child with bean $bean and key $key.")
-    }
+    fun <T> getChildByBean(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getChildByBean(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
 
-    fun getChildByBeanClass(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context?
-    fun getChildByBeanClassOrFail(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context {
-        return getChildByBeanClass(beanClass, key, primary) ?: throw NoSuchElementException("Cannot find child with bean class $beanClass and key $key.")
-    }
-
-    fun getParentByBean(bean: Any, key: Any? = null, primary: Boolean? = null): Context?
-    fun getParentByBeanOrFail(bean: Any, key: Any? = null, primary: Boolean? = null): Context {
-        return getParentByBean(bean, key, primary) ?: throw NoSuchElementException("Cannot find parent with bean $bean and key $key.")
-    }
-
-    fun getParentByBeanClass(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context?
-    fun getParentByBeanClassOrFail(beanClass: Class<*>, key: Any? = null, primary: Boolean? = null): Context {
-        return getParentByBeanClass(beanClass, key, primary) ?: throw NoSuchElementException("Cannot find parent with bean class $beanClass and key $key.")
-    }
+    fun <T> getParentByBean(bean: T, beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
+    fun <T> getParentByBean(beanType: ResolvableType<T>, id: String? = null, primary: Boolean? = null): Context?
 
     /**
      * 进入一个子上下文。
      *
-     * @param key 上下文键。
+     * @param id 上下文键。
      * @param child 子上下文对象。
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
      */
-    fun enterChild(child: Any, key: Any, replace: Boolean = false): Context?
-    fun enterChild(child: Any, key: Any): Context
+    fun enterChild(child: Any, id: String, replace: Boolean = false): Context?
+    fun enterChild(child: Any, id: String): Context
     fun enterChild(child: Any): Context
 
     /**
@@ -164,8 +154,8 @@ interface Context : MutableBeanFactory, AutoCloseable {
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
      */
-    fun enterChild(vararg child: Any, key: Any, replace: Boolean = false): Context?
-    fun enterChild(vararg child: Any, key: Any): Context
+    fun enterChild(vararg child: Any, id: String, replace: Boolean = false): Context?
+    fun enterChild(vararg child: Any, id: String): Context
     fun enterChild(vararg child: Any): Context
 
     /**
@@ -176,8 +166,8 @@ interface Context : MutableBeanFactory, AutoCloseable {
      * @param replace 是否替换已有的同键子上下文。
      * @return 添加后的上下文。
      */
-    fun enterChild(child: Iterable<Any>, key: Any, replace: Boolean = false): Context?
-    fun enterChild(child: Iterable<Any>, key: Any): Context
+    fun enterChild(child: Iterable<Any>, id: String, replace: Boolean = false): Context?
+    fun enterChild(child: Iterable<Any>, id: String): Context
     fun enterChild(child: Iterable<Any>): Context
 
     /**
@@ -215,6 +205,13 @@ interface Context : MutableBeanFactory, AutoCloseable {
     fun removeParent(parent: Context): Boolean
 
     /**
+     * 尝试退出上下文。
+     *
+     * @return 是否成功推出
+     */
+    fun tryExit(): Boolean
+
+    /**
      * 退出并销毁上下文。
      *
      * @author Chuanwise
@@ -226,12 +223,12 @@ interface Context : MutableBeanFactory, AutoCloseable {
 
 @ContextsInternalApi
 abstract class AbstractContext : Context {
-    override fun enterChild(child: Any, key: Any, replace: Boolean): Context? {
-        return enterChild(listOf(child), key, replace)
+    override fun enterChild(child: Any, id: String, replace: Boolean): Context? {
+        return enterChild(listOf(child), id, replace)
     }
 
-    override fun enterChild(vararg child: Any, key: Any, replace: Boolean): Context? {
-        return enterChild(child.toList(), key, replace)
+    override fun enterChild(vararg child: Any, id: String, replace: Boolean): Context? {
+        return enterChild(child.toList(), id, replace)
     }
 
     override fun enterChild(child: Any): Context {
@@ -242,30 +239,63 @@ abstract class AbstractContext : Context {
         return enterChild(child.toList())
     }
 
-    override fun enterChild(child: Any, key: Any): Context {
-        return enterChild(listOf(child), key)
+    override fun enterChild(child: Any, id: String): Context {
+        return enterChild(listOf(child), id)
     }
 
-    override fun enterChild(vararg child: Any, key: Any): Context {
-        return enterChild(child.toList(), key, replace = false)!!
+    override fun enterChild(vararg child: Any, id: String): Context {
+        return enterChild(child.toList(), id, replace = false)!!
     }
 }
 
 @ContextsInternalApi
-@Suppress("UNCHECKED_CAST")
-class ContextImpl(
-    override val contextManager: ContextManagerImpl,
-    override val key: Any?,
-) : AbstractContext() {
-    private inner class AllParentIterable : Iterable<BeanFactory> {
-        override fun iterator(): Iterator<BeanFactory> {
+private class ContextBeanManagerImpl : AbstractInheritedMutableBeanManager() {
+    lateinit var context: ContextImpl
+
+    override fun <T> addBean(value: T, type: ResolvableType<T>, id: String?, primary: Boolean): MutableBeanEntry<T> {
+        context.checkNotExited()
+
+        val preAddEvent = ContextBeanPreAddEventImpl(context, value, context.contextManager, id, primary, type)
+        context.contextManager.onContextBeanPreAdd(preAddEvent)
+
+        val bean = super.addBean(value, type, id, primary)
+
+        val postAddEvent = ContextBeanPostAddEventImpl(context, value, bean, context.contextManager)
+        context.contextManager.onContextBeanPostAdd(postAddEvent)
+        return bean
+    }
+
+    override fun removeBean(bean: MutableBeanEntry<*>) {
+        context.checkNotExited()
+
+        val preRemoveEvent = ContextBeanPreRemoveEventImpl(context, bean, context.contextManager)
+        context.contextManager.onContextBeanPreRemove(preRemoveEvent)
+
+        super.removeBean(bean)
+
+        val postRemoveEvent = ContextBeanPostRemoveEventImpl(context, bean, context.contextManager)
+        context.contextManager.onContextBeanPostRemove(postRemoveEvent)
+    }
+
+    private inner class AllParentIterable : Iterable<BeanManager> {
+        override fun iterator(): Iterator<BeanManager> {
             return sequence {
-                yieldAll(createChildToParentTopologicalIteratorInAllParents())
-                yield(contextManager)
+                yieldAll(context.createChildToParentTopologicalIteratorInAllParents())
+                yield(context.contextManager)
             }.iterator()
         }
     }
-    private val beans: InheritedMutableBeanFactory = InheritedMutableBeanFactory(AllParentIterable())
+
+    override val parentBeanManagers: Iterable<BeanManager> get() = AllParentIterable()
+}
+
+@ContextsInternalApi
+@Suppress("UNCHECKED_CAST")
+class ContextImpl private constructor(
+    override val contextManager: ContextManagerImpl,
+    override val id: Any?,
+    private val beanManager: ContextBeanManagerImpl
+) : AbstractContext(), MutableBeanManager by beanManager {
     private val lock = ReadWriteLockBasedReadAddRemoveLock()
 
     private val mutableParents: MutableCollection<ContextImpl> = mutableListOf()
@@ -277,7 +307,7 @@ class ContextImpl(
     override val singleParent: Context get() = lock.read { mutableParents.single() }
     override val singleParentOrNull: Context? get() = lock.read { mutableParents.singleOrNull() }
 
-    override fun inParents(context: Context): Boolean {
+    override fun isParent(context: Context): Boolean {
         return lock.read { context in mutableParents }
     }
 
@@ -287,7 +317,7 @@ class ContextImpl(
     override val singleAllParent: Context get() = lock.read { allParents.single() }
     override val singleAllParentOrNull: Context? get() = lock.read { allParents.singleOrNull() }
 
-    override fun inAllParents(context: Context): Boolean {
+    override fun isInAllParents(context: Context): Boolean {
         return context in allParents
     }
 
@@ -300,7 +330,7 @@ class ContextImpl(
     override val singleChild: Context get() = lock.read { mutableChildren.single() }
     override val singleChildOrNull: Context? get() = lock.read { mutableChildren.singleOrNull() }
 
-    override fun inChildren(context: Context): Boolean {
+    override fun isChild(context: Context): Boolean {
         return lock.read { context in mutableChildren }
     }
 
@@ -310,37 +340,45 @@ class ContextImpl(
     override val singleAllChild: Context get() = lock.read { allChildren.single() }
     override val singleAllChildOrNull: Context? get() = lock.read { allChildren.singleOrNull() }
 
-    override fun inAllChildren(context: Context): Boolean {
+    override fun isInAllChildren(context: Context): Boolean {
         return context in allChildren
     }
 
-    override val components: List<Context> get() = allParents + allChildren + this
-
-    override val contextBeanValues: List<*> get() = beans.beans.getBeanValues(Any::class.java)
-    override val contextBeans: List<MutableBean<*>> get() = beans.beans.getBeans(Any::class.java) as List<MutableBean<Any>>
-
     private enum class State {
-        INITIALIZED, ENTERED, EXITED
+        ALLOCATED, INITIALIZED, ENTERED, EXITED
     }
 
-    private val state = AtomicReference(State.INITIALIZED)
+    private val state = AtomicReference(State.ALLOCATED)
     override val isExited: Boolean get() = state.get() == State.EXITED
-    override val isInitialized: Boolean get() = state.get() == State.INITIALIZED
+    override val isInitialized: Boolean get() = state.get() != State.ALLOCATED
     override val isEntered: Boolean get() = state.get() == State.ENTERED
 
-    private val contextBean = addBean(this)
+    constructor(contextManager: ContextManagerImpl, id: Any?) : this(contextManager, id, ContextBeanManagerImpl())
 
-    override fun getChildByKey(key: Any): Context? = lock.read {
+    init {
+        beanManager.context = this
+        addBean(this)
+    }
+
+    override fun getChildById(key: Any): Context? = lock.read {
         mutableChildrenByKey[key]
     }
 
-    override fun getParentByKey(key: Any): Context? = lock.read {
+    override fun getParentById(key: Any): Context? = lock.read {
         mutableParentsByKey[key]
     }
 
-    override fun getParentByBean(bean: Any, key: Any?, primary: Boolean?): Context? {
+    override fun <T> getParentByBean(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
         for (parent in createAllParentsBreadthFirstSearchIterator()) {
-            val beanValue = parent.getBean(bean::class.java, key = key)?.value ?: continue
+            parent.getBeanEntry(beanType, id = id, primary = primary) ?: continue
+            return parent
+        }
+        return null
+    }
+
+    override fun <T> getParentByBean(bean: T, beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
+        for (parent in createAllParentsBreadthFirstSearchIterator()) {
+            val beanValue = parent.getBeanEntry(beanType, id = id, primary = primary)?.value ?: continue
             if (beanValue == bean) {
                 return parent
             }
@@ -348,39 +386,31 @@ class ContextImpl(
         return null
     }
 
-    override fun getChildByBean(bean: Any, key: Any?, primary: Boolean?): Context? = lock.read {
+    override fun <T> getChildByBean(beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
         for (child in createAllChildrenBreadthFirstSearchIterator()) {
-            val beanValue = child.getBean(bean::class.java, key = key, primary = primary)?.value ?: continue
-            if (beanValue == bean) {
-                return child
-            }
-        }
-        null
-    }
-
-    override fun getParentByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? {
-        for (parent in createAllParentsBreadthFirstSearchIterator()) {
-            parent.getBean(beanClass, key = key, primary = primary) ?: continue
-            return parent
+            child.getBeanEntry(beanType, id = id, primary = primary) ?: continue
+            return child
         }
         return null
     }
 
-    override fun getChildByBeanClass(beanClass: Class<*>, key: Any?, primary: Boolean?): Context? = lock.read {
+    override fun <T> getChildByBean(bean: T, beanType: ResolvableType<T>, id: String?, primary: Boolean?): Context? {
         for (child in createAllChildrenBreadthFirstSearchIterator()) {
-            child.getBean(beanClass, key = key, primary = primary) ?: continue
-            return child
+            val beanValue = child.getBeanEntry(beanType, id = id, primary = primary)?.value ?: continue
+            if (beanValue == bean) {
+                return child
+            }
         }
-        null
+        return null
     }
 
     // 连接两个上下文，不检查是否会成环，不加锁，会通知 context modules: PreAdd, PostAdd。
     // 如果 check = true，先确保不是父子关系。否则信任调用者。
     private fun addNoLock(parent: ContextImpl, child: ContextImpl, replace: Boolean, enter: Boolean, check: Boolean = true): Boolean {
-        val childKey = child.key
-        val parentKey = parent.key
+        val childKey = child.id
+        val parentKey = parent.id
 
-        if (check && parent.inChildren(child)) {
+        if (check && parent.isChild(child)) {
             return false
         }
 
@@ -427,10 +457,10 @@ class ContextImpl(
     // 退出一个子上下文，不加锁，会通知 context modules: PreRemove, PostRemove。
     // 如果 check = true，先确保是父子关系。否则信任调用者。
     private fun removeNoLock(parent: ContextImpl, child: ContextImpl, exit: Boolean, check: Boolean = true): Boolean {
-        val childKey = child.key
-        val parentKey = parent.key
+        val childKey = child.id
+        val parentKey = parent.id
 
-        if (check && !parent.inChildren(child)) {
+        if (check && !parent.isChild(child)) {
             return false
         }
 
@@ -465,14 +495,29 @@ class ContextImpl(
         return true
     }
 
-    private fun doEnterChild(child: Iterable<Any>, key: Any?, replace: Boolean): Context? {
+    fun trySetInitialized() : Boolean {
+        return state.compareAndSet(State.ALLOCATED, State.INITIALIZED)
+    }
+
+    fun trySetEntered() : Boolean {
+        return state.compareAndSet(State.INITIALIZED, State.ENTERED)
+    }
+
+    private fun doEnterChild(child: Iterable<Any>, id: String?, replace: Boolean): Context? {
         checkNotExited()
 
-        val context = ContextImpl(contextManager, key).apply {
-            addBeans(child)
-        }
+        val context = ContextImpl(contextManager, id)
         val contextInitEvent = ContextInitEventImpl(context, contextManager)
         contextManager.onContextInit(contextInitEvent)
+
+        if (!trySetInitialized()) {
+            return null
+        }
+        context.addBeans(child)
+
+        if (!trySetEntered()) {
+            return null
+        }
 
         listOf(lock, context.lock).add {
             val contextPreEnterEvent = ContextPreEnterEventImpl(context, contextManager)
@@ -491,17 +536,20 @@ class ContextImpl(
     }
 
     override fun enterChild(child: Iterable<Any>): Context {
-        return doEnterChild(child, null, replace = false)!!
+        val result = doEnterChild(child, null, replace = false)
+        requireNotNull(result) { "Child context was exited by a module." }
+        return result
     }
 
-    override fun enterChild(child: Iterable<Any>, key: Any, replace: Boolean): Context? {
-        return doEnterChild(child, key, replace)
+    override fun enterChild(child: Iterable<Any>, id: String, replace: Boolean): Context? {
+        return doEnterChild(child, id, replace)
     }
 
-    override fun enterChild(child: Iterable<Any>, key: Any): Context {
-        val result = doEnterChild(child, key, replace = false)
+    override fun enterChild(child: Iterable<Any>, id: String): Context {
+        val result = doEnterChild(child, id, replace = false)
         requireNotNull(result) {
-            "Child with same key $key already exists. To replace it, use context.enterChild(child, key, replace = true)."
+            "Child context with same id $id already exists or it was exited by a module. " +
+                    "For first situation, to replace it, use context.enterChild(child, id, replace = true)."
         }
         return result
     }
@@ -535,8 +583,9 @@ class ContextImpl(
 
     override fun removeParent(parent: Context): Boolean = parent.removeChild(this)
 
-    override fun exit() {
-        if (state.compareAndSet(State.ENTERED, State.EXITED)) {
+    override fun tryExit(): Boolean {
+        val result = state.compareAndSet(State.ENTERED, State.EXITED)
+        if (result) {
             // 不加 addLock 的原因是在 exitLock = true 的时候其他线程不可能对他 add。
 
             val contextPreExitEvent = ContextPreExitEventImpl(this, contextManager)
@@ -563,73 +612,22 @@ class ContextImpl(
             val contextPostExitEvent = ContextPostExitEventImpl(this, contextManager)
             contextManager.onContextPostExit(contextPostExitEvent)
         }
+        return result
     }
 
-    override fun getBean(type: Type, primary: Boolean?, key: Any?): Bean<*>? {
-        return beans.getBean(type, primary, key)
-    }
-
-    override fun <T : Any> getBean(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T>? {
-        return beans.getBean(beanClass, primary, key)
-    }
-
-    override fun getBeanOrFail(type: Type, primary: Boolean?, key: Any?): Bean<*> {
-        return beans.getBeanOrFail(type, primary, key)
-    }
-
-    override fun <T : Any> getBeanOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): Bean<T> {
-        return beans.getBeanOrFail(beanClass, primary, key)
-    }
-
-    override fun getBeans(type: Type): List<Bean<*>> {
-        return beans.getBeans(type)
-    }
-
-    override fun <T : Any> getBeans(beanClass: Class<T>): List<Bean<T>> {
-        return beans.getBeans(beanClass)
-    }
-
-    override fun <T : Any> addBean(value: T, keys: MutableSet<Any>, primary: Boolean): MutableBean<T> {
-        return beans.addBean(value, keys, primary)
-    }
-
-    override fun <T : Any> addBean(value: T, key: Any, primary: Boolean): MutableBean<T> {
-        return beans.addBean(value, key, primary)
-    }
-
-    override fun <T : Any> addBean(value: T, primary: Boolean): MutableBean<T> {
-        return beans.addBean(value, primary)
-    }
-
-    override fun getBeanValue(type: Type, primary: Boolean?, key: Any?): Any? {
-        return beans.getBeanValue(type, primary, key)
-    }
-
-    override fun <T : Any> getBeanValue(beanClass: Class<T>, primary: Boolean?, key: Any?): T? {
-        return beans.getBeanValue(beanClass, primary, key)
-    }
-
-    override fun getBeanValueOrFail(type: Type, primary: Boolean?, key: Any?): Any {
-        return beans.getBeanValueOrFail(type, primary, key)
-    }
-
-    override fun <T : Any> getBeanValueOrFail(beanClass: Class<T>, primary: Boolean?, key: Any?): T {
-        return beans.getBeanValueOrFail(beanClass, primary, key)
-    }
-
-    override fun getBeanValues(type: Type): List<*> {
-        return beans.getBeanValues(type)
-    }
-
-    override fun <T : Any> getBeanValues(beanClass: Class<T>): List<T> {
-        return beans.getBeanValues(beanClass)
+    override fun exit() {
+        check(tryExit()) { "Unexpected context state $state while exiting." }
     }
 
     override fun toString(): String {
-        return "Context(key=$key, hash=${hashCode()}, exit=$isExited)"
+        return "Context(key=$id, hash=${hashCode()}, exit=$isExited)"
     }
 
-    private fun checkNotExited() {
+    fun checkNotExited() {
         check(!isExited) { "Context is exited." }
+    }
+
+    fun checkInitialized() {
+        check(isInitialized) { "Context is not initialized." }
     }
 }

@@ -20,5 +20,5 @@ package cn.chuanwise.contexts.util
 
 import kotlinx.coroutines.CoroutineScope
 
-val BeanFactory.coroutineScope: CoroutineScope get() = getBeanValueOrFail()
-val BeanFactory.coroutineScopeOrNull: CoroutineScope? get() = getBeanValue()
+val BeanManager.coroutineScope: CoroutineScope get() = getBeanOrFail()
+val BeanManager.coroutineScopeOrNull: CoroutineScope? get() = getBean()

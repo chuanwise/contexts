@@ -17,9 +17,8 @@
 @file:JvmName("BukkitTaskManagers")
 package cn.chuanwise.contexts.bukkit.task
 
-import cn.chuanwise.contexts.util.BeanFactory
-import cn.chuanwise.contexts.util.getBeanValue
+import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.getBeanValueOrFail
 
-val BeanFactory.bukkitTaskManager: BukkitTaskManager get() = getBeanValueOrFail()
-val BeanFactory.bukkitTaskManagerOrNull: BukkitTaskManager? get() = getBeanValue()
+val BeanManager.bukkitTaskManager: BukkitTaskManager get() = getBeanValueOrFail()
+val BeanManager.bukkitTaskManagerOrNull: BukkitTaskManager? get() = getBean()

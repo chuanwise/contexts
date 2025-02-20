@@ -17,7 +17,9 @@
 package cn.chuanwise.contexts.module
 
 import cn.chuanwise.contexts.context.ContextBeanPostAddEvent
+import cn.chuanwise.contexts.context.ContextBeanPostRemoveEvent
 import cn.chuanwise.contexts.context.ContextBeanPreAddEvent
+import cn.chuanwise.contexts.context.ContextBeanPreRemoveEvent
 import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
 import cn.chuanwise.contexts.context.ContextPostEnterEvent
@@ -52,6 +54,6 @@ interface Module {
     fun onContextBeanPreAdd(event: ContextBeanPreAddEvent<*>): Unit = Unit
     fun onContextBeanPostAdd(event: ContextBeanPostAddEvent<*>): Unit = Unit
 
-    fun onContextBeanPreRemove(event: ContextBeanPreAddEvent<*>): Unit = Unit
-    fun onContextBeanPostRemove(event: ContextBeanPostAddEvent<*>): Unit = Unit
+    fun onContextBeanPreRemove(event: ContextBeanPreRemoveEvent<*>): Unit = Unit
+    fun onContextBeanPostRemove(event: ContextBeanPostRemoveEvent<*>): Unit = Unit
 }
