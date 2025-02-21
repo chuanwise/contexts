@@ -21,7 +21,7 @@ import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.filters.annotations.Filter
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -57,7 +57,7 @@ class PlayerSessionImpl(
 
     @Listener
     fun ContextPostEnterEvent.onPostEnter() {
-        context.addBean(player)
+        context.addBeanByCompilationType(player)
         mutableContext = context
     }
 

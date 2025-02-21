@@ -29,7 +29,7 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 
 /**
  * 事件模块。
@@ -175,11 +175,11 @@ class EventModuleImpl @JvmOverloads constructor(
         private fun createEventContext(event: Any): EventContext<Any> {
             val filterContext = context.filterManager.filter(event)
             val beans = InheritedMutableBeanManagerImpl(context).apply {
-                addBean(filterContext, primary = true)
-                addBean(event, primary = true)
+                addBeanByCompilationType(filterContext, primary = true)
+                addBeanByCompilationType(event, primary = true)
             }
             return EventContextImpl(event, context, beans, filterContext).apply {
-                beans.addBean(this, primary = true)
+                beans.addBeanByCompilationType(this, primary = true)
             }
         }
 
@@ -290,7 +290,7 @@ class EventModuleImpl @JvmOverloads constructor(
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val eventPublisher = EventPublisherImpl(event.context, defaultEventSpreader)
-        event.context.addBean(eventPublisher)
+        event.context.addBeanByCompilationType(eventPublisher)
     }
 
     override fun registerEventHandler(eventHandler: EventHandler): MutableEntry<EventHandler> {

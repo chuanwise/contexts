@@ -18,11 +18,12 @@ package cn.chuanwise.contexts.reactions.util
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
+import cn.chuanwise.contexts.util.ResolvableType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 @ContextsInternalApi
-abstract class AbstractMutableReactive<T> : AbstractReactive<T>(), MutableReactive<T> {
+abstract class AbstractMutableReactive<T>(type: ResolvableType<T>) : AbstractReactive<T>(type), MutableReactive<T> {
     private inner class MutableEntryImpl(
         override val value: ReactiveWriteObserver<T>
     ) : MutableEntry<ReactiveWriteObserver<T>> {
@@ -40,12 +41,10 @@ abstract class AbstractMutableReactive<T> : AbstractReactive<T>(), MutableReacti
 
     private val writeObservers = ConcurrentHashMap<ReactiveWriteObserver<T>, MutableEntryImpl>()
 
-    protected fun onValueWrite(value: T): T {
-        var finalValue = value
+    protected fun onValueWrite(value: T) {
         writeObservers.keys.forEach {
-            finalValue = it.onValueWrite(this, value)
+            it.onValueWrite(this, value)
         }
-        return finalValue
     }
 
     override fun addWriteObserver(observer: ReactiveWriteObserver<T>): MutableEntry<ReactiveWriteObserver<T>> {

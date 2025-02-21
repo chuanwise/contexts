@@ -74,7 +74,16 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
                 context, function, functionClass, arguments, coroutineScopeConfiguration,
                 runBlocking = false,
                 onException = {
-                    onException(it, eventContext)
+                    context.contextManager.logger.error(it) {
+                        "Exception occurred while listening event ${eventContext.event::class.simpleName} " +
+                                "by method ${function.name} declared in ${function::class.simpleName} for context $context. " +
+                                "Details: " +
+                                "method class: ${function::class.qualifiedName}, " +
+                                "method: $function, " +
+                                "event class: ${eventContext.event::class.qualifiedName}, " +
+                                "priority: $priority, " +
+                                "ignoreCancelled: $ignoreCancelled."
+                    }
                 },
                 onFinally = {
                     if (listen) {
@@ -82,19 +91,6 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
                     }
                 }
             )
-        }
-
-        private fun onException(e: Throwable, eventContext: EventContext<Event>) {
-            context.contextManager.logger.error(e) {
-                "Exception occurred while listening event ${eventContext.event::class.simpleName} " +
-                        "by method ${function.name} declared in ${function::class.simpleName} for context $context. " +
-                        "Details: " +
-                        "method class: ${function::class.qualifiedName}, " +
-                        "method: $function, " +
-                        "event class: ${eventContext.event::class.qualifiedName}, " +
-                        "priority: $priority, " +
-                        "ignoreCancelled: $ignoreCancelled."
-            }
         }
     }
 

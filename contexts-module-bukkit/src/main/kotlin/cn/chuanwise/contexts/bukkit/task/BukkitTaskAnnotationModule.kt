@@ -27,7 +27,7 @@ import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
 import cn.chuanwise.contexts.util.getBean
@@ -53,7 +53,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
     ) : Consumer<BukkitTask> {
         override fun accept(t: BukkitTask) {
             val beans = InheritedMutableBeanManagerImpl(context).apply {
-                addBean(t)
+                addBeanByCompilationType(t)
             }
             val arguments = argumentResolvers.mapValues { it.value.resolveArgument(beans) }
 

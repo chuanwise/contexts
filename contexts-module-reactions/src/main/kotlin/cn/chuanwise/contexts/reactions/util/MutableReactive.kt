@@ -18,6 +18,7 @@ package cn.chuanwise.contexts.reactions.util
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
+import cn.chuanwise.contexts.util.ResolvableType
 
 interface MutableReactive<T> : Reactive<T> {
     override var value: T
@@ -26,8 +27,15 @@ interface MutableReactive<T> : Reactive<T> {
 }
 
 @ContextsInternalApi
-class NotModelMutableReactive<T>(initialValue: T) : AbstractMutableReactive<T>() {
+class MutableReactiveImpl<T>(initialValue: T, type: ResolvableType<T>) : AbstractMutableReactive<T>(type) {
     override var value: T = initialValue
         get() = onValueRead(field)
-        set(value) { field = onValueWrite(value) }
+        set(value) {
+            field = value
+            onValueWrite(value)
+        }
+
+    override fun toString(): String {
+        return "MutableReactive(value=$value)"
+    }
 }

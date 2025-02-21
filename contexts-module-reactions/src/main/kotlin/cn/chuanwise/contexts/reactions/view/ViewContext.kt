@@ -16,6 +16,62 @@
 
 package cn.chuanwise.contexts.reactions.view
 
-interface ViewContext {
+import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextExitEvent
+import cn.chuanwise.contexts.events.annotations.Listener
+import cn.chuanwise.contexts.reactions.ReactionManager
+import cn.chuanwise.contexts.reactions.ReactionModule
+import cn.chuanwise.contexts.reactions.ReactionModuleImpl
+import cn.chuanwise.contexts.reactions.util.MutableReactive
+import cn.chuanwise.contexts.reactions.util.Reactive
+import cn.chuanwise.contexts.reactions.util.ReactiveWriteObserver
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.MutableEntry
+import java.util.concurrent.ConcurrentHashMap
 
+interface ViewContext {
+    val context: Context
+    val beanManager: BeanManager
+
+    val reactionManager: ReactionManager
+    val reactionModule: ReactionModule
+
+    fun <T> bind(reactive: Reactive<T>, cache: T)
+}
+
+@ContextsInternalApi
+class ViewContextImpl(
+    override val context: Context,
+    override val beanManager: BeanManager,
+    override val reactionManager: ReactionModuleImpl.ReactionManagerImpl,
+    override val reactionModule: ReactionModule
+) : ViewContext {
+    private val reactives = ConcurrentHashMap<Reactive<Any?>, MutableEntry<ReactiveWriteObserver<Any?>>>()
+
+    private inner class ViewFlusher : ReactiveWriteObserver<Any?> {
+        override fun onValueWrite(reactive: Reactive<Any?>, value: Any?) {
+            reactionManager.tryFlush(reactive, value)
+        }
+    }
+
+    private val viewFlusher = ViewFlusher()
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> bind(reactive: Reactive<T>, cache: T) {
+        reactionManager.cacheReactiveValue(reactive, cache)
+        reactives.computeIfAbsent(reactive) {
+            when (reactive) {
+                is MutableReactive -> (reactive as MutableReactive<Any?>).addWriteObserver(viewFlusher)
+                else -> error("Unsupported reactive type: ${reactive::class.java}")
+            }
+        }
+    }
+
+    @Listener
+    fun onContextExited(event: ContextExitEvent) {
+        reactives.values.forEach {
+            it.remove()
+        }
+    }
 }

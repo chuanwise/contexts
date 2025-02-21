@@ -25,8 +25,8 @@ import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
 import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.add
-import cn.chuanwise.contexts.util.addBean
-import cn.chuanwise.contexts.util.addBeans
+import cn.chuanwise.contexts.util.addBeanByCompilationType
+import cn.chuanwise.contexts.util.addBeanByRuntimeType
 import cn.chuanwise.contexts.util.createAllChildrenBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.createAllParentsBreadthFirstSearchIterator
 import cn.chuanwise.contexts.util.read
@@ -361,7 +361,7 @@ class ContextImpl private constructor(
 
     init {
         beanManager.context = this
-        addBean(this)
+        addBeanByCompilationType(this)
     }
 
     override fun getChildById(id: Any): Context? = lock.read {
@@ -543,7 +543,10 @@ class ContextImpl private constructor(
         if (!context.trySetInitialized()) {
             return null
         }
-        context.addBeans(child)
+
+        for (any in child) {
+            context.addBeanByRuntimeType(any)
+        }
 
         if (!context.trySetEntered()) {
             return null

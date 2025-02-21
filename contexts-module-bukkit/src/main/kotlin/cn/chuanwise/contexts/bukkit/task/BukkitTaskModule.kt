@@ -22,7 +22,7 @@ import cn.chuanwise.contexts.context.ContextPreExitEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.getBeanOrFail
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
@@ -103,6 +103,6 @@ class BukkitTaskModuleImpl @JvmOverloads constructor(
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val bukkitTimerManager = BukkitTaskManagerImpl(event.context)
-        event.context.addBean(bukkitTimerManager)
+        event.context.addBeanByCompilationType(bukkitTimerManager)
     }
 }

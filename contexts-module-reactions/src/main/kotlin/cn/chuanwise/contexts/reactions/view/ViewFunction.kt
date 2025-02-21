@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.view
 
-import cn.chuanwise.contexts.util.ResolvableType
-
-/**
- * 一个响应式的值，当值发生变化时，会通知所有监听者。
- *
- * @param T 值类型
- * @author Chuanwise
- * @see MutableReactive
- */
-interface Reactive<out T> {
-    val value: T
-    val type: ResolvableType<@UnsafeVariance T>
+fun interface ViewFunction {
+    fun buildView(context: ViewContext)
 }

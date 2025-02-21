@@ -20,7 +20,6 @@ import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.addBean
 import org.bukkit.inventory.ItemStack
 import java.util.function.Function
 

@@ -18,7 +18,7 @@
 package cn.chuanwise.contexts.util
 
 import kotlin.reflect.KClass
-import kotlin.reflect.typeOf
+import kotlin.reflect.full.createType
 
 @JvmOverloads
 fun <T : Any> MutableBeanManager.addBean(
@@ -58,7 +58,7 @@ fun <T: Any> MutableBeanManager.addBeans(
     return addBeans(values, createResolvableType(beanClass.kotlin), id, primary)
 }
 
-inline fun <reified T> MutableBeanManager.addBean(
+inline fun <reified T> MutableBeanManager.addBeanByCompilationType(
     value: T,
     id: String? = DEFAULT_BEAN_ID,
     primary: Boolean = DEFAULT_BEAN_PRIMARY
@@ -66,11 +66,12 @@ inline fun <reified T> MutableBeanManager.addBean(
     return addBean(value, createResolvableType<T>(), id, primary)
 }
 
-inline fun <reified T> MutableBeanManager.addBeans(
-    values: Iterable<T>,
+@Suppress("UNCHECKED_CAST")
+fun <T : Any> MutableBeanManager.addBeanByRuntimeType(
+    value: T,
     id: String? = DEFAULT_BEAN_ID,
     primary: Boolean = DEFAULT_BEAN_PRIMARY
-): List<BeanEntry<T>> {
-    return addBeans(values, createResolvableType<T>(), id, primary)
+): MutableBeanEntry<T> {
+    val valueType = createResolvableType(value::class.createType()) as ResolvableType<T>
+    return addBean(value, valueType, id, primary)
 }
-

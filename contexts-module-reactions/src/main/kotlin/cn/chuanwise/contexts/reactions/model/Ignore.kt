@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
-
-import cn.chuanwise.contexts.util.ResolvableType
+package cn.chuanwise.contexts.reactions.model
 
 /**
- * 一个响应式的值，当值发生变化时，会通知所有监听者。
+ * 在模型类型内的函数上使用，标注一个函数在代理的时候需要忽略。
  *
- * @param T 值类型
  * @author Chuanwise
- * @see MutableReactive
  */
-interface Reactive<out T> {
-    val value: T
-    val type: ResolvableType<@UnsafeVariance T>
-}
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Ignore

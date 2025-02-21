@@ -29,6 +29,8 @@ dependencies {
     api(project(":contexts-module-events"))
     api(project(":contexts-module-filters"))
 
+    implementation(libs.byte.buddy)
+
     testImplementation(libs.junit.jupiter)
 }
 

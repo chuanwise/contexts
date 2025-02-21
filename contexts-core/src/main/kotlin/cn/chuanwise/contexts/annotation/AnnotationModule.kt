@@ -20,11 +20,10 @@ import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.context.ContextBeanPostAddEvent
 import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.module.Module
-import cn.chuanwise.contexts.context.ContextPostEnterEvent
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import kotlin.reflect.KClass
 import kotlin.reflect.full.functions
 
@@ -146,7 +145,7 @@ class AnnotationModuleImpl : AnnotationModule {
     }
 
     override fun onContextInit(event: ContextInitEvent) {
-        event.context.addBean(AnnotationManagerImpl(event.context))
+        event.context.addBeanByCompilationType(AnnotationManagerImpl(event.context))
     }
 
     override fun onContextBeanPostAdd(event: ContextBeanPostAddEvent<*>) {

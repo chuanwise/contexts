@@ -145,7 +145,7 @@ fun callFunctionAsync(
     coroutineScopeConfiguration: CoroutineScopeConfiguration?,
     runBlocking: Boolean,
     onException: Consumer<Throwable>,
-    onFinally: Runnable
+    onFinally: Runnable = Runnable { }
 ) {
     if (function.isSuspend) {
         val block: suspend CoroutineScope.() -> Unit = {

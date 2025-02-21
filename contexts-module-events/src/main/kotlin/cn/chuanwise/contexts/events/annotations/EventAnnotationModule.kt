@@ -39,7 +39,7 @@ import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.NotStableForInheritance
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
@@ -50,7 +50,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
 
 /**
@@ -274,7 +273,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val listenerManager = ListenerManagerImpl(event.context)
-        event.context.addBean(listenerManager)
+        event.context.addBeanByCompilationType(listenerManager)
     }
 
     private lateinit var listenerAnnotationFunctionProcessor: MutableEntry<AnnotationFunctionProcessor<Listener>>

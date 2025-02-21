@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+@file:JvmName("ReactionManagers")
 
-import cn.chuanwise.contexts.util.ResolvableType
+package cn.chuanwise.contexts.reactions
 
-/**
- * 一个响应式的值，当值发生变化时，会通知所有监听者。
- *
- * @param T 值类型
- * @author Chuanwise
- * @see MutableReactive
- */
-interface Reactive<out T> {
-    val value: T
-    val type: ResolvableType<@UnsafeVariance T>
-}
+import cn.chuanwise.contexts.util.BeanManager
+import cn.chuanwise.contexts.util.getBean
+import cn.chuanwise.contexts.util.getBeanOrFail
+
+val BeanManager.reactionManager: ReactionManager get() = getBeanOrFail()
+val BeanManager.reactionManagerOrNull: ReactionManager? get() = getBean()

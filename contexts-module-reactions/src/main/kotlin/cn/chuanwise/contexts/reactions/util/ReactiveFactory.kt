@@ -19,6 +19,14 @@
 package cn.chuanwise.contexts.reactions.util
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.contexts.util.createResolvableType
 
 @OptIn(ContextsInternalApi::class)
-fun <T> createMutableReactive(initialValue: T): MutableReactive<T> = NotModelMutableReactive(initialValue)
+fun <T> createMutableReactive(initialValue: T, type: ResolvableType<T>): MutableReactive<T> {
+    return MutableReactiveImpl(initialValue, type)
+}
+
+inline fun <reified T> createMutableReactive(initialValue: T): MutableReactive<T> {
+    return createMutableReactive(initialValue, createResolvableType<T>())
+}

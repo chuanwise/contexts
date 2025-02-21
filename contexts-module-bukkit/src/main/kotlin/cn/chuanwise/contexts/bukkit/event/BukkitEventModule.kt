@@ -34,7 +34,7 @@ import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.getBean
 import cn.chuanwise.contexts.util.getBeanOrFail
 import org.bukkit.event.Cancellable
@@ -187,6 +187,6 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val bukkitEventManager = BukkitEventManagerImpl(event.context)
-        event.context.addBean(bukkitEventManager)
+        event.context.addBeanByCompilationType(bukkitEventManager)
     }
 }

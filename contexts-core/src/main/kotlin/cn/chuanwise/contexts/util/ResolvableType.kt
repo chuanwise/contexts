@@ -494,4 +494,8 @@ class ResolvableTypeImpl(
     override fun hashCode(): Int {
         return rawType.hashCode()
     }
+
+    override fun toString(): String {
+        return "ResolvableTypeImpl(rawType=$rawType)"
+    }
 }

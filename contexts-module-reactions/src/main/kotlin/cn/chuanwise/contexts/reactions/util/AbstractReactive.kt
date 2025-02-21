@@ -17,9 +17,12 @@
 package cn.chuanwise.contexts.reactions.util
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import cn.chuanwise.contexts.util.ResolvableType
 
 @ContextsInternalApi
-abstract class AbstractReactive<T> : Reactive<T> {
+abstract class AbstractReactive<T>(
+    override val type: ResolvableType<T>
+) : Reactive<T> {
     @Suppress("UNCHECKED_CAST")
     protected fun onValueRead(value: T): T {
         val observers = reactiveReadObservers.get() ?: return value

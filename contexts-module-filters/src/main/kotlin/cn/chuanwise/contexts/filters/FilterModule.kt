@@ -27,7 +27,7 @@ import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.ResolvableType
-import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.createResolvableType
 import cn.chuanwise.contexts.util.toResolvableType
 import kotlin.reflect.KTypeProjection
@@ -60,10 +60,10 @@ class FilterModuleImpl : FilterModule {
                 } else {
                     val resolverBeanLocal = resolverBean
                     if (resolverBeanLocal == null) {
-                        context.addBean(value).let { resolverBean = it }
+                        context.addBeanByCompilationType(value).let { resolverBean = it }
                     } else if (value != resolverBeanLocal.value) {
                         resolverBeanLocal.remove()
-                        context.addBean(value).let { resolverBean = it }
+                        context.addBeanByCompilationType(value).let { resolverBean = it }
                     }
                 }
             }
@@ -178,7 +178,7 @@ class FilterModuleImpl : FilterModule {
 
     override fun onContextPreEnter(event: ContextPreEnterEvent) {
         val filterManager = FilterManagerImpl(event.context)
-        event.context.addBean(filterManager)
+        event.context.addBeanByCompilationType(filterManager)
     }
 
     override fun onContextEdgePostAdd(event: ContextPostEdgeAddEvent) {

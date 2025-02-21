@@ -30,8 +30,7 @@ import cn.chuanwise.contexts.util.MutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.ResolvableType
-import cn.chuanwise.contexts.util.addBean
-import cn.chuanwise.contexts.util.addBeans
+import cn.chuanwise.contexts.util.addBeanByRuntimeType
 import cn.chuanwise.contexts.util.createResolvableType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -376,7 +375,10 @@ class ContextManagerImpl(
         check(newContext.trySetInitialized()) {
             "Context $newContext was exited by a module."
         }
-        newContext.addBeans(context)
+
+        for (any in context) {
+            newContext.addBeanByRuntimeType(any)
+        }
 
         val contextPreEnterEvent = ContextPreEnterEventImpl(newContext, this)
         onContextPreEnter(contextPreEnterEvent)
