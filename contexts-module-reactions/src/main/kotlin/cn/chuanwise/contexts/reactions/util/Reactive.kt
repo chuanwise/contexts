@@ -23,6 +23,6 @@ package cn.chuanwise.contexts.reactions.util
  * @author Chuanwise
  * @see MutableReactive
  */
-interface Reactive<T> {
+interface Reactive<out T> {
     val value: T
 }

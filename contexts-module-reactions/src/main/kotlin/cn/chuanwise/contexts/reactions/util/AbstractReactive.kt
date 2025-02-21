@@ -17,23 +17,17 @@
 package cn.chuanwise.contexts.reactions.util
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import java.util.concurrent.ConcurrentHashMap
 
 @ContextsInternalApi
 abstract class AbstractReactive<T> : Reactive<T> {
-    private val observers = ConcurrentHashMap.newKeySet<ReactiveObserver<*>>()
+    @Suppress("UNCHECKED_CAST")
+    protected fun onValueRead(value: T): T {
+        val observers = reactiveReadObservers.get() ?: return value
 
-    protected fun collectObservers() {
-        val observers = reactiveObservers.get()
-        if (observers != null) {
-            this.observers.addAll(observers)
-        }
-    }
-
-    protected fun notifyObservers(value: T) {
+        var finalValue = value
         observers.forEach {
-            @Suppress("UNCHECKED_CAST")
-            (it as ReactiveObserver<T>).onValueChanged(this, value)
+            finalValue = (it as ReactiveReadObserver<T>).onValueRead(this, value)
         }
+        return finalValue
     }
 }

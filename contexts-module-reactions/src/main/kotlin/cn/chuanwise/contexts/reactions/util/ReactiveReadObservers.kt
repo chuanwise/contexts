@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("ReactiveObservers")
+@file:JvmName("ReactiveReadObservers")
 
 package cn.chuanwise.contexts.reactions.util
 
@@ -22,28 +22,28 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import kotlin.concurrent.getOrSet
 
 @ContextsInternalApi
-val reactiveObservers = ThreadLocal<MutableList<ReactiveObserver<*>>>()
+val reactiveReadObservers = ThreadLocal<MutableList<ReactiveReadObserver<out Any?>>>()
 
 @ContextsInternalApi
-fun addReactiveObserver(reactiveObserver: ReactiveObserver<*>) {
-    reactiveObservers.getOrSet { mutableListOf() }.add(reactiveObserver)
+fun addReactiveReadObserver(reactiveReadObserver: ReactiveReadObserver<out Any?>) {
+    reactiveReadObservers.getOrSet { mutableListOf() }.add(reactiveReadObserver)
 }
 
 @ContextsInternalApi
-fun removeReactiveObserver(reactiveObserver: ReactiveObserver<*>) {
-    val observers = reactiveObservers.get() ?: error("No observers found.")
-    observers.remove(reactiveObserver)
+fun removeReactiveReadObserver(reactiveReadObserver: ReactiveReadObserver<out Any?>) {
+    val observers = reactiveReadObservers.get() ?: error("No observers found.")
+    observers.remove(reactiveReadObserver)
     if (observers.isEmpty()) {
-        reactiveObservers.remove()
+        reactiveReadObservers.remove()
     }
 }
 
 @OptIn(ContextsInternalApi::class)
-inline fun <T> ReactiveObserver<*>.withReactiveObserver(block: () -> T): T {
-    addReactiveObserver(this)
+inline fun <T> ReactiveReadObserver<out Any?>.withReactiveReadObserver(block: () -> T): T {
+    addReactiveReadObserver(this)
     try {
         return block()
     } finally {
-        removeReactiveObserver(this)
+        removeReactiveReadObserver(this)
     }
 }

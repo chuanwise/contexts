@@ -21,4 +21,4 @@ package cn.chuanwise.contexts.reactions.util
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 @OptIn(ContextsInternalApi::class)
-fun <T> createMutableReactive(initialValue: T): MutableReactive<T> = MutableReactiveImpl(initialValue)
+fun <T> createMutableReactive(initialValue: T): MutableReactive<T> = NotModelMutableReactive(initialValue)

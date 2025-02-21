@@ -16,6 +16,6 @@
 
 package cn.chuanwise.contexts.reactions.util
 
-fun interface ReactiveObserver<T> {
-    fun onValueChanged(reactive: Reactive<T>, value: T)
+fun interface ReactiveWriteObserver<T> {
+    fun onValueWrite(reactive: Reactive<T>, value: T): T
 }

@@ -16,18 +16,6 @@
 
 package cn.chuanwise.contexts.reactions.util
 
-import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.MutableEntry
-
-interface MutableReactive<T> : Reactive<T> {
-    override var value: T
-
-    fun addWriteObserver(observer: ReactiveWriteObserver<T>): MutableEntry<ReactiveWriteObserver<T>>
-}
-
-@ContextsInternalApi
-class NotModelMutableReactive<T>(initialValue: T) : AbstractMutableReactive<T>() {
-    override var value: T = initialValue
-        get() = onValueRead(field)
-        set(value) { field = onValueWrite(value) }
+fun interface ReactiveReadObserver<T> {
+    fun onValueRead(reactive: Reactive<T>, value: T): T
 }

@@ -22,6 +22,9 @@ import cn.chuanwise.contexts.module.ModulePostEnableEvent
 import cn.chuanwise.contexts.module.ModulePreEnableEvent
 import cn.chuanwise.contexts.module.addDependencyModuleClass
 import cn.chuanwise.contexts.reactions.ReactionModule
+import cn.chuanwise.contexts.reactions.util.Reactive
+import cn.chuanwise.contexts.reactions.util.ReactiveReadObserver
+import cn.chuanwise.contexts.reactions.util.withReactiveReadObserver
 import cn.chuanwise.contexts.reactions.view.View
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
@@ -39,5 +42,25 @@ class ReactionAnnotationModuleImpl : ReactionAnnotationModule {
         annotationModule.registerAnnotationFunctionProcessor(View::class) {
 
         }
+    }
+
+    private class ReactiveReadCollector : ReactiveReadObserver<Any?> {
+        val reactives = mutableSetOf<Reactive<Any?>>()
+
+        override fun onValueRead(reactive: Reactive<Any?>, value: Any?) {
+            reactives.add(reactive)
+        }
+    }
+
+    private fun callViewFunction(autoBind: Boolean, block: () -> Unit) {
+        if (autoBind) {
+            val collector = ReactiveReadCollector()
+
+            collector.withReactiveReadObserver {
+                block()
+            }
+
+        }
+        block()
     }
 }

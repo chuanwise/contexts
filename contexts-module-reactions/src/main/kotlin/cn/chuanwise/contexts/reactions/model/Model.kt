@@ -45,7 +45,7 @@ import cn.chuanwise.contexts.reactions.util.Reactive
  * var configuration by lateInitialReactive<Configuration>()
  *
  * object DebugInfoDisplay {
- *     @Model
+ *     @View
  *     fun displayGameName() {
  *         if (configuration.debug) {
  *             sendBroadcast("Now we are debugging!")

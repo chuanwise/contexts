@@ -29,8 +29,10 @@ import cn.chuanwise.contexts.util.MutableBeanEntry
 import cn.chuanwise.contexts.util.MutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
+import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.addBean
 import cn.chuanwise.contexts.util.addBeans
+import cn.chuanwise.contexts.util.createResolvableType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.CopyOnWriteArrayList
@@ -169,8 +171,8 @@ class ContextManagerImpl(
         private var mutableIsRemoved = AtomicBoolean(false)
         override val isRemoved: Boolean get() = mutableIsRemoved.get()
 
-        val tryEnableLock = AtomicBoolean(false)
-        override val isEnabled: Boolean get() = tryEnableLock.get()
+        val enableLock = AtomicBoolean(false)
+        override val isEnabled: Boolean get() = enableLock.get()
 
         private var bean: MutableBeanEntry<Module>? = null
 
@@ -179,9 +181,13 @@ class ContextManagerImpl(
             try {
                 val event = ModulePostEnableEventImpl(id, value, this@ContextManagerImpl)
                 value.onModulePostEnable(event)
-                bean = beans.addBean(value)
+
+                @Suppress("UNCHECKED_CAST")
+                val beanType = createResolvableType(value::class) as ResolvableType<Module>
+                bean = beans.addBean(value, beanType)
             } catch (e: Throwable) {
-                tryEnableLock.set(false)
+                enableLock.set(false)
+                throw e
             }
         }
 
@@ -306,7 +312,7 @@ class ContextManagerImpl(
         // 如果当前模块的依赖关系可以满足，则调用 PostEnable。
         if (preEnableEvent.isDependencyModuleEnabled()) {
             // 如果 PostEnable 失败则原样把异常抛给注册者。
-            if (entry.tryEnableLock.compareAndSet(false, true)) {
+            if (entry.enableLock.compareAndSet(false, true)) {
                 entry.enableNoCheck()
             }
 
@@ -324,7 +330,7 @@ class ContextManagerImpl(
                     val otherModuleEntry = iterator.next()
                     if (otherModuleEntry != null &&
                         otherModuleEntry.preEnableEvent.isDependencyModuleEnabled() &&
-                        otherModuleEntry.tryEnableLock.compareAndSet(false, true)) {
+                        otherModuleEntry.enableLock.compareAndSet(false, true)) {
 
                         iterator.remove()
 

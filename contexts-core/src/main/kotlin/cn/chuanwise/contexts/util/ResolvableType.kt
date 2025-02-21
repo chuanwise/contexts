@@ -437,7 +437,7 @@ class ResolvableTypeImpl(
                     KVariance.IN -> thatTypeParameter.type!!.isAssignableFrom(typeArgument.type!!)
                     KVariance.OUT -> typeArgument.type!!.isAssignableFrom(thatTypeParameter.type!!)
                     KVariance.INVARIANT -> typeArgument.type == thatTypeParameter.type
-                    null -> error("Unexpected type variance: $variance")
+                    null -> error("Unexpected type variance: null")
                 }
                 if (!result) {
                     return false
