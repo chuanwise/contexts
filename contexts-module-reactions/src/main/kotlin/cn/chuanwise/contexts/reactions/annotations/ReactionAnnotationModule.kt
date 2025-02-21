@@ -36,7 +36,7 @@ class ReactionAnnotationModuleImpl : ReactionAnnotationModule {
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
         val annotationModule = event.contextManager.annotationModule
-        annotationModule.registerAnnotationFunctionProcessor(View::class.java) {
+        annotationModule.registerAnnotationFunctionProcessor(View::class) {
 
         }
     }

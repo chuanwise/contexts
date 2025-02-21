@@ -21,10 +21,11 @@ import com.fasterxml.jackson.databind.util.LRUMap
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.createType
 import kotlin.reflect.typeOf
 
 @Suppress("UNCHECKED_CAST")
-fun <T : Any> createResolvableType(type: KClass<T>): ResolvableType<T> = createResolvableType(type as KType) as ResolvableType<T>
+fun <T : Any> createResolvableType(type: KClass<T>): ResolvableType<T> = createResolvableType(type.createType()) as ResolvableType<T>
 
 private val INSTANCES = LRUMap<KType, ResolvableType<*>>(
     System.getProperty("contexts.resolvableType.cache.initialEntries", "512").toInt(),

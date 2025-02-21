@@ -540,12 +540,12 @@ class ContextImpl private constructor(
         val contextInitEvent = ContextInitEventImpl(context, contextManager)
         contextManager.onContextInit(contextInitEvent)
 
-        if (!trySetInitialized()) {
+        if (!context.trySetInitialized()) {
             return null
         }
         context.addBeans(child)
 
-        if (!trySetEntered()) {
+        if (!context.trySetEntered()) {
             return null
         }
 

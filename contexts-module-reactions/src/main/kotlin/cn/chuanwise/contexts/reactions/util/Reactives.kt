@@ -19,6 +19,6 @@
 package cn.chuanwise.contexts.reactions.util
 
 operator fun <T> Reactive<T>.getValue(thisRef: Any?, property: Any?) = value
-operator fun <T> Reactive<T>.setValue(thisRef: Any?, property: Any?, value: T) {
+operator fun <T> MutableReactive<T>.setValue(thisRef: Any?, property: Any?, value: T) {
     this.value = value
 }

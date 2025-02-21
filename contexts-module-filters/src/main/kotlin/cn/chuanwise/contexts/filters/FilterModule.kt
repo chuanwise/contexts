@@ -28,7 +28,10 @@ import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.addBean
+import cn.chuanwise.contexts.util.createResolvableType
 import cn.chuanwise.contexts.util.toResolvableType
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.createType
 
 /**
  * 过滤器模块。
@@ -114,10 +117,18 @@ class FilterModuleImpl : FilterModule {
         ) : FilterContext<T>
 
         override fun <T : Any> filter(value: T): FilterContext<T> {
+            val valueType = value::class.toResolvableType()
             val beans = InheritedMutableBeanManagerImpl(context).apply {
-                addBean(value, type = value::class.toResolvableType() as ResolvableType<T>, primary = true)
+                addBean(value, type = valueType as ResolvableType<T>, primary = true)
             }
-            val context = FilterContextImpl(value, context, beans).apply { beans.addBean(this) }
+
+            val contextType = createResolvableType(FilterContextImpl::class.createType(
+                arguments = listOf(KTypeProjection.invariant(valueType.rawType))
+            )) as ResolvableType<FilterContextImpl<T>>
+
+            val context = FilterContextImpl(value, context, beans).apply {
+                beans.addBean(this, type = contextType)
+            }
             return filter(context)
         }
 

@@ -121,8 +121,6 @@ class ContextManagerTest {
 
     @Test
     fun testContextManager() {
-
-
         val globalContext = contextManager.enterRoot(GlobalContext, id = "Global")
 
         val chuanwiseContext = globalContext.enterChild(PlayerContext("Chuanwise"), id = "Chuanwise")
