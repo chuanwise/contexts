@@ -36,6 +36,7 @@ import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import kotlinx.coroutines.runBlocking
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
@@ -51,10 +52,10 @@ interface FilterAnnotationModule : Module
 class FilterAnnotationModuleImpl : FilterAnnotationModule {
     private class ReflectFilterImpl(
         private val context: Context,
-        private val functionClass: Class<*>,
+        private val functionClass: KClass<*>,
         private val function: KFunction<*>,
         private val argumentResolvers: Map<KParameter, ArgumentResolver>,
-        private val filterValueClass: Class<*>,
+        private val filterValueClass: KClass<*>,
     ) : cn.chuanwise.contexts.filters.Filter<Any> {
         override fun filter(filterContext: FilterContext<Any>): Boolean? {
             if (!filterValueClass.isInstance(filterContext.value)) {
@@ -84,7 +85,7 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
                 "Exception occurred while filtering value $value by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
                         "Details: " +
-                        "function class: ${functionClass.name}, " +
+                        "function class: ${functionClass.qualifiedName}, " +
                         "function: $function, " +
                         "value class: ${value::class.qualifiedName}."
             }
@@ -100,17 +101,17 @@ class FilterAnnotationModuleImpl : FilterAnnotationModule {
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
         val annotationModule = event.contextManager.annotationModule
-        annotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Filter::class.java) {
+        annotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Filter::class) {
             val function = it.function
             val value = it.value
             val context = it.context
 
-            val functionClass = value::class.java
+            val functionClass = value::class
             val (argumentResolvers, valueClass) = context.parseSubjectClassAndCollectArgumentResolvers<Any>(
                 functionClass = functionClass,
                 function = function,
-                defaultSubjectClass = it.annotation.valueClass.takeIf { it != Nothing::class }?.java,
-                subjectAnnotationClass = Value::class.java
+                defaultSubjectClass = it.annotation.valueClass.takeIf { it != Nothing::class },
+                subjectAnnotationClass = Value::class
             )
             val filter = ReflectFilterImpl(it.context, functionClass, function, argumentResolvers, valueClass)
             context.filterManagerOrNull?.registerFilter(it.annotation.cache, filter)

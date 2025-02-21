@@ -22,11 +22,12 @@ import cn.chuanwise.contexts.events.DEFAULT_LISTENER_INTERCEPT
 import cn.chuanwise.contexts.events.DEFAULT_LISTENER_LISTEN
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import org.bukkit.event.Event
+import kotlin.reflect.KClass
 
 @JvmOverloads
 @OptIn(ContextsInternalApi::class)
 fun <T : Event> createBukkitEventWaiter(
-    eventClass: Class<T>,
+    eventClass: KClass<T>,
     timeout: Long,
     filter: Boolean = DEFAULT_LISTENER_FILTER,
     intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
@@ -41,5 +42,5 @@ inline fun <reified T: Event> createBukkitEventWaiter(
     intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
     listen: Boolean = DEFAULT_LISTENER_LISTEN
 ) : BukkitEventWaiter<T> {
-    return createBukkitEventWaiter(T::class.java, timeout, filter, intercept, listen)
+    return createBukkitEventWaiter(T::class, timeout, filter, intercept, listen)
 }

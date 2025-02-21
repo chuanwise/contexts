@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.blocking.bridge)
+}
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api(project(":contexts-core"))
+
+    api(project(":contexts-module-events"))
+    api(project(":contexts-module-filters"))
+
+    testImplementation(libs.junit.jupiter)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

@@ -19,20 +19,21 @@ package cn.chuanwise.contexts.events.annotations
 import cn.chuanwise.contexts.annotation.ArgumentResolver
 import cn.chuanwise.contexts.annotation.AnnotationFunctionProcessContext
 import cn.chuanwise.contexts.util.ContextsInternalApi
+import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 
-interface ListenerAnnotationFunctionProcessContext<T> : AnnotationFunctionProcessContext<Listener> {
-    val eventClass: Class<T>
+interface ListenerAnnotationFunctionProcessContext<T : Any> : AnnotationFunctionProcessContext<Listener> {
+    val eventClass: KClass<T>
     val argumentResolvers: Map<KParameter, ArgumentResolver>
 }
 
-fun interface ListenerFunctionProcessor<T> {
+fun interface ListenerFunctionProcessor<T : Any> {
     fun process(context: ListenerAnnotationFunctionProcessContext<T>)
 }
 
 @ContextsInternalApi
-class ListenerAnnotationFunctionProcessContextImpl<T>(
-    override val eventClass: Class<T>,
+class ListenerAnnotationFunctionProcessContextImpl<T : Any>(
+    override val eventClass: KClass<T>,
     override val argumentResolvers: Map<KParameter, ArgumentResolver>,
     private val annotationFunctionProcessContext: AnnotationFunctionProcessContext<Listener>
 ) : ListenerAnnotationFunctionProcessContext<T>, AnnotationFunctionProcessContext<Listener> by annotationFunctionProcessContext

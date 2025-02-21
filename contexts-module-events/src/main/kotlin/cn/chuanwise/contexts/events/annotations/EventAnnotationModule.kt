@@ -47,8 +47,11 @@ import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSuperclassOf
 
 /**
  * 事件注解模块。
@@ -65,7 +68,7 @@ interface EventAnnotationModule : Module {
      * @param annotationClass 注解类
      * @return 注解
      */
-    fun <T : Annotation> registerIgnoreListenerAnnotationClass(annotationClass: Class<T>): MutableEntry<Class<T>>
+    fun <T : Annotation> registerIgnoreListenerAnnotationClass(annotationClass: KClass<T>): MutableEntry<Class<T>>
 
     /**
      * 注册一个监听器函数处理器。
@@ -76,7 +79,7 @@ interface EventAnnotationModule : Module {
      * @return 处理器
      */
     fun <T : Any> registerListenerFunctionProcessor(
-        eventClass: Class<T>, processor: ListenerFunctionProcessor<T>
+        eventClass: KClass<T>, processor: ListenerFunctionProcessor<T>
     ): MutableEntry<ListenerFunctionProcessor<T>>
 }
 
@@ -85,7 +88,7 @@ interface EventAnnotationModule : Module {
 class EventAnnotationModuleImpl : EventAnnotationModule {
     private abstract class AbstractListener<T : Any>(
         val context: Context,
-        val eventClass: Class<T>?,
+        val eventClass: KClass<T>?,
         val filter: Boolean,
         val intercept: Boolean,
         val listen: Boolean
@@ -119,7 +122,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
     private class ListenerImpl<T : Any>(
         private val listener: cn.chuanwise.contexts.events.Listener<T>,
         context: Context,
-        eventClass: Class<T>?,
+        eventClass: KClass<T>?,
         filter: Boolean,
         intercept: Boolean,
         listen: Boolean
@@ -131,11 +134,11 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
     }
 
     private class ReflectListenerImpl(
-        private val functionClass: Class<*>,
+        private val functionClass: KClass<*>,
         private val function: KFunction<*>,
         private val argumentResolvers: Map<KParameter, ArgumentResolver>,
         context: Context,
-        eventClass: Class<Any>,
+        eventClass: KClass<Any>,
         filter: Boolean,
         intercept: Boolean,
         listen: Boolean
@@ -160,7 +163,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                         "Function ${function.name} in class ${functionClass.simpleName} is suspend, " +
                                 "but no coroutine scope found. It will blocking caller thread. " +
                                 "Details: " +
-                                "function class: ${functionClass.name}, " +
+                                "function class: ${functionClass.qualifiedName}, " +
                                 "function: $function. "
                     }
                     runBlocking(block = block)
@@ -182,7 +185,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 "Exception occurred while processing event ${eventContext.event} by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
                         "Details: " +
-                        "function class: ${functionClass.name}, " +
+                        "function class: ${functionClass.qualifiedName}, " +
                         "function: $function, " +
                         "event class: ${eventContext.event::class.qualifiedName}."
             }
@@ -196,7 +199,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         private val listeners = MutableEntries<AbstractListener<Any>>()
 
         override fun <T : Any> registerListener(
-            eventClass: Class<T>,
+            eventClass: KClass<T>,
             filter: Boolean,
             intercept: Boolean,
             listen: Boolean,
@@ -236,14 +239,14 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         }
     }
 
-    private val ignoreListenerAnnotationClasses = MutableEntries<Class<Annotation>>()
+    private val ignoreListenerAnnotationClasses = MutableEntries<KClass<out Annotation>>()
 
-    override fun <T : Annotation> registerIgnoreListenerAnnotationClass(annotationClass: Class<T>): MutableEntry<Class<T>> {
-        return ignoreListenerAnnotationClasses.add(annotationClass as Class<Annotation>) as MutableEntry<Class<T>>
+    override fun <T : Annotation> registerIgnoreListenerAnnotationClass(annotationClass: KClass<T>): MutableEntry<Class<T>> {
+        return ignoreListenerAnnotationClasses.add(annotationClass) as MutableEntry<Class<T>>
     }
 
     private class ListenerFunctionProcessorImpl<T : Any>(
-        val eventClass: Class<T>,
+        val eventClass: KClass<T>,
         val processor: ListenerFunctionProcessor<T>
     ) : ListenerFunctionProcessor<T> by processor {
         fun safeProcess(context: ListenerAnnotationFunctionProcessContext<T>) {
@@ -253,7 +256,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 context.context.contextManager.logger.error(e) {
                     "Exception occurred while processing listener function processor $processor for event class ${eventClass.simpleName}. " +
                             "Details: " +
-                            "event class: ${eventClass.name}. "
+                            "event class: ${eventClass.qualifiedName}. "
                 }
             }
         }
@@ -262,7 +265,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
     private val listenerFunctionProcessors = MutableEntries<ListenerFunctionProcessorImpl<Any>>()
 
     override fun <T : Any> registerListenerFunctionProcessor(
-        eventClass: Class<T>,
+        eventClass: KClass<T>,
         processor: ListenerFunctionProcessor<T>
     ): MutableEntry<ListenerFunctionProcessor<T>> {
         val finalProcessor = ListenerFunctionProcessorImpl(eventClass, processor) as ListenerFunctionProcessorImpl<Any>
@@ -283,7 +286,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
 
     private class ReflectEventSpreaderImpl<T : Any>(
         val context: Context,
-        val functionClass: Class<*>,
+        val functionClass: KClass<*>,
         val function: KFunction<*>,
         val argumentResolvers: Map<KParameter, ArgumentResolver>
     ) : EventSpreader<T> {
@@ -306,7 +309,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                         "Function ${function.name} in class ${functionClass.simpleName} is suspend, " +
                                 "but no coroutine scope found. It will blocking caller thread. " +
                                 "Details: " +
-                                "function class: ${functionClass.name}, " +
+                                "function class: ${functionClass.qualifiedName}, " +
                                 "function: $function. "
                     }
                     runBlocking(block = block)
@@ -327,7 +330,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 "Exception occurred while spreading event ${eventContext.event} by function ${function.name} " +
                         "declared in ${functionClass.simpleName} for context $context. " +
                         "Details: " +
-                        "function class: ${functionClass.name}, " +
+                        "function class: ${functionClass.qualifiedName}, " +
                         "function: $function, " +
                         "event class: ${eventContext.event::class.qualifiedName}."
             }
@@ -357,7 +360,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         eventHandler = eventModule.registerEventHandler(ListenerManagerEventHandlerImpl)
 
         val annotationModule = contextManager.annotationModule
-        listenerAnnotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Listener::class.java) {
+        listenerAnnotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(Listener::class) {
             val function = it.function
             val value = it.value
             val context = it.context
@@ -369,16 +372,16 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
                 }
             }
 
-            val functionClass = value::class.java
+            val functionClass = value::class
             val (argumentResolvers, eventClass) = context.parseSubjectClassAndCollectArgumentResolvers<Any>(
                 functionClass = functionClass,
                 function = function,
-                defaultSubjectClass = it.annotation.eventClass.takeIf { cls -> cls != Nothing::class }?.java,
-                subjectAnnotationClass = Event::class.java
+                defaultSubjectClass = it.annotation.eventClass.takeIf { cls -> cls != Nothing::class },
+                subjectAnnotationClass = Event::class
             )
 
             for (entry in listenerFunctionProcessors) {
-                if (entry.value.eventClass.isAssignableFrom(eventClass)) {
+                if (entry.value.eventClass.isSuperclassOf(eventClass)) {
                     val listenerFunctionProcessContext =
                         ListenerAnnotationFunctionProcessContextImpl(eventClass, argumentResolvers, it)
                     entry.value.safeProcess(listenerFunctionProcessContext as ListenerAnnotationFunctionProcessContext<Any>)
@@ -387,7 +390,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             }
 
             val listener = ReflectListenerImpl(
-                functionClass, function, argumentResolvers, context, eventClass as Class<Any>,
+                functionClass, function, argumentResolvers, context, eventClass as KClass<Any>,
                 it.annotation.filter, it.annotation.intercept, it.annotation.listen
             )
 
@@ -395,18 +398,18 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
             listenerManager.registerListener(listener)
         }
         eventSpreaderAnnotationFunctionProcessor = annotationModule.registerAnnotationFunctionProcessor(
-            cn.chuanwise.contexts.events.annotations.EventSpreader::class.java
+            cn.chuanwise.contexts.events.annotations.EventSpreader::class
         ) {
             val function = it.function
             val value = it.value
             val context = it.context
 
-            val functionClass = value::class.java
+            val functionClass = value::class
             val (argumentResolvers, eventClass) = context.parseSubjectClassAndCollectArgumentResolvers<Any>(
                 functionClass = functionClass,
                 function = function,
-                defaultSubjectClass = it.annotation.eventClass.takeIf { cls -> cls != Nothing::class }?.java,
-                subjectAnnotationClass = Event::class.java
+                defaultSubjectClass = it.annotation.eventClass.takeIf { cls -> cls != Nothing::class },
+                subjectAnnotationClass = Event::class
             )
 
             val spreader = ReflectEventSpreaderImpl<Any>(it.context, functionClass, function, argumentResolvers)

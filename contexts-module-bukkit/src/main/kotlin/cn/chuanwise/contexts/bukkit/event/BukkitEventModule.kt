@@ -43,6 +43,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.plugin.Plugin
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
+import kotlin.reflect.KClass
 
 /**
  * Bukkit 事件模块，用于处理 Bukkit 事件。
@@ -57,7 +58,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
     private var plugin: Plugin? = null
 ) : BukkitEventModule {
     private data class EventHandlerPolicy(
-        val eventClass: Class<out Event>,
+        val eventClass: KClass<out Event>,
         val priority: EventPriority
     )
 
@@ -69,7 +70,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
     private var contextManager: ContextManager? = null
     private fun getContextManager(): ContextManager = contextManager ?: error("BukkitEventModule is not enabled.")
 
-    private fun ensureEventHandlerRegistered(eventClass: Class<out Event>, priority: EventPriority) {
+    private fun ensureEventHandlerRegistered(eventClass: KClass<out Event>, priority: EventPriority) {
         val policy = EventHandlerPolicy(eventClass, priority)
         eventHandlers.computeIfAbsent(policy) {
             bukkitEventHandlerInjector.registerEventHandler(policy.eventClass, policy.priority) {
@@ -129,7 +130,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         override val context: Context
     ) : BukkitEventManager {
         override fun <T : Event> registerListener(
-            eventClass: Class<T>,
+            eventClass: KClass<T>,
             priority: EventPriority,
             ignoreCancelled: Boolean,
             filter: Boolean,

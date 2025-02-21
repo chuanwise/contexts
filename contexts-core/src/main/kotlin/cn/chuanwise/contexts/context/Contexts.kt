@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.function.Consumer
 import java.util.function.Function
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.typeOf
@@ -139,7 +140,7 @@ fun cn.chuanwise.contexts.util.CoroutineScope.toConfiguration() : CoroutineScope
 fun callFunctionAsync(
     context: Context,
     function: KFunction<*>,
-    functionClass: Class<*>,
+    functionClass: KClass<*>,
     arguments: Map<KParameter, Any?>,
     coroutineScopeConfiguration: CoroutineScopeConfiguration?,
     runBlocking: Boolean,
@@ -168,7 +169,7 @@ fun callFunctionAsync(
                                 "or use @CoroutineScope to specify a coroutine scope (if not). " +
                                 "But it can be run in blocking mode, it still works but may cause performance issues. " +
                                 "Details: " +
-                                "function class: ${functionClass.name}, " +
+                                "function class: ${functionClass.qualifiedName}, " +
                                 "function: $function. "
                     }
 
@@ -181,7 +182,7 @@ fun callFunctionAsync(
                                 "or use @CoroutineScope to specify a coroutine scope (if not). " +
                                 "It CAN NOT be called in blocking mode, so it will be ignored. " +
                                 "Details: " +
-                                "function class: ${functionClass.name}, " +
+                                "function class: ${functionClass.qualifiedName}, " +
                                 "function: $function. "
                     ))
                 }
@@ -204,7 +205,7 @@ fun callFunctionAsync(
                                         "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                         "But it can be run in blocking mode, it still works but may cause performance issues. " +
                                         "Details: " +
-                                        "function class: ${functionClass.name}, " +
+                                        "function class: ${functionClass.qualifiedName}, " +
                                         "function: $function. "
                             }
                             runBlocking(block = block)
@@ -217,7 +218,7 @@ fun callFunctionAsync(
                                         "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                         "It CAN NOT be called in blocking mode (caused by runBlocking = false), so it will be ignored. " +
                                         "Details: " +
-                                        "function class: ${functionClass.name}, " +
+                                        "function class: ${functionClass.qualifiedName}, " +
                                         "function: $function. "
                             ))
                         }
@@ -231,7 +232,7 @@ fun callFunctionAsync(
                                 "and primary = ${coroutineScopeConfiguration.primary} available in current context, " +
                                 "But it CAN NOT BE run in blocking mode (caused by caller), so it will be ignored. " +
                                 "Details: " +
-                                "function class: ${functionClass.name}, " +
+                                "function class: ${functionClass.qualifiedName}, " +
                                 "function: $function. "
                     ))
                 }
@@ -254,7 +255,7 @@ fun callFunctionAsync(
 fun <T> callFunctionSync(
     context: Context,
     function: KFunction<T>,
-    functionClass: Class<*>,
+    functionClass: KClass<*>,
     arguments: Map<KParameter, Any?>,
     coroutineScopeConfiguration: CoroutineScopeConfiguration?,
     onException: Function<Throwable, T>,
@@ -277,7 +278,7 @@ fun <T> callFunctionSync(
                         "for context $context are required to run in blocking mode by caller. " +
                         "@CoroutineScope will be ignored. " +
                         "Details: " +
-                        "function class: ${functionClass.name}, " +
+                        "function class: ${functionClass.qualifiedName}, " +
                         "function: $function. " +
                         "coroutine scope key: ${coroutineScopeConfiguration.id}, " +
                         "coroutine scope primary: ${coroutineScopeConfiguration.primary}, " +

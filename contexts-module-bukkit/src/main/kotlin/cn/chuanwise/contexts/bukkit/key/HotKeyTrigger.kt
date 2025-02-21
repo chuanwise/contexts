@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
+package cn.chuanwise.contexts.bukkit.key
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+import cn.chuanwise.contexts.util.NotStableForInheritance
+
+@NotStableForInheritance
+interface HotKeyTrigger {
+//    fun
+}

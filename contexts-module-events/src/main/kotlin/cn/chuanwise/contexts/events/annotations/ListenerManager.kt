@@ -25,6 +25,7 @@ import cn.chuanwise.contexts.events.Listener
 import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
+import kotlin.reflect.KClass
 
 /**
  * 监听器管理器。
@@ -49,7 +50,7 @@ interface ListenerManager {
      * @return 监听器
      */
     fun <T : Any> registerListener(
-        eventClass: Class<T>,
+        eventClass: KClass<T>,
         filter: Boolean = DEFAULT_LISTENER_FILTER,
         intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,
         listen: Boolean = DEFAULT_LISTENER_LISTEN,

@@ -38,6 +38,7 @@ import cn.chuanwise.contexts.util.parseSubjectClassAndCollectArgumentResolvers
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.findAnnotation
@@ -57,7 +58,7 @@ interface BukkitEventAnnotationModule : Module
 class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
     private inner class ReflectListenerImpl(
         private val function: KFunction<*>,
-        private val functionClass: Class<*>,
+        private val functionClass: KClass<*>,
         private val context: Context,
         private val argumentResolvers: Map<KParameter, ArgumentResolver>,
         private val coroutineScopeConfiguration: CoroutineScopeConfiguration?,
@@ -113,18 +114,18 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
         val eventAnnotationsModule = contextManager.eventAnnotationModule
 
         // 让事件注解模块忽略带 EventHandler 注解的方法。
-        ignoreListenerAnnotationClass = eventAnnotationsModule.registerIgnoreListenerAnnotationClass(EventHandler::class.java)
-        listenerFunctionProcessor = eventAnnotationsModule.registerListenerFunctionProcessor(Event::class.java) {
+        ignoreListenerAnnotationClass = eventAnnotationsModule.registerIgnoreListenerAnnotationClass(EventHandler::class)
+        listenerFunctionProcessor = eventAnnotationsModule.registerListenerFunctionProcessor(Event::class) {
             val coroutineScopeConfiguration = it.function.findAnnotation<cn.chuanwise.contexts.util.CoroutineScope>()?.toConfiguration()
 
             // 处理那些只有 @Listener 注解，没有 @EventHandler 注解的函数注册。
             val listener = ReflectListenerImpl(
-                it.function, it.value::class.java, it.context, it.argumentResolvers,
+                it.function, it.value::class, it.context, it.argumentResolvers,
                 coroutineScopeConfiguration, listen = it.annotation.listen
             )
             it.context.bukkitEventManager.registerListener(it.eventClass, listener = listener)
         }
-        eventHandlerAnnotationClass = annotationModule.registerAnnotationFunctionProcessor(EventHandler::class.java) {
+        eventHandlerAnnotationClass = annotationModule.registerAnnotationFunctionProcessor(EventHandler::class) {
             val coroutineScopeConfiguration = it.function.findAnnotation<cn.chuanwise.contexts.util.CoroutineScope>()?.toConfiguration()
             val listenerAnn = it.function.findAnnotation<cn.chuanwise.contexts.events.annotations.Listener>()
 
@@ -139,15 +140,15 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
             val context = it.context
 
             val subjectClassFromListenerAnn = listenerAnn?.eventClass
-                ?.takeIf { cls -> Event::class.java.isAssignableFrom(cls.java) }?.java
+                ?.takeIf { cls -> Event::class.java.isAssignableFrom(cls.java) }
 
-            val functionClass = value::class.java
+            val functionClass = value::class
             val (argumentResolvers, eventClass) = context.parseSubjectClassAndCollectArgumentResolvers(
                 functionClass = functionClass,
                 function = function,
                 defaultSubjectClass = subjectClassFromListenerAnn,
-                subjectAnnotationClass = cn.chuanwise.contexts.events.annotations.Event::class.java,
-                subjectSuperClass = Event::class.java
+                subjectAnnotationClass = cn.chuanwise.contexts.events.annotations.Event::class,
+                subjectSuperClass = Event::class
             )
 
             val listener = ReflectListenerImpl(
@@ -155,7 +156,7 @@ class BukkitEventAnnotationModuleImpl : BukkitEventAnnotationModule {
                 coroutineScopeConfiguration, priority, ignoreCancelled, listen
             )
 
-            context.bukkitEventManager.registerListener(eventClass as Class<Event>, priority, ignoreCancelled, filter, intercept, listen, listener)
+            context.bukkitEventManager.registerListener(eventClass as KClass<Event>, priority, ignoreCancelled, filter, intercept, listen, listener)
         }
     }
 

@@ -24,6 +24,7 @@ import cn.chuanwise.contexts.events.Listener
 import cn.chuanwise.contexts.util.MutableEntry
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
+import kotlin.reflect.KClass
 
 /**
  * Bukkit 事件管理器。
@@ -50,7 +51,7 @@ interface BukkitEventManager {
      * @return 监听器
      */
     fun <T : Event> registerListener(
-        eventClass: Class<T>,
+        eventClass: KClass<T>,
         priority: EventPriority = DEFAULT_BUKKIT_EVENT_HANDLER_PRIORITY,
         ignoreCancelled: Boolean = DEFAULT_BUKKIT_EVENT_HANDLER_IGNORE_CANCELLED,
         filter: Boolean = DEFAULT_LISTENER_FILTER,

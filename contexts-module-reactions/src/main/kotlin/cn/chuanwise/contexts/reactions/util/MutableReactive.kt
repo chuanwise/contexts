@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
+package cn.chuanwise.contexts.reactions.util
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+import cn.chuanwise.contexts.util.ContextsInternalApi
+
+interface MutableReactive<T> : Reactive<T> {
+    override var value: T
+}
+
+@ContextsInternalApi
+class MutableReactiveImpl<T>(initialValue: T) : AbstractReactive<T>(), MutableReactive<T> {
+    override var value: T = initialValue
+        get() {
+            collectObservers()
+            return field
+        }
+        set(value) {
+            field = value
+            notifyObservers(value)
+        }
+}

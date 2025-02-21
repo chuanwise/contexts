@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.bukkit.scheduler.BukkitTask
 import java.util.function.Consumer
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 
@@ -45,7 +46,7 @@ interface BukkitTaskAnnotationModule : Module
 class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
     private class ReflectConsumerImpl(
         private val context: Context,
-        private val functionClass: Class<*>,
+        private val functionClass: KClass<*>,
         private val function: KFunction<*>,
         private val argumentResolvers: Map<KParameter, ArgumentResolver>,
         private val async: Boolean
@@ -72,7 +73,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
                             "Function ${function.name} in class ${functionClass.simpleName} is suspend, " +
                                     "but no coroutine scope found. It will blocking caller thread. " +
                                     "Details: " +
-                                    "function class: ${functionClass.name}, " +
+                                    "function class: ${functionClass.qualifiedName}, " +
                                     "function: $function. "
                         }
                         runBlocking(block = block)
@@ -101,7 +102,7 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
                         "declared in ${functionClass.simpleName}, and its bukkit task id is ${t.taskId}. " +
                         "Details: " +
                         "function: $function, " +
-                        "function class: ${functionClass.name}. "
+                        "function class: ${functionClass.qualifiedName}. "
             }
         }
     }
@@ -112,9 +113,9 @@ class BukkitTaskAnnotationModuleImpl : BukkitTaskAnnotationModule, Module {
 
     override fun onModulePostEnable(event: ModulePostEnableEvent) {
         val annotationModule = event.contextManager.annotationModule
-        annotationModule.registerAnnotationFunctionProcessor(Timer::class.java) {
+        annotationModule.registerAnnotationFunctionProcessor(Timer::class) {
             val function = it.function
-            val functionClass = it.value::class.java
+            val functionClass = it.value::class
 
             val argumentResolvers = function.parameters.associateWith { para ->
                 val argumentResolveContext = ArgumentResolveContextImpl(functionClass, function, para, it.context)

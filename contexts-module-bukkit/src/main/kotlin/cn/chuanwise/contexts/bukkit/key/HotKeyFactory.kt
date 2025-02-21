@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+@file:JvmName("HotKeyFactory")
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+package cn.chuanwise.contexts.bukkit.key
+
+import cn.chuanwise.contexts.util.ContextsInternalApi
+
+@JvmOverloads
+@OptIn(ContextsInternalApi::class)
+fun createHotKey(id: String, isLongPressSupported: Boolean = false): HotKey = HotKeyImpl(id, isLongPressSupported)

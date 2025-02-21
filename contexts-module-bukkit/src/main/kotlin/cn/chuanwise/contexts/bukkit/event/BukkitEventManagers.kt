@@ -40,7 +40,7 @@ inline fun <reified T : Event> BukkitEventManager.registerListener(
     listener: Listener<T>
 ) : MutableEntry<Listener<T>> {
     return registerListener(
-        T::class.java,
+        T::class,
         priority,
         ignoreCancelled,
         filter,

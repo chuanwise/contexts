@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+package cn.chuanwise.contexts.reactions.util
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+/**
+ * 一个响应式的值，当值发生变化时，会通知所有监听者。
+ *
+ * @param T 值类型
+ * @author Chuanwise
+ * @see MutableReactive
+ */
+interface Reactive<T> {
+    val value: T
+}

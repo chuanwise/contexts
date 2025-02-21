@@ -14,30 +14,26 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.annotation
+package cn.chuanwise.contexts.reactions.util
 
-import cn.chuanwise.contexts.context.Context
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
-
-/**
- * 对象解析上下文。
- *
- * @author Chuanwise
- */
-interface ArgumentResolveContext {
-    val functionClass: KClass<*>
-    val function: KFunction<*>
-    val parameter: KParameter
-    val context: Context
-}
+import java.util.concurrent.ConcurrentHashMap
 
 @ContextsInternalApi
-class ArgumentResolveContextImpl(
-    override val functionClass: KClass<*>,
-    override val function: KFunction<*>,
-    override val parameter: KParameter,
-    override val context: Context
-) : ArgumentResolveContext
+abstract class AbstractReactive<T> : Reactive<T> {
+    private val observers = ConcurrentHashMap.newKeySet<ReactiveObserver<*>>()
+
+    protected fun collectObservers() {
+        val observers = reactiveObservers.get()
+        if (observers != null) {
+            this.observers.addAll(observers)
+        }
+    }
+
+    protected fun notifyObservers(value: T) {
+        observers.forEach {
+            @Suppress("UNCHECKED_CAST")
+            (it as ReactiveObserver<T>).onValueChanged(this, value)
+        }
+    }
+}

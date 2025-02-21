@@ -35,6 +35,7 @@ import kotlinx.coroutines.future.asCompletableFuture
 import org.bukkit.event.Event
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.reflect.KClass
 
 /**
  * 用于等待下一个 Bukkit 事件的等待器。
@@ -60,7 +61,7 @@ interface BukkitEventWaiter<T : Event> : Waiter<T>
 @ContextsInternalApi
 @OptIn(JavaFriendlyApi::class)
 class BukkitEventWaiterImpl<T : Event>(
-    private val eventClass: Class<T>,
+    private val eventClass: KClass<T>,
     override val timeout: Long,
     private val filter: Boolean = DEFAULT_LISTENER_FILTER,
     private val intercept: Boolean = DEFAULT_LISTENER_INTERCEPT,

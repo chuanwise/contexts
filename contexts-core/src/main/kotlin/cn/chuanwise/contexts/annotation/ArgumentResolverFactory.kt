@@ -76,10 +76,10 @@ object DefaultArgumentResolverFactory : ArgumentResolverFactory {
 
             error("Cannot resolve argument for parameter ${context.parameter.name} of type ${context.parameter.type} " +
                     "caused by missing bean. " +
-                    "while trying to call ${context.function.name} declared in ${context.functionClass.name}. " +
+                    "while trying to call ${context.function.name} declared in ${context.functionClass.qualifiedName}. " +
                     "Details: " +
                     "function: ${context.function}, " +
-                    "function class: ${context.functionClass.name}. ")
+                    "function class: ${context.functionClass.qualifiedName}. ")
         }
     }
 

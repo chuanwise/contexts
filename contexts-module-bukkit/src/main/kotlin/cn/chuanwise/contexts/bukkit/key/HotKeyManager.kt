@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
+package cn.chuanwise.contexts.bukkit.key
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+import cn.chuanwise.contexts.events.annotations.Listener
+import cn.chuanwise.contexts.util.ContextsInternalApi
+import org.bukkit.event.player.PlayerDropItemEvent
+
+interface HotKeyManager {
+//    fun registerHotKeyHandler()
+}
+
+@ContextsInternalApi
+class HotKeyManagerImpl : HotKeyManager {
+    @Listener
+    fun PlayerDropItemEvent.onPlayerDropItem() {
+        player.isSneaking
+    }
+}

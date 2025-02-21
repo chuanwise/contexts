@@ -29,9 +29,11 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Member
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
+import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.jvmErasure
 
@@ -93,6 +95,7 @@ fun Field.getSafe(instance: Any): Any? {
 }
 
 @ContextsInternalApi
+@Suppress("DEPRECATION")
 fun Field.getStaticSafe(): Any? {
     return if (isAccessible) {
         get(declaringClass)
@@ -199,17 +202,17 @@ suspend fun <T> KFunction<T>.callSuspendByAndRethrowException(arguments: Map<KPa
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
-    functionClass: Class<*>,
+    functionClass: KClass<*>,
     function: KFunction<*>,
     defaultArgumentResolverFactory: ArgumentResolverFactory = DefaultArgumentResolverFactory,
-    subjectAnnotationClass: Class<out Annotation>? = null,
-    subjectSuperClass: Class<T>? = null,
-    defaultSubjectClass: Class<*>? = null
-): Pair<Map<KParameter, ArgumentResolver>, Class<out T>> {
+    subjectAnnotationClass: KClass<out Annotation>? = null,
+    subjectSuperClass: KClass<T>? = null,
+    defaultSubjectClass: KClass<*>? = null
+): Pair<Map<KParameter, ArgumentResolver>, KClass<out T>> {
     val parameters = function.parameters
     val argumentResolvers = mutableMapOf<KParameter, ArgumentResolver>()
 
-    var subjectClass: Class<*>? = defaultSubjectClass
+    var subjectClass: KClass<*>? = defaultSubjectClass
     val annotationModule = contextManager.getBeanOrFail<AnnotationModule>()
     for (parameter in parameters) {
         val annotations = parameter.annotations
@@ -218,7 +221,7 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
         if (subjectAnnotationClass != null) {
             val annotation = annotations.firstOrNull { subjectAnnotationClass.isInstance(it) }
             if (annotation != null) {
-                val parameterClass = parameter.type.jvmErasure.java
+                val parameterClass = parameter.type.classifier as KClass<*>
                 subjectClass = if (subjectClass == null) {
                     parameterClass
                 } else {
@@ -229,16 +232,16 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
                                 "for function ${function.name} declared in ${functionClass.simpleName}. " +
                                 "Details: " +
                                 "function: $function, " +
-                                "class where function declared in: ${functionClass.name}, " +
-                                "subject super class: ${subjectSuperClass?.name}, " +
-                                "subject annotation class: ${subjectAnnotationClass.name}. "
+                                "class where function declared in: ${functionClass.qualifiedName}, " +
+                                "subject super class: ${subjectSuperClass?.qualifiedName}, " +
+                                "subject annotation class: ${subjectAnnotationClass.qualifiedName}. "
                     }
                     parameterClass
                 }
             }
         }
         if (parameter.kind == KParameter.Kind.EXTENSION_RECEIVER) {
-            val parameterClass = parameter.type.jvmErasure.java
+            val parameterClass = parameter.type.classifier as KClass<*>
             subjectClass = if (subjectClass == null) {
                 parameterClass
             } else {
@@ -247,9 +250,9 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
                             "with extension receiver for function ${function.name} declared in ${functionClass.simpleName}. " +
                             "Details: " +
                             "function: $function, " +
-                            "class where function declared in: ${functionClass.name}, " +
-                            "subject super class: ${subjectSuperClass?.name}, " +
-                            "subject annotation class: ${subjectAnnotationClass?.name}. "
+                            "class where function declared in: ${functionClass.qualifiedName}, " +
+                            "subject super class: ${subjectSuperClass?.qualifiedName}, " +
+                            "subject annotation class: ${subjectAnnotationClass?.qualifiedName}. "
                 }
                 parameterClass
             }
@@ -266,9 +269,9 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
                     "for function ${function.name} declared in ${functionClass.simpleName}. " +
                     "Details: " +
                     "function: $function, " +
-                    "class where function declared in: ${functionClass.name}, " +
-                    "subject super class: ${subjectSuperClass?.name}, " +
-                    "subject annotation class: ${subjectAnnotationClass?.name}. "
+                    "class where function declared in: ${functionClass.qualifiedName}, " +
+                    "subject super class: ${subjectSuperClass?.qualifiedName}, " +
+                    "subject annotation class: ${subjectAnnotationClass?.qualifiedName}. "
         }
         if (argumentResolver != null) {
             argumentResolvers[parameter] = argumentResolver
@@ -279,7 +282,7 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
     if (subjectClass == null) {
         val onlyOneValueParameter = parameters.singleOrNull { it.kind == KParameter.Kind.VALUE }
         if (onlyOneValueParameter != null) {
-            subjectClass = onlyOneValueParameter.type.jvmErasure.java
+            subjectClass = onlyOneValueParameter.type.classifier as KClass<*>
         }
     }
 
@@ -287,20 +290,20 @@ fun <T : Any> Context.parseSubjectClassAndCollectArgumentResolvers(
         "Cannot find subject class for function ${function.name} declared in ${functionClass.simpleName}. " +
                 "Details: " +
                 "function: $function, " +
-                "class where function declared in: ${functionClass.name}, " +
-                "subject super class: ${subjectSuperClass?.name}, " +
-                "subject annotation class: ${subjectAnnotationClass?.name}. "
+                "class where function declared in: ${functionClass.qualifiedName}, " +
+                "subject super class: ${subjectSuperClass?.qualifiedName}, " +
+                "subject annotation class: ${subjectAnnotationClass?.qualifiedName}. "
     }
-    require(subjectSuperClass == null || subjectSuperClass.isAssignableFrom(subjectClass)) {
-        "Subject class ${subjectClass.name} is not assignable from required subject super class ${subjectSuperClass!!.name} " +
+    require(subjectSuperClass == null || subjectSuperClass.isSuperclassOf(subjectClass)) {
+        "Subject class ${subjectClass.qualifiedName} is not assignable from required subject super class ${subjectSuperClass!!.qualifiedName} " +
                 "for function ${function.name} declared in ${functionClass.simpleName}. " +
                 "Details: " +
                 "function: $function, " +
-                "class where function declared in: ${functionClass.name}, " +
-                "subject super class: ${subjectSuperClass.name}, " +
-                "subject annotation class: ${subjectAnnotationClass?.name}. "
+                "class where function declared in: ${functionClass.qualifiedName}, " +
+                "subject super class: ${subjectSuperClass.qualifiedName}, " +
+                "subject annotation class: ${subjectAnnotationClass?.qualifiedName}. "
     }
 
-    return argumentResolvers to subjectClass as Class<out T>
+    return argumentResolvers to subjectClass as KClass<out T>
 }
 

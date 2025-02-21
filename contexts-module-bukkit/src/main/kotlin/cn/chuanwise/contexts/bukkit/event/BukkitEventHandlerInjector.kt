@@ -35,6 +35,7 @@ import org.bukkit.plugin.Plugin
 import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
+import kotlin.reflect.KClass
 
 /**
  * Bukkit 事件处理器注入器。
@@ -53,7 +54,7 @@ interface BukkitEventHandlerInjector {
      * @return 可以用于移除监听器的对象
      */
     fun <T : Event> registerEventHandler(
-        eventClass: Class<T>,
+        eventClass: KClass<T>,
         priority: EventPriority = EventPriority.NORMAL,
         ignoreCancelled: Boolean = false,
         eventHandler: Consumer<T>
@@ -71,7 +72,7 @@ class BukkitEventHandlerInjectorImpl(
     private val bukkitListenerClassLoader: ClassLoader = plugin.javaClass.classLoader
 ) : BukkitEventHandlerInjector {
     // 不是 private 的目的是让 ByteBuddy 产生的类型可以访问这里的函数。
-    inner class BukkitEventClassContext(val eventClass: Class<out Event>) {
+    inner class BukkitEventClassContext(val eventClass: KClass<out Event>) {
         // 管理针对一个类型的，同一优先级监听器的上下文。
         inner class EventHandlerClassContext(priority: EventPriority) {
             // 构造一个类型，继承 Any::class.java，实现 org.bukkit.event.Listener 接口。
@@ -82,7 +83,7 @@ class BukkitEventHandlerInjectorImpl(
                 .subclass(Any::class.java)
                 .implement(org.bukkit.event.Listener::class.java)
                 .defineMethod("onPlatformEventPublished", Void.TYPE, Modifier.PUBLIC)
-                .withParameter(eventClass)
+                .withParameter(eventClass.java)
                 .intercept(MethodDelegation.to(this))
                 .annotateMethod(
                     AnnotationDescription.Builder.ofType(EventHandler::class.java)
@@ -154,10 +155,10 @@ class BukkitEventHandlerInjectorImpl(
     }
 
     // 因为只能在主线程上注册事件监听器，故无需考虑线程安全问题。
-    private val bukkitListenerClassContexts = mutableMapOf<Class<*>, BukkitEventClassContext>()
+    private val bukkitListenerClassContexts = mutableMapOf<KClass<*>, BukkitEventClassContext>()
 
     inner class EventHandlerImpl<T : Any>(
-        private val eventClass: Class<T>,
+        private val eventClass: KClass<T>,
         private val ignoreCancelled: Boolean,
         private val consumer: Consumer<T>
     ) : Consumer<T> {
@@ -187,7 +188,7 @@ class BukkitEventHandlerInjectorImpl(
     }
 
     override fun <T : Event> registerEventHandler(
-        eventClass: Class<T>,
+        eventClass: KClass<T>,
         priority: EventPriority,
         ignoreCancelled: Boolean,
         eventHandler: Consumer<T>

@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
+package cn.chuanwise.contexts.reactions
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+import cn.chuanwise.contexts.context.ContextInitEvent
+import cn.chuanwise.contexts.module.Module
+import cn.chuanwise.contexts.util.ContextsInternalApi
+
+interface ReactionModule : Module {
+
+}
+
+@ContextsInternalApi
+class ReactionModuleImpl : ReactionModule {
+
+}

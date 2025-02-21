@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
+@file:JvmName("Reactives")
 
-rootProject.name = "contexts"
-include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+package cn.chuanwise.contexts.reactions.util
+
+operator fun <T> Reactive<T>.getValue(thisRef: Any?, property: Any?) = value
+operator fun <T> Reactive<T>.setValue(thisRef: Any?, property: Any?, value: T) {
+    this.value = value
+}

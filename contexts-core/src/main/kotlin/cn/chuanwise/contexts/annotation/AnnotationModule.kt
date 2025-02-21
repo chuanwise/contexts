@@ -25,6 +25,7 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.addBean
+import kotlin.reflect.KClass
 import kotlin.reflect.full.functions
 
 /**
@@ -45,7 +46,7 @@ interface AnnotationModule : Module {
      * @return 扫描器
      */
     fun <T : Annotation> registerAnnotationFunctionProcessor(
-        annotationClass: Class<T>, processor: AnnotationFunctionProcessor<T>
+        annotationClass: KClass<T>, processor: AnnotationFunctionProcessor<T>
     ): MutableEntry<AnnotationFunctionProcessor<T>>
 
     /**
@@ -71,7 +72,7 @@ interface AnnotationModule : Module {
 @ContextsInternalApi
 class AnnotationModuleImpl : AnnotationModule {
     private class AnnotationFunctionProcessorImpl<T : Annotation>(
-        val annotationClass: Class<T>,
+        val annotationClass: KClass<T>,
         val processor: AnnotationFunctionProcessor<T>
     ) : AnnotationFunctionProcessor<T> {
         override fun process(context: AnnotationFunctionProcessContext<T>) {
@@ -83,7 +84,7 @@ class AnnotationModuleImpl : AnnotationModule {
     private val argumentResolverFactories = MutableEntries<ArgumentResolverFactory>()
 
     override fun <T : Annotation> registerAnnotationFunctionProcessor(
-        annotationClass: Class<T>,
+        annotationClass: KClass<T>,
         processor: AnnotationFunctionProcessor<T>
     ): MutableEntry<AnnotationFunctionProcessor<T>> {
         val finalFunctionProcessor = AnnotationFunctionProcessorImpl(annotationClass, processor) as AnnotationFunctionProcessorImpl<Annotation>
