@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+@file:JvmName("ReactiveCallObservers")
 
+package cn.chuanwise.contexts.reactions
+
+import cn.chuanwise.contexts.reactions.reactive.ReactiveCallObserver
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.ResolvableType
 
 @ContextsInternalApi
-class ComputedReactiveImpl<T>(
-    type: ResolvableType<T>,
-    private val computer: (Reactive<T>) -> T
-) : AbstractReactive<T>(type) {
-    override val value: T get() = doGetValue()
+val reactiveCallObserver = ThreadLocal<ReactiveCallObserver<out Any?>>()
 
-    private fun doGetValue() : T {
-        return computer(this)
+@OptIn(ContextsInternalApi::class)
+inline fun <T> ReactiveCallObserver<out Any?>.withCallObserver(block: () -> T): T {
+    val backup = reactiveCallObserver.get()
+    reactiveCallObserver.set(this)
+
+    try {
+        return block()
+    } finally {
+        if (backup == null) {
+            reactiveCallObserver.remove()
+        } else {
+            reactiveCallObserver.set(backup)
+        }
     }
 }

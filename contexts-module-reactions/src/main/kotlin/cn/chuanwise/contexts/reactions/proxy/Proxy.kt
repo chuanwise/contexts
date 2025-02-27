@@ -14,23 +14,36 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.view
+package cn.chuanwise.contexts.reactions.proxy
+
+import cn.chuanwise.contexts.util.NotStableForInheritance
+import cn.chuanwise.typeresolver.ResolvableType
 
 /**
- * 视图函数。
+ * 和代理对象一一对应，存储相关上下文信息。
  *
- * 视图函数是用于构造此上下文相关的 UI 的函数。函数中可以使用响应式值，框架会自动检测其值并绑定依赖关系。
- * 除此之外，也可以手动使用 [ViewContext.bind] 绑定依赖关系。
- *
- * 视图函数应当是幂等的，只有在数据发生变化或手动调用刷新函数时才会执行。
- *
+ * @param T 代理对象类型
  * @author Chuanwise
  */
-fun interface ViewFunction {
+@NotStableForInheritance
+interface Proxy<T : Any> {
     /**
-     * 构建视图。
-     *
-     * @param context 视图上下文
+     * 代理对象的类型。
      */
-    fun buildView(context: ViewContext)
+    val type: ResolvableType<T>
+
+    /**
+     * 被代理对象的原始值。
+     */
+    val value: T
+
+    /**
+     * 代理对象。
+     */
+    val valueProxy: T
+
+    /**
+     * 代理处理器。
+     */
+    var proxyHandler: ProxyHandler<T>
 }

@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+@file:JvmName("ReactiveReadObservers")
+
+package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.ResolvableType
 
 @ContextsInternalApi
-abstract class AbstractReactive<T>(
-    override val type: ResolvableType<T>
-) : Reactive<T> {
-    @Suppress("UNCHECKED_CAST")
-    protected fun onValueRead(value: T): T {
-        val observers = reactiveReadObservers.get() ?: return value
+val reactiveReadObserver = ThreadLocal<ReactiveReadObserver<out Any?>>()
 
-        var finalValue = value
-        observers.forEach {
-            finalValue = (it as ReactiveReadObserver<T>).onValueRead(this, value)
+@OptIn(ContextsInternalApi::class)
+inline fun <T> ReactiveReadObserver<out Any?>.withReadObserver(block: () -> T): T {
+    val backup = reactiveReadObserver.get()
+    reactiveReadObserver.set(this)
+
+    try {
+        return block()
+    } finally {
+        if (backup == null) {
+            reactiveReadObserver.remove()
+        } else {
+            reactiveReadObserver.set(backup)
         }
-        return finalValue
     }
 }

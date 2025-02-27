@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:JvmName("Reactives")
+package cn.chuanwise.contexts.reactions.reactive
 
-package cn.chuanwise.contexts.reactions.util
-
-operator fun <T> Reactive<T>.getValue(thisRef: Any?, property: Any?) = value
-operator fun <T> MutableReactive<T>.setValue(thisRef: Any?, property: Any?, value: T) {
-    this.value = value
+fun interface ReactiveWriteObserver<T> {
+    fun onValueWrite(reactive: Reactive<T>, value: T)
 }

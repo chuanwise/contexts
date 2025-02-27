@@ -16,6 +16,8 @@
 
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.ResolvableType
+
 interface InheritedMutableBeanManager : MutableBeanManager {
     val parentBeanManagers: Iterable<BeanManager>
     val beanManager: MutableBeanManager

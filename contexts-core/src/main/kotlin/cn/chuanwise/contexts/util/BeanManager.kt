@@ -16,6 +16,7 @@
 
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.ResolvableType
 import java.util.Queue
 import java.util.Stack
 

@@ -17,20 +17,10 @@
 package cn.chuanwise.contexts.reactions.view
 
 /**
- * 视图函数。
- *
- * 视图函数是用于构造此上下文相关的 UI 的函数。函数中可以使用响应式值，框架会自动检测其值并绑定依赖关系。
- * 除此之外，也可以手动使用 [ViewContext.bind] 绑定依赖关系。
- *
- * 视图函数应当是幂等的，只有在数据发生变化或手动调用刷新函数时才会执行。
+ * 在模型类型内的函数上使用，标注一个函数在代理的时候需要忽略。
  *
  * @author Chuanwise
  */
-fun interface ViewFunction {
-    /**
-     * 构建视图。
-     *
-     * @param context 视图上下文
-     */
-    fun buildView(context: ViewContext)
-}
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Ignore

@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.filters
 
 import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.context.ContextPostEdgeAddEvent
 import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.module.Module
@@ -26,10 +27,11 @@ import cn.chuanwise.contexts.util.MutableBeanEntry
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
 import cn.chuanwise.contexts.util.addBeanByCompilationType
-import cn.chuanwise.contexts.util.createResolvableType
-import cn.chuanwise.contexts.util.toResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
+import cn.chuanwise.typeresolver.toResolvableType
+import kotlin.reflect.KClass
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 
@@ -117,9 +119,11 @@ class FilterModuleImpl : FilterModule {
         ) : FilterContext<T>
 
         override fun <T : Any> filter(value: T): FilterContext<T> {
-            val valueType = value::class.toResolvableType()
+            val kClass = value::class as KClass<T>
+            val valueType = kClass.toResolvableType()
+
             val beans = InheritedMutableBeanManagerImpl(context).apply {
-                addBean(value, type = valueType as ResolvableType<T>, primary = true)
+                addBean(value, type = valueType, primary = true)
             }
 
             val contextType = createResolvableType(FilterContextImpl::class.createType(
@@ -176,7 +180,7 @@ class FilterModuleImpl : FilterModule {
         }
     }
 
-    override fun onContextPreEnter(event: ContextPreEnterEvent) {
+    override fun onContextInit(event: ContextInitEvent) {
         val filterManager = FilterManagerImpl(event.context)
         event.context.addBeanByCompilationType(filterManager)
     }

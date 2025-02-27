@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.proxy
 
-fun interface ReactiveWriteObserver<T> {
-    fun onValueWrite(reactive: Reactive<T>, value: T)
+import cn.chuanwise.contexts.util.ContextsInternalApi
+
+fun interface ProxyHandler<in T : Any> {
+    fun onCall(call: ProxyCall<@UnsafeVariance T>) : Any?
+}
+
+@ContextsInternalApi
+object NoOperationProxyHandler : ProxyHandler<Any> {
+    override fun onCall(call: ProxyCall<Any>): Any? = call.call()
 }

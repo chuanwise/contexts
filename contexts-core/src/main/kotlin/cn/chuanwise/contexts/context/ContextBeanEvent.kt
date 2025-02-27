@@ -18,7 +18,7 @@ package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableBeanEntry
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
 
 interface ContextBeanEvent<out T> : ContextEvent {
     val value: T

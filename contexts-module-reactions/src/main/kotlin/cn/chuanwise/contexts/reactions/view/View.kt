@@ -17,7 +17,8 @@
 package cn.chuanwise.contexts.reactions.view
 
 import cn.chuanwise.contexts.context.ContextPostEnterEvent
-import cn.chuanwise.contexts.reactions.util.Reactive
+import cn.chuanwise.contexts.reactions.DEFAULT_AUTO_BIND
+import cn.chuanwise.contexts.reactions.reactive.Reactive
 
 /**
  * 标注一个上下文函数为视图函数。
@@ -62,5 +63,5 @@ import cn.chuanwise.contexts.reactions.util.Reactive
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class View(
-    val autoBind: Boolean = true
+    val autoBind: Boolean = DEFAULT_AUTO_BIND
 )

@@ -16,34 +16,25 @@
 
 @file:JvmName("ReactiveWriteObservers")
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import kotlin.concurrent.getOrSet
 
 @ContextsInternalApi
-val reactiveWriteObservers = ThreadLocal<MutableList<ReactiveWriteObserver<*>>>()
-
-@ContextsInternalApi
-fun addReactiveWriteObserver(reactiveWriteObserver: ReactiveWriteObserver<*>) {
-    reactiveWriteObservers.getOrSet { mutableListOf() }.add(reactiveWriteObserver)
-}
-
-@ContextsInternalApi
-fun removeReactiveWriteObserver(reactiveWriteObserver: ReactiveWriteObserver<*>) {
-    val observers = reactiveWriteObservers.get() ?: error("No observers found.")
-    observers.remove(reactiveWriteObserver)
-    if (observers.isEmpty()) {
-        reactiveWriteObservers.remove()
-    }
-}
+val reactiveWriteObserver = ThreadLocal<ReactiveWriteObserver<out Any?>>()
 
 @OptIn(ContextsInternalApi::class)
-inline fun <T> ReactiveWriteObserver<*>.withReactiveWriteObserver(block: () -> T): T {
-    addReactiveWriteObserver(this)
+inline fun <T> ReactiveWriteObserver<out Any?>.withWriteObserver(block: () -> T): T {
+    val backup = reactiveWriteObserver.get()
+    reactiveWriteObserver.set(this)
+
     try {
         return block()
     } finally {
-        removeReactiveWriteObserver(this)
+        if (backup == null) {
+            reactiveWriteObserver.remove()
+        } else {
+            reactiveWriteObserver.set(backup)
+        }
     }
 }

@@ -16,6 +16,8 @@
 
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.ResolvableType
+
 /**
  * 表示一个在 [BeanManager] 内的对象。
  *

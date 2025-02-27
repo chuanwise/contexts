@@ -18,15 +18,11 @@
 
 package cn.chuanwise.contexts.reactions
 
-import cn.chuanwise.contexts.reactions.model.ModelHandler
 import cn.chuanwise.contexts.util.BeanManager
-import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.getBean
 import cn.chuanwise.contexts.util.getBeanOrFail
 
+const val DEFAULT_AUTO_BIND = true
+
 val BeanManager.reactionModule: ReactionModule get() = getBeanOrFail()
 val BeanManager.reactionModuleOrNull: ReactionModule? get() = getBean()
-
-inline fun <reified T> ReactionModule.registerModelHandler(modelHandler: ModelHandler<T>): MutableEntry<ModelHandler<T>> {
-    return registerModelHandler(T::class.java, modelHandler)
-}

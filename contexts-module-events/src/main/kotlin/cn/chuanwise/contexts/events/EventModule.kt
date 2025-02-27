@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.events
 
 import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.events.annotations.ListenerManager
@@ -30,6 +31,7 @@ import cn.chuanwise.contexts.util.InheritedMutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableEntries
 import cn.chuanwise.contexts.util.MutableEntry
 import cn.chuanwise.contexts.util.addBeanByCompilationType
+import cn.chuanwise.contexts.util.addBeanByRuntimeType
 
 /**
  * 事件模块。
@@ -176,7 +178,7 @@ class EventModuleImpl @JvmOverloads constructor(
             val filterContext = context.filterManager.filter(event)
             val beans = InheritedMutableBeanManagerImpl(context).apply {
                 addBeanByCompilationType(filterContext, primary = true)
-                addBeanByCompilationType(event, primary = true)
+                addBeanByRuntimeType(event, primary = true)
             }
             return EventContextImpl(event, context, beans, filterContext).apply {
                 beans.addBeanByCompilationType(this, primary = true)
@@ -288,7 +290,7 @@ class EventModuleImpl @JvmOverloads constructor(
         event.addDependencyModuleClass<FilterModule>()
     }
 
-    override fun onContextPreEnter(event: ContextPreEnterEvent) {
+    override fun onContextInit(event: ContextInitEvent) {
         val eventPublisher = EventPublisherImpl(event.context, defaultEventSpreader)
         event.context.addBeanByCompilationType(eventPublisher)
     }

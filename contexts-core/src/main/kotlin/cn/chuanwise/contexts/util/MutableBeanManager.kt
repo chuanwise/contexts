@@ -16,6 +16,16 @@
 
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.ResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
+import cn.chuanwise.typeresolver.isArray
+import cn.chuanwise.typeresolver.isList
+import cn.chuanwise.typeresolver.isMap
+import cn.chuanwise.typeresolver.isNothing
+import cn.chuanwise.typeresolver.isQueue
+import cn.chuanwise.typeresolver.isSet
+import cn.chuanwise.typeresolver.isStack
+import cn.chuanwise.typeresolver.isString
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
@@ -125,30 +135,30 @@ class MutableBeanManagerImpl: AbstractMutableBeanManager() {
         }
 
         if (beanType.isList) {
-            val componentType = beanType.typeArguments.values.single().type ?: createResolvableType<Any?>()
+            val componentType = beanType.typeArguments.single().type ?: createResolvableType<Any?>()
             return getBeans(componentType, id, primary) as T
         }
         if (beanType.isSet) {
-            val componentType = beanType.typeArguments.values.single().type ?: createResolvableType<Any?>()
+            val componentType = beanType.typeArguments.single().type ?: createResolvableType<Any?>()
             return getBeans(componentType, id, primary).toSet() as T
         }
         if (beanType.isQueue) {
-            val componentType = beanType.typeArguments.values.single().type ?: createResolvableType<Any?>()
+            val componentType = beanType.typeArguments.single().type ?: createResolvableType<Any?>()
             return ArrayDeque<Any?>().apply { addAll(getBeans(componentType, id, primary)) } as T
         }
         if (beanType.isStack) {
-            val componentType = beanType.typeArguments.values.single().type ?: createResolvableType<Any?>()
+            val componentType = beanType.typeArguments.single().type ?: createResolvableType<Any?>()
             return LinkedList<Any?>().apply { addAll(getBeans(componentType, id, primary)) } as T
         }
         if (beanType.isArray) {
-            val componentType = beanType.typeArguments.values.single().type ?: createResolvableType<Any?>()
+            val componentType = beanType.typeArguments.single().type ?: createResolvableType<Any?>()
             return getBeans(componentType, id, primary).toTypedArray() as T
         }
 
         if (beanType.isMap) {
-            val keyType = beanType.typeArguments.values.first().type ?: createResolvableType<String?>()
+            val keyType = beanType.typeArguments.first().type ?: createResolvableType<String?>()
             if (keyType.isString) {
-                val valueType = beanType.typeArguments.values.last().type ?: createResolvableType<Any?>()
+                val valueType = beanType.typeArguments.last().type ?: createResolvableType<Any?>()
                 return getBeanEntries(valueType, id, primary).associateBy { it.id } as T
             }
         }

@@ -18,10 +18,9 @@ package cn.chuanwise.contexts.reactions
 
 import cn.chuanwise.contexts.context.createContextManager
 import cn.chuanwise.contexts.context.findAndRegisterModules
-import cn.chuanwise.contexts.reactions.model.Model
-import cn.chuanwise.contexts.reactions.util.createMutableReactive
-import cn.chuanwise.contexts.reactions.util.getValue
-import cn.chuanwise.contexts.reactions.util.setValue
+import cn.chuanwise.contexts.reactions.reactive.createMutableReactive
+import cn.chuanwise.contexts.reactions.reactive.getValue
+import cn.chuanwise.contexts.reactions.reactive.setValue
 import cn.chuanwise.contexts.reactions.view.View
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -58,39 +57,37 @@ class ReactionTest {
         assertEquals(2, monitor.count)
     }
 
-    data class GameConfiguration(
+    data class Game(
         val name: String
     )
 
-    @Model
-    interface Configuration {
+    interface Config {
         var checkUpdate: Boolean
-        val games: MutableMap<String, GameConfiguration>
+        val games: MutableMap<String, Game>
     }
 
-    class ConfigurationImpl : Configuration {
-        override var checkUpdate by createMutableReactive(true)
-        override val games by createMutableReactive(
-            mutableMapOf(
-                "1" to GameConfiguration("404E")
-            )
+    class ConfigImpl : Config {
+        override var checkUpdate = true
+        override val games = mutableMapOf(
+            "1" to Game("404E")
         )
     }
 
-    private var configuration by createMutableReactive<Configuration>(ConfigurationImpl())
+    private var config by createMutableReactive<Config>(ConfigImpl())
 
     private inner class CheckUpdateMonitor {
         @View
         fun displayConfigCheckUpdate() {
-            println("A : Check update: ${configuration.checkUpdate}")
+            println("A : Check update: ${config.checkUpdate}")
         }
     }
 
     private inner class GameOneMonitor {
         @View
         fun displayGameOne() {
-            val games = configuration.games
-            println("B : Game 1: ${games["1"]!!.name}")
+            val games = config.games
+            val first: Any = games["1"]!!
+            println("B : Game 1: $first")
         }
     }
 
@@ -99,15 +96,30 @@ class ReactionTest {
         val checkUpdateMonitor = CheckUpdateMonitor()
         val gameOneMonitor = GameOneMonitor()
 
-        contextManager.enterRoot(checkUpdateMonitor)
-        contextManager.enterRoot(gameOneMonitor)
+        contextManager.enterRoot(checkUpdateMonitor, id = "CheckUpdate")
+        contextManager.enterRoot(gameOneMonitor, id = "GameOne")
 
-        println("Contexts entered!")
+        println("---- Contexts entered! ----")
 
-        configuration.checkUpdate = false
-        println("Check update changed to false!")
+        val oldValue = config.checkUpdate
+        println("BEFORE: configuration.checkUpdate = $oldValue")
 
-        configuration.games["1"] = GameConfiguration("Chuanwise")
+        println("BEFORE SET Check update changed to ${!oldValue}!")
+        config.checkUpdate = !oldValue
+        println("AFTER SET Check update changed to ${!oldValue}!")
+
+        config.games["1"] = Game("Chuanwise")
         println("Game 1 name changed to Chuanwise!")
+
+        config.games["2"] = Game("404E")
+        println("Game 2 name changed to 404E!")
+    }
+
+    @Test
+    fun testApis() {
+        val config = createMutableReactive(false)
+        config.addWriteObserver { reactive, value ->
+            println("Value in $reactive changed to $value")
+        }
     }
 }

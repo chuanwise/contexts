@@ -20,10 +20,12 @@ plugins {
 }
 
 repositories {
+    mavenLocal() // Kotlin Type Resolver
     mavenCentral()
 }
 
 dependencies {
+    api(libs.type.resolver)
     api(libs.blocking.bridge.runtime)
 
     api(libs.jackson.module.kotlin)
@@ -31,7 +33,6 @@ dependencies {
     api(libs.coroutines.core)
 
     testImplementation(libs.junit.jupiter)
-//    testImplementation(libs.slf)
 }
 
 tasks.test {

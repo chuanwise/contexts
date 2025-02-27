@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.model
+package cn.chuanwise.contexts.reactions.reactive
 
-/**
- * 在模型类型内的函数上使用，标注一个函数在代理的时候需要忽略。
- *
- * @author Chuanwise
- */
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Ignore
+fun interface ReactiveReadObserver<T> {
+    fun onValueRead(reactive: Reactive<T>, value: T): T
+}

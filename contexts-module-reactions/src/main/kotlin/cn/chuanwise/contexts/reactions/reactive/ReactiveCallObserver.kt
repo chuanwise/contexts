@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.reactive
 
-fun interface ReactiveReadObserver<T> {
-    fun onValueRead(reactive: Reactive<T>, value: T): T
+/**
+ * 函数调用观察者。
+ *
+ * 对于 [Reactive] 值的函数调用，若其类型非 `final` 类型，则在调用之后将会执行此函数通知所有监听者。
+ *
+ * @param T 代理类型和原始类型
+ * @author Chuanwise
+ */
+interface ReactiveCallObserver<T> {
+    fun onFunctionCall(context: ReactiveCallContext<T>)
 }

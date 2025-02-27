@@ -17,17 +17,16 @@
 package cn.chuanwise.contexts.reactions.view
 
 import cn.chuanwise.contexts.context.Context
-import cn.chuanwise.contexts.context.ContextExitEvent
-import cn.chuanwise.contexts.events.annotations.Listener
 import cn.chuanwise.contexts.reactions.ReactionManager
 import cn.chuanwise.contexts.reactions.ReactionModule
 import cn.chuanwise.contexts.reactions.ReactionModuleImpl
-import cn.chuanwise.contexts.reactions.util.MutableReactive
-import cn.chuanwise.contexts.reactions.util.Reactive
-import cn.chuanwise.contexts.reactions.util.ReactiveWriteObserver
+import cn.chuanwise.contexts.reactions.reactive.MutableReactive
+import cn.chuanwise.contexts.reactions.reactive.Reactive
+import cn.chuanwise.contexts.reactions.reactive.ReactiveCallContext
+import cn.chuanwise.contexts.reactions.reactive.ReactiveCallObserver
+import cn.chuanwise.contexts.reactions.reactive.ReactiveWriteObserver
 import cn.chuanwise.contexts.util.BeanManager
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.MutableEntry
 import java.util.concurrent.ConcurrentHashMap
 
 interface ViewContext {
@@ -47,11 +46,25 @@ class ViewContextImpl(
     override val reactionManager: ReactionModuleImpl.ReactionManagerImpl,
     override val reactionModule: ReactionModule
 ) : ViewContext {
-    private val reactives = ConcurrentHashMap<Reactive<Any?>, MutableEntry<ReactiveWriteObserver<Any?>>>()
+    private inner class Bind(reactive: MutableReactive<Any?>) {
+        private val writeObserverEntry = reactive.addWriteObserver(viewFlusher)
+        private val callObserverEntry = reactive.addCallObserver(viewFlusher)
 
-    private inner class ViewFlusher : ReactiveWriteObserver<Any?> {
+        fun remove() {
+            writeObserverEntry.remove()
+            callObserverEntry.remove()
+        }
+    }
+
+    private val reactiveBinds = ConcurrentHashMap<Reactive<Any?>, Bind>()
+
+    private inner class ViewFlusher : ReactiveWriteObserver<Any?>, ReactiveCallObserver<Any?> {
         override fun onValueWrite(reactive: Reactive<Any?>, value: Any?) {
             reactionManager.tryFlush(reactive, value)
+        }
+
+        override fun onFunctionCall(context: ReactiveCallContext<Any?>) {
+            reactionManager.onFunctionCall(context)
         }
     }
 
@@ -59,19 +72,19 @@ class ViewContextImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> bind(reactive: Reactive<T>, cache: T) {
-        reactionManager.cacheReactiveValue(reactive, cache)
-        reactives.computeIfAbsent(reactive) {
+        reactionManager.setReactiveCache(reactive, cache)
+        reactiveBinds.computeIfAbsent(reactive as Reactive<Any?>) {
             when (reactive) {
-                is MutableReactive -> (reactive as MutableReactive<Any?>).addWriteObserver(viewFlusher)
+                is MutableReactive -> Bind(reactive as MutableReactive<Any?>)
                 else -> error("Unsupported reactive type: ${reactive::class.java}")
             }
         }
     }
 
-    @Listener
-    fun onContextExited(event: ContextExitEvent) {
-        reactives.values.forEach {
+    fun exit() {
+        reactiveBinds.values.forEach {
             it.remove()
         }
+        context.exit()
     }
 }

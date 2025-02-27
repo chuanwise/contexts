@@ -18,31 +18,37 @@
 
 package cn.chuanwise.contexts.reactions.view
 
-import cn.chuanwise.contexts.reactions.util.Reactive
-import cn.chuanwise.contexts.reactions.util.ReactiveReadObserver
-import cn.chuanwise.contexts.reactions.util.withReactiveReadObserver
-import cn.chuanwise.contexts.reactions.util.withReactiveWriteObserver
+import cn.chuanwise.contexts.reactions.reactive.Reactive
+import cn.chuanwise.contexts.reactions.reactive.ReactiveCallContext
+import cn.chuanwise.contexts.reactions.reactive.ReactiveCallObserver
+import cn.chuanwise.contexts.reactions.reactive.ReactiveReadObserver
+import cn.chuanwise.contexts.reactions.reactive.withReadObserver
+import cn.chuanwise.contexts.reactions.withCallObserver
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
 // 将对 Reactive 的读写请求转换为代理对象，同时在读的时候自动绑定。
 @ContextsInternalApi
-@Suppress("UNCHECKED_CAST")
-class ViewContextBindReadObserver(
+class ViewContextBinder(
     private val viewContext: ViewContextImpl
-) : ReactiveReadObserver<Any?> {
+) : ReactiveReadObserver<Any?>, ReactiveCallObserver<Any?> {
     override fun onValueRead(reactive: Reactive<Any?>, value: Any?): Any? {
         viewContext.bind(reactive, value)
+        return value
+    }
 
-        val expectClass = reactive.type.rawClass.java as Class<Any?>
-        val modelHandler = viewContext.reactionModule.getModelHandler(expectClass) ?: return value
-        return modelHandler.value.toProxy(viewContext.context, expectClass, value)
+    override fun onFunctionCall(context: ReactiveCallContext<Any?>) {
+        viewContext.bind(context.reactive, context.raw)
     }
 }
 
 @OptIn(ContextsInternalApi::class)
-inline fun <T> ViewContext.bindUsed(block: () -> T): T {
-    val bindObservers = ViewContextBindReadObserver(this as ViewContextImpl)
-    bindObservers.withReactiveReadObserver {
-        return block()
+inline fun <T> ViewContext.bind(block: () -> T): T {
+    require(this is ViewContextImpl) { "The ViewContext must be an instance of ViewContextImpl." }
+
+    val binder = ViewContextBinder(this)
+    return binder.withReadObserver {
+        binder.withCallObserver {
+            block()
+        }
     }
 }

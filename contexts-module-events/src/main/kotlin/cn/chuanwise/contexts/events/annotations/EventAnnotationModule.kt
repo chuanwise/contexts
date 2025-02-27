@@ -22,6 +22,7 @@ import cn.chuanwise.contexts.annotation.AnnotationModule
 import cn.chuanwise.contexts.annotation.ArgumentResolver
 import cn.chuanwise.contexts.annotation.AnnotationFunctionProcessor
 import cn.chuanwise.contexts.annotation.annotationModule
+import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.events.EventContext
 import cn.chuanwise.contexts.events.EventHandler
 import cn.chuanwise.contexts.events.EventModule
@@ -271,7 +272,7 @@ class EventAnnotationModuleImpl : EventAnnotationModule {
         return listenerFunctionProcessors.add(finalProcessor) as MutableEntry<ListenerFunctionProcessor<T>>
     }
 
-    override fun onContextPreEnter(event: ContextPreEnterEvent) {
+    override fun onContextInit(event: ContextInitEvent) {
         val listenerManager = ListenerManagerImpl(event.context)
         event.context.addBeanByCompilationType(listenerManager)
     }

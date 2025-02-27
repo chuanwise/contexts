@@ -24,3 +24,13 @@ import cn.chuanwise.contexts.util.getBeanOrFail
 
 val BeanManager.reactionManager: ReactionManager get() = getBeanOrFail()
 val BeanManager.reactionManagerOrNull: ReactionManager? get() = getBean()
+
+inline fun <T> ReactionManager.withAutoFlush(autoFlush: Boolean, block: () -> T) : T {
+    val originalAutoFlush = this.autoFlush
+    this.autoFlush = autoFlush
+    try {
+        return block()
+    } finally {
+        this.autoFlush = originalAutoFlush
+    }
+}

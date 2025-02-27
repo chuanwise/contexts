@@ -23,7 +23,7 @@ import cn.chuanwise.contexts.util.MutableBeanEntry
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.ReadWriteLockBasedReadAddRemoveLock
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
 import cn.chuanwise.contexts.util.add
 import cn.chuanwise.contexts.util.addBeanByCompilationType
 import cn.chuanwise.contexts.util.addBeanByRuntimeType

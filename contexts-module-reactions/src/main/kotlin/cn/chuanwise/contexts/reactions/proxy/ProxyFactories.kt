@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.view
+@file:JvmName("ProxyFactories")
 
-/**
- * 视图函数。
- *
- * 视图函数是用于构造此上下文相关的 UI 的函数。函数中可以使用响应式值，框架会自动检测其值并绑定依赖关系。
- * 除此之外，也可以手动使用 [ViewContext.bind] 绑定依赖关系。
- *
- * 视图函数应当是幂等的，只有在数据发生变化或手动调用刷新函数时才会执行。
- *
- * @author Chuanwise
- */
-fun interface ViewFunction {
-    /**
-     * 构建视图。
-     *
-     * @param context 视图上下文
-     */
-    fun buildView(context: ViewContext)
+package cn.chuanwise.contexts.reactions.proxy
+
+import cn.chuanwise.typeresolver.ResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
+
+fun <T : Any> ProxyFactory.createProxyOrNull(type: ResolvableType<T>, value: T?, handler: ProxyHandler<T>) : Proxy<T>? {
+    return if (value == null) {
+        null
+    } else {
+        createProxy(type, value, handler)
+    }
+}
+
+inline fun <reified T : Any> ProxyFactory.createProxy(value: T, handler: ProxyHandler<T>) : Proxy<T> {
+    return createProxy(createResolvableType<T>(), value, handler)
 }

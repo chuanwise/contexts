@@ -18,7 +18,7 @@ package cn.chuanwise.contexts.annotation
 
 import cn.chuanwise.contexts.util.Bean
 import cn.chuanwise.contexts.util.BeanManager
-import cn.chuanwise.contexts.util.createResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
 import cn.chuanwise.contexts.util.getBean
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaType

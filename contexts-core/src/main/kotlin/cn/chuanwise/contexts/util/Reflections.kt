@@ -44,6 +44,9 @@ private val EMPTY_ANY_ARRAY = emptyArray<Any>()
 val Member.isStatic: Boolean get() = Modifier.isStatic(modifiers)
 
 @ContextsInternalApi
+val Class<*>.isFinal: Boolean get() = Modifier.isFinal(modifiers)
+
+@ContextsInternalApi
 fun Class<*>.getDeclaredMethodOrNull(name: String, vararg parameterTypes: Class<*> = EMPTY_CLASS_ARRAY): Method? {
     return try {
         getDeclaredMethod(name, *parameterTypes)
@@ -55,6 +58,15 @@ fun Class<*>.getDeclaredMethodOrNull(name: String, vararg parameterTypes: Class<
 @ContextsInternalApi
 fun Class<*>.getDeclaredStaticMethodOrNull(name: String, vararg parameterTypes: Class<*> = EMPTY_CLASS_ARRAY): Method? {
     return getDeclaredMethodOrNull(name, *parameterTypes).takeIf { it?.isStatic == true }
+}
+
+@ContextsInternalApi
+fun Class<*>.getMethodOrNull(name: String, vararg parameterTypes: Class<*> = EMPTY_CLASS_ARRAY): Method? {
+    return try {
+        getMethod(name, *parameterTypes)
+    } catch (e: NoSuchMethodException) {
+        null
+    }
 }
 
 @ContextsInternalApi
@@ -110,7 +122,7 @@ fun Field.getStaticSafe(): Any? {
 }
 
 @ContextsInternalApi
-fun Method.invokeSafe(instance: Any, vararg args: Any = EMPTY_ANY_ARRAY): Any? {
+fun Method.invokeSafe(instance: Any, vararg args: Any? = EMPTY_ANY_ARRAY): Any? {
     return if (canAccess(instance)) {
         invoke(instance, *args)
     } else {
@@ -124,7 +136,7 @@ fun Method.invokeSafe(instance: Any, vararg args: Any = EMPTY_ANY_ARRAY): Any? {
 }
 
 @ContextsInternalApi
-fun <T : Any> Constructor<T>.newInstanceSafe(vararg args: Any = EMPTY_ANY_ARRAY): T? {
+fun <T : Any> Constructor<T>.newInstanceSafe(vararg args: Any? = EMPTY_ANY_ARRAY): T? {
     return if (canAccess(null)) {
         newInstance(*args)
     } else {

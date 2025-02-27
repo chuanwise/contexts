@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.bukkit.event
 
 import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.context.ContextManager
 import cn.chuanwise.contexts.module.Module
 import cn.chuanwise.contexts.context.ContextPreEnterEvent
@@ -185,7 +186,7 @@ class BukkitEventModuleImpl @JvmOverloads constructor(
         eventProcessor.remove()
     }
 
-    override fun onContextPreEnter(event: ContextPreEnterEvent) {
+    override fun onContextInit(event: ContextInitEvent) {
         val bukkitEventManager = BukkitEventManagerImpl(event.context)
         event.context.addBeanByCompilationType(bukkitEventManager)
     }

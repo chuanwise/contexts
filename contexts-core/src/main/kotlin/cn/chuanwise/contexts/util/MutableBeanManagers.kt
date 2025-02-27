@@ -17,6 +17,8 @@
 @file:JvmName("MutableBeanManagers")
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.ResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
 

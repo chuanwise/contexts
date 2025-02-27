@@ -16,15 +16,20 @@
 
 @file:JvmName("ReactiveFactory")
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.ResolvableType
-import cn.chuanwise.contexts.util.createResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
 
+@JvmOverloads
 @OptIn(ContextsInternalApi::class)
-fun <T> createMutableReactive(initialValue: T, type: ResolvableType<T>): MutableReactive<T> {
-    return MutableReactiveImpl(initialValue, type)
+fun <T> createMutableReactive(
+    initialValue: T,
+    type: ResolvableType<T>,
+    proxyClassLoader: ClassLoader? = type.rawClass.java.classLoader
+): MutableReactive<T> {
+    return MutableReactiveImpl(initialValue, type, proxyClassLoader)
 }
 
 inline fun <reified T> createMutableReactive(initialValue: T): MutableReactive<T> {

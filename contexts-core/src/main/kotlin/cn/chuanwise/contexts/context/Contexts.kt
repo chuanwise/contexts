@@ -19,12 +19,12 @@
 package cn.chuanwise.contexts.context
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
 import cn.chuanwise.contexts.util.TopologicalIterator
 import cn.chuanwise.contexts.util.callByAndRethrowException
 import cn.chuanwise.contexts.util.callSuspendByAndRethrowException
 import cn.chuanwise.contexts.util.coroutineScopeOrNull
-import cn.chuanwise.contexts.util.createResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
 import cn.chuanwise.contexts.util.getBean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

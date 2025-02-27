@@ -17,6 +17,7 @@
 package cn.chuanwise.contexts.bukkit.task
 
 import cn.chuanwise.contexts.context.Context
+import cn.chuanwise.contexts.context.ContextInitEvent
 import cn.chuanwise.contexts.context.ContextPreEnterEvent
 import cn.chuanwise.contexts.context.ContextPreExitEvent
 import cn.chuanwise.contexts.module.Module
@@ -101,7 +102,7 @@ class BukkitTaskModuleImpl @JvmOverloads constructor(
         bukkitTimerManager.cancelTasks()
     }
 
-    override fun onContextPreEnter(event: ContextPreEnterEvent) {
+    override fun onContextInit(event: ContextInitEvent) {
         val bukkitTimerManager = BukkitTaskManagerImpl(event.context)
         event.context.addBeanByCompilationType(bukkitTimerManager)
     }

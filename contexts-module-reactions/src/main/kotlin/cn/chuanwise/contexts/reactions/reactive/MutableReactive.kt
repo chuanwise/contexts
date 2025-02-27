@@ -14,28 +14,34 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.MutableEntry
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
 
 interface MutableReactive<T> : Reactive<T> {
     override var value: T
 
     fun addWriteObserver(observer: ReactiveWriteObserver<T>): MutableEntry<ReactiveWriteObserver<T>>
+    fun addCallObserver(observer: ReactiveCallObserver<T>): MutableEntry<ReactiveCallObserver<T>>
 }
 
 @ContextsInternalApi
-class MutableReactiveImpl<T>(initialValue: T, type: ResolvableType<T>) : AbstractMutableReactive<T>(type) {
-    override var value: T = initialValue
-        get() = onValueRead(field)
+class MutableReactiveImpl<T>(
+    initialValue: T, type: ResolvableType<T>, proxyClassLoader: ClassLoader?
+) : AbstractMutableReactive<T>(type, proxyClassLoader) {
+    override var raw: T = initialValue
+
+    override var value: T
+        get() = onValueRead(toProxyOrNull(raw))
         set(value) {
-            field = value
-            onValueWrite(value)
+            val result = tryToRawOrNull(value)
+            raw = result
+            onValueWrite(result)
         }
 
     override fun toString(): String {
-        return "MutableReactive(value=$value)"
+        return "MutableReactive(value=$raw)"
     }
 }

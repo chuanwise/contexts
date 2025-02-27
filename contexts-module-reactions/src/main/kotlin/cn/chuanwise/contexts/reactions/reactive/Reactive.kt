@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-package cn.chuanwise.contexts.reactions.util
+package cn.chuanwise.contexts.reactions.reactive
 
-import cn.chuanwise.contexts.util.ResolvableType
+import cn.chuanwise.contexts.util.NotStableForInheritance
+import cn.chuanwise.typeresolver.ResolvableType
 
 /**
  * 一个响应式的值，当值发生变化时，会通知所有监听者。
+ *
+ * 值类型若为 `final`，无法产生代理，则只有在值发生变化时，才会通知监听者。
+ * 否则一旦调用代理的任何方法，便会通知监听者检测是否需要更新。
  *
  * @param T 值类型
  * @author Chuanwise
  * @see MutableReactive
  */
-interface Reactive<out T> {
+@NotStableForInheritance
+interface Reactive<T> {
+    /**
+     * 对于 `final` 类型，为原始值；对于非 `final` 类型，为代理值。
+     */
     val value: T
-    val type: ResolvableType<@UnsafeVariance T>
+
+    /**
+     * 值的类型。
+     */
+    val type: ResolvableType<T>
 }

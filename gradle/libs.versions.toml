@@ -8,11 +8,15 @@ spigot = "1.20.1-R0.1-SNAPSHOT"
 coroutines-core = "1.8.0"
 byte-buddy = "1.15.10"
 
+type-resolver = "0.1.0-SNAPSHOT"
+
 shadow = "8.3.5"
 slf4j = "2.0.16"
 log4j = "2.24.3"
 
 [libraries]
+type-resolver = { module = "cn.chuanwise:kotlin-type-resolver", version.ref = "type-resolver" }
+
 blocking-bridge-runtime = { module = "me.him188:kotlin-jvm-blocking-bridge-runtime", version.ref = "blocking-bridge" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-bom" }
 

@@ -17,6 +17,7 @@
 @file:JvmName("BeanManagers")
 package cn.chuanwise.contexts.util
 
+import cn.chuanwise.typeresolver.createResolvableType
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf

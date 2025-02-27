@@ -30,6 +30,7 @@ dependencies {
     api(project(":contexts-module-filters"))
 
     implementation(libs.byte.buddy)
+//    implementation(libs.kache)
 
     testImplementation(libs.junit.jupiter)
 }

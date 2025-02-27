@@ -29,13 +29,14 @@ import cn.chuanwise.contexts.util.MutableBeanEntry
 import cn.chuanwise.contexts.util.MutableBeanManagerImpl
 import cn.chuanwise.contexts.util.MutableBeanManager
 import cn.chuanwise.contexts.util.NotStableForInheritance
-import cn.chuanwise.contexts.util.ResolvableType
 import cn.chuanwise.contexts.util.addBeanByRuntimeType
-import cn.chuanwise.contexts.util.createResolvableType
+import cn.chuanwise.typeresolver.ResolvableType
+import cn.chuanwise.typeresolver.createResolvableType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.reflect.KClass
 
 /**
  * 上下文管理器。
@@ -175,14 +176,16 @@ class ContextManagerImpl(
 
         private var bean: MutableBeanEntry<Module>? = null
 
+        @Suppress("UNCHECKED_CAST")
         fun enableNoCheck() {
             require(!isRemoved) { "Cannot enable a removed module." }
             try {
                 val event = ModulePostEnableEventImpl(id, value, this@ContextManagerImpl)
                 value.onModulePostEnable(event)
 
-                @Suppress("UNCHECKED_CAST")
-                val beanType = createResolvableType(value::class) as ResolvableType<Module>
+                val rawClass = value::class as KClass<Module>
+                val beanType = createResolvableType(rawClass)
+
                 bean = beans.addBean(value, beanType)
             } catch (e: Throwable) {
                 enableLock.set(false)
