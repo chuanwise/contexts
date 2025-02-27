@@ -45,5 +45,10 @@ interface Proxy<T : Any> {
     /**
      * 代理处理器。
      */
-    var proxyHandler: ProxyHandler<T>
+    val handler: ProxyHandler<T>
+
+    /**
+     * 代理工厂。
+     */
+    val factory: ProxyFactory
 }

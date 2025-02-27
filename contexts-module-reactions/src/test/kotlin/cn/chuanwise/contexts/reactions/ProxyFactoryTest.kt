@@ -16,7 +16,7 @@
 
 package cn.chuanwise.contexts.reactions
 
-import cn.chuanwise.contexts.reactions.proxy.NoOperationProxyHandler
+import cn.chuanwise.contexts.reactions.proxy.JustForwardProxyHandler
 import cn.chuanwise.contexts.reactions.proxy.ProxyFactoryImpl
 import cn.chuanwise.contexts.reactions.proxy.createProxy
 import cn.chuanwise.contexts.util.ContextsInternalApi
@@ -44,10 +44,10 @@ class ProxyFactoryTest {
 
     @Test
     fun testProxyCreate() {
-        val foo = proxyFactory.createProxy<Foo>(FooImpl, NoOperationProxyHandler).valueProxy
+        val foo = proxyFactory.createProxy<Foo>(FooImpl, JustForwardProxyHandler).valueProxy
         assertEquals("Proxy(value=$FooImpl)", foo.toString())
 
-        val charSequence = proxyFactory.createProxy<CharSequence>("114", NoOperationProxyHandler).valueProxy
+        val charSequence = proxyFactory.createProxy<CharSequence>("114", JustForwardProxyHandler).valueProxy
         assertEquals("114", charSequence.toString())
     }
 }

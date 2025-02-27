@@ -20,7 +20,6 @@ import cn.chuanwise.contexts.reactions.view.Ignore
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.NotStableForInheritance
 import cn.chuanwise.contexts.util.getDeclaredFieldOrNull
-import cn.chuanwise.contexts.util.getDeclaredMethodOrNull
 import cn.chuanwise.contexts.util.getMethodOrNull
 import cn.chuanwise.contexts.util.getSafe
 import cn.chuanwise.typeresolver.ResolvableType
@@ -30,8 +29,6 @@ import cn.chuanwise.typeresolver.resolveByOuterType
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.description.modifier.Visibility
-import net.bytebuddy.dynamic.Transformer.ForField
-import net.bytebuddy.implementation.FieldAccessor
 import net.bytebuddy.implementation.MethodDelegation
 import net.bytebuddy.implementation.bind.annotation.AllArguments
 import net.bytebuddy.implementation.bind.annotation.FieldValue
@@ -108,8 +105,9 @@ class ProxyFactoryImpl(
         override val value: T,
         private val proxyClass: ProxyClass<T>,
         private val proxyType: ProxyClass<T>.ProxyType,
-        override var proxyHandler: ProxyHandler<T>
+        override val handler: ProxyHandler<T>
     ) : Proxy<T> {
+        override val factory: ProxyFactory get() = this@ProxyFactoryImpl
         override lateinit var valueProxy: T
 
         private val Method.rawFunctionOrNull: KFunction<*>?
@@ -126,7 +124,7 @@ class ProxyFactoryImpl(
                 proxyClass.rawMethodToGetter[method], proxyClass.rawMethodToSetter[method]
             )
 
-            return proxyHandler.onCall(call)
+            return handler.onCall(call)
         }
 
         fun onToString(): String {

@@ -18,11 +18,22 @@ package cn.chuanwise.contexts.reactions.proxy
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
+/**
+ * 代理处理器，以代理函数调用。
+ *
+ * @param T 代理类型。
+ * @author Chuanwise
+ */
 fun interface ProxyHandler<in T : Any> {
     fun onCall(call: ProxyCall<@UnsafeVariance T>) : Any?
 }
 
+/**
+ * 不进行任何操作，只是将函数调用原样转发给原始对象的代理处理器。
+ *
+ * @author Chuanwise
+ */
 @ContextsInternalApi
-object NoOperationProxyHandler : ProxyHandler<Any> {
+object JustForwardProxyHandler : ProxyHandler<Any> {
     override fun onCall(call: ProxyCall<Any>): Any? = call.call()
 }
