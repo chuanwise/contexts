@@ -17,8 +17,9 @@
 
 rootProject.name = "contexts"
 include("contexts-core")
-include("contexts-module-events")
-include("contexts-module-filters")
-include("contexts-module-bukkit")
-include("contexts-module-commands")
-include("contexts-module-reactions")
+
+include("contexts-events")
+include("contexts-filters")
+include("contexts-bukkit")
+include("contexts-commands")
+include("contexts-reactions")

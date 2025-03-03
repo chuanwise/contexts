@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.blocking.bridge)
     alias(libs.plugins.shadow)
+    `maven-publish`
 }
 
 repositories {
@@ -29,8 +30,8 @@ repositories {
 
 dependencies {
     api(project(":contexts-core"))
-    api(project(":contexts-module-events"))
-    api(project(":contexts-module-filters"))
+    api(project(":contexts-events"))
+    api(project(":contexts-filters"))
 
     compileOnly(libs.spigot.api)
     implementation(libs.byte.buddy)
@@ -55,4 +56,16 @@ tasks.processResources {
 
 tasks.shadowJar {
     mergeServiceFiles()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifactId = project.name
+
+            artifact(tasks.kotlinSourcesJar)
+
+            from(components["java"])
+        }
+    }
 }

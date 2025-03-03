@@ -17,6 +17,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.blocking.bridge)
+    `maven-publish`
 }
 
 repositories {
@@ -26,8 +27,8 @@ repositories {
 dependencies {
     api(project(":contexts-core"))
 
-    api(project(":contexts-module-events"))
-    api(project(":contexts-module-filters"))
+    api(project(":contexts-events"))
+    api(project(":contexts-filters"))
 
     implementation(libs.byte.buddy)
 //    implementation(libs.kache)
@@ -37,4 +38,16 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifactId = project.name
+
+            artifact(tasks.kotlinSourcesJar)
+
+            from(components["java"])
+        }
+    }
 }
