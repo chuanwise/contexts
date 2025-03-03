@@ -16,6 +16,14 @@
 
 package cn.chuanwise.contexts.reactions.reactive
 
-fun interface ReactiveReadObserver<T> {
-    fun onValueRead(reactive: Reactive<T>, value: T): T
+/**
+ * 响应式值直接读取的上下文。
+ *
+ * 一旦调用 [Reactive.value]，此方法即被调用。方法的返回值将是实际读出的值。
+ * 可在此处将原始类型替换为代理类型，以便检测后续对此对象的使用。
+ *
+ * @author Chuanwise
+ */
+fun interface ReactiveReadObserver<out T> {
+    fun onRead(context: ReactiveReadContext<@UnsafeVariance T>)
 }

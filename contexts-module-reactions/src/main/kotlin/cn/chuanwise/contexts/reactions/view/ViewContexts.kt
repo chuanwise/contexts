@@ -18,11 +18,11 @@
 
 package cn.chuanwise.contexts.reactions.view
 
-import cn.chuanwise.contexts.reactions.reactive.Reactive
 import cn.chuanwise.contexts.reactions.reactive.ReactiveCallContext
 import cn.chuanwise.contexts.reactions.reactive.ReactiveCallObserver
+import cn.chuanwise.contexts.reactions.reactive.ReactiveReadContext
 import cn.chuanwise.contexts.reactions.reactive.ReactiveReadObserver
-import cn.chuanwise.contexts.reactions.reactive.withReadObserver
+import cn.chuanwise.contexts.reactions.reactive.withPrimaryReadObserver
 import cn.chuanwise.contexts.reactions.withCallObserver
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
@@ -31,12 +31,11 @@ import cn.chuanwise.contexts.util.ContextsInternalApi
 class ViewContextBinder(
     private val viewContext: ViewContextImpl
 ) : ReactiveReadObserver<Any?>, ReactiveCallObserver<Any?> {
-    override fun onValueRead(reactive: Reactive<Any?>, value: Any?): Any? {
-        viewContext.bind(reactive, value)
-        return value
+    override fun onRead(context: ReactiveReadContext<Any?>) {
+        viewContext.bind(context.reactive, context.value)
     }
 
-    override fun onFunctionCall(context: ReactiveCallContext<Any?>) {
+    override fun onCall(context: ReactiveCallContext<Any?>) {
         viewContext.bind(context.reactive, context.raw)
     }
 }
@@ -46,7 +45,7 @@ inline fun <T> ViewContext.bind(block: () -> T): T {
     require(this is ViewContextImpl) { "The ViewContext must be an instance of ViewContextImpl." }
 
     val binder = ViewContextBinder(this)
-    return binder.withReadObserver {
+    return binder.withPrimaryReadObserver {
         binder.withCallObserver {
             block()
         }

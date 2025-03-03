@@ -14,27 +14,36 @@
  * limitations under the License.
  */
 
-@file:JvmName("ReactiveReadObservers")
-
 package cn.chuanwise.contexts.reactions.reactive
 
+import cn.chuanwise.contexts.reactions.proxy.Proxy
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
+interface ReactiveWriteContext<T> : ReactiveContext<T> {
+    /**
+     * 此前的原始值，无代理。
+     */
+    val oldValue: T
+
+    /**
+     * 此前的代理。
+     */
+    val oldValueProxy: Proxy<T & Any>
+
+    /**
+     * 新值，无代理。
+     */
+    var newValue: T
+}
+
 @ContextsInternalApi
-val reactiveReadObserver = ThreadLocal<ReactiveReadObserver<out Any?>>()
-
-@OptIn(ContextsInternalApi::class)
-inline fun <T> ReactiveReadObserver<out Any?>.withReadObserver(block: () -> T): T {
-    val backup = reactiveReadObserver.get()
-    reactiveReadObserver.set(this)
-
-    try {
-        return block()
-    } finally {
-        if (backup == null) {
-            reactiveReadObserver.remove()
-        } else {
-            reactiveReadObserver.set(backup)
-        }
+class ReactiveWriteContextImpl<T>(
+    override val reactive: Reactive<T>,
+    override val oldValue: T,
+    override val oldValueProxy: Proxy<T & Any>,
+    override var newValue: T
+) : AbstractReactiveContext<T>(), ReactiveWriteContext<T> {
+    override fun toString(): String {
+        return "ReactiveWriteContext(oldValue=$oldValue, newValue=$newValue, reactive=$reactive)"
     }
 }

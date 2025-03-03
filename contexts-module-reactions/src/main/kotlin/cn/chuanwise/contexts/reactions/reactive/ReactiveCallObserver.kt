@@ -25,5 +25,5 @@ package cn.chuanwise.contexts.reactions.reactive
  * @author Chuanwise
  */
 interface ReactiveCallObserver<T> {
-    fun onFunctionCall(context: ReactiveCallContext<T>)
+    fun onCall(context: ReactiveCallContext<T>)
 }

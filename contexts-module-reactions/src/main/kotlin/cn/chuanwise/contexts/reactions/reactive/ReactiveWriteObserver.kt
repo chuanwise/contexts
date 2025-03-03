@@ -16,6 +16,6 @@
 
 package cn.chuanwise.contexts.reactions.reactive
 
-fun interface ReactiveWriteObserver<T> {
-    fun onValueWrite(reactive: Reactive<T>, value: T)
+fun interface ReactiveWriteObserver<out T> {
+    fun onValueWrite(reactive: Reactive<@UnsafeVariance T>, value: @UnsafeVariance T)
 }

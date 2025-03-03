@@ -63,8 +63,8 @@ class ViewContextImpl(
             reactionManager.tryFlush(reactive, value)
         }
 
-        override fun onFunctionCall(context: ReactiveCallContext<Any?>) {
-            reactionManager.onFunctionCall(context)
+        override fun onCall(context: ReactiveCallContext<Any?>) {
+            reactionManager.onCall(context)
         }
     }
 

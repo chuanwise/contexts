@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-@file:JvmName("ReactiveWriteObservers")
-
 package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.util.ContextsInternalApi
 
+interface ReactiveReadContext<T> : ReactiveContext<T> {
+    /**
+     * 此处的值是原始值，后续可能会被代理。
+     * 修改将会影响后续读到的值。
+     */
+    var value: T
+}
+
 @ContextsInternalApi
-val reactiveWriteObserver = ThreadLocal<ReactiveWriteObserver<out Any?>>()
-
-@OptIn(ContextsInternalApi::class)
-inline fun <T> ReactiveWriteObserver<out Any?>.withWriteObserver(block: () -> T): T {
-    val backup = reactiveWriteObserver.get()
-    reactiveWriteObserver.set(this)
-
-    try {
-        return block()
-    } finally {
-        if (backup == null) {
-            reactiveWriteObserver.remove()
-        } else {
-            reactiveWriteObserver.set(backup)
-        }
+class ReactiveReadContextImpl<T>(
+    override val reactive: Reactive<T>,
+    override var value: T
+) : AbstractReactiveContext<T>(), ReactiveReadContext<T> {
+    override fun toString(): String {
+        return "ReactiveReadContext(value=$value, reactive=$reactive)"
     }
 }

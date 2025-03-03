@@ -17,7 +17,7 @@
 package cn.chuanwise.contexts.reactions.reactive
 
 import cn.chuanwise.contexts.context.Context
-import cn.chuanwise.contexts.reactions.buildingContext
+import cn.chuanwise.contexts.reactions.getBuildingReactionManager
 import cn.chuanwise.contexts.reactions.reactionManagerOrNull
 import cn.chuanwise.contexts.util.ContextsInternalApi
 import cn.chuanwise.contexts.util.isFinal
@@ -38,6 +38,8 @@ import net.bytebuddy.matcher.ElementMatchers.isDeclaredBy
 import net.bytebuddy.matcher.ElementMatchers.isFinal
 import net.bytebuddy.matcher.ElementMatchers.not
 import java.lang.reflect.Method
+import java.util.ArrayDeque
+import java.util.Deque
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -46,12 +48,52 @@ import kotlin.reflect.jvm.javaMethod
 import kotlin.reflect.jvm.kotlinFunction
 
 @ContextsInternalApi
+val primaryReadObserver = ThreadLocal<ReactiveReadObserver<Any?>?>()
+
+@OptIn(ContextsInternalApi::class)
+inline fun <T> ReactiveReadObserver<Any?>.withPrimaryReadObserver(block: () -> T): T {
+    val backup = primaryReadObserver.get()
+    primaryReadObserver.set(this)
+
+    try {
+        return block()
+    } finally {
+        if (backup == null) {
+            primaryReadObserver.remove()
+        } else {
+            primaryReadObserver.set(backup)
+        }
+    }
+}
+
+@ContextsInternalApi
+val readObservers = ThreadLocal<Deque<ReactiveReadObserver<Any?>>?>()
+
+@OptIn(ContextsInternalApi::class)
+inline fun <T> ReactiveReadObserver<Any?>.withReadObserver(block: () -> T) : T {
+    var deque = readObservers.get()
+    if (deque == null) {
+        deque = ArrayDeque()
+        readObservers.set(deque)
+    }
+
+    try {
+        return block()
+    } finally {
+        check(deque.removeLast() === this) { "The last read observer is not the current read observer." }
+        if (deque.isEmpty()) {
+            readObservers.remove()
+        }
+    }
+}
+
+@ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
 abstract class AbstractReactive<T>(
     override val type: ResolvableType<T>,
     private val proxyClassLoader: ClassLoader?
 ) : Reactive<T> {
-    abstract val raw: T
+    abstract val rawValue: T
 
     companion object {
         // 每个代理类型内都有一个对应的代理上下文，以便调用函数并执行代理方法。
@@ -85,7 +127,7 @@ abstract class AbstractReactive<T>(
 
             fun onProxyMethodCall(method: Method, arguments: Array<Any?>) : Any? {
                 val result: Any? = method.invoke(raw, *arguments)
-                val context: Context? = buildingContext.get()
+                val context: Context? = getBuildingReactionManager()?.context
 
                 val callContext = ReactiveCallContextImpl(
                     reactive, context, context?.reactionManagerOrNull, proxy, raw, method, arguments,
@@ -125,7 +167,7 @@ abstract class AbstractReactive<T>(
                         }
                     }
                 }
-                observer.onFunctionCall(callContext)
+                observer.onCall(callContext)
 
                 return callContext.resultProxy
             }
@@ -237,7 +279,21 @@ abstract class AbstractReactive<T>(
     }
 
     protected fun onValueRead(value: T): T {
-        val observer = reactiveReadObserver.get() as? ReactiveReadObserver<T> ?: return value
-        return observer.onValueRead(this, value)
+        val context = ReactiveReadContextImpl(this, value)
+
+        val primaryObserver = primaryReadObserver.get() as? ReactiveReadObserver<T>
+        if (primaryObserver != null) {
+            primaryObserver.onRead(context)
+        }
+
+        val readObservers = readObservers.get()
+        if (readObservers != null) {
+            for (observer in readObservers.descendingIterator()) {
+                observer as ReactiveReadObserver<T>
+                observer.onRead(context)
+            }
+        }
+
+        return context.value
     }
 }

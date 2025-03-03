@@ -23,22 +23,42 @@ import cn.chuanwise.contexts.util.MutableEntrySet
 import cn.chuanwise.typeresolver.ResolvableType
 
 @ContextsInternalApi
+val primaryWriteObserver = ThreadLocal<ReactiveWriteObserver<out Any?>>()
+
+@OptIn(ContextsInternalApi::class)
+inline fun <T> ReactiveWriteObserver<out Any?>.withWriteObserver(block: () -> T): T {
+    val backup = primaryWriteObserver.get()
+    primaryWriteObserver.set(this)
+
+    try {
+        return block()
+    } finally {
+        if (backup == null) {
+            primaryWriteObserver.remove()
+        } else {
+            primaryWriteObserver.set(backup)
+        }
+    }
+}
+
+
+
+@ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
 abstract class AbstractMutableReactive<T>(
     type: ResolvableType<T>, proxyClassLoader: ClassLoader?
 ) : AbstractReactive<T>(type, proxyClassLoader), MutableReactive<T> {
-
     private val writeObservers = MutableEntrySet<ReactiveWriteObserver<T>>()
     private val callObservers = MutableEntrySet<ReactiveCallObserver<T>>()
 
     private inner class ReactiveCallObserverImpl : ReactiveCallObserver<T> {
-        override fun onFunctionCall(context: ReactiveCallContext<T>) {
+        override fun onCall(context: ReactiveCallContext<T>) {
             // 环境中的 call observer 是优先级最高的。
-            (reactiveCallObserver.get() as? ReactiveCallObserver<T>)?.onFunctionCall(context)
+            (reactiveCallObserver.get() as? ReactiveCallObserver<T>)?.onCall(context)
 
             // 随后是已经注册的 call observers。
             callObservers.forEach {
-                it.value.onFunctionCall(context)
+                it.value.onCall(context)
             }
         }
     }
@@ -50,7 +70,7 @@ abstract class AbstractMutableReactive<T>(
         }
     }
 
-    @Suppress("UNCHECKED_CAST", "UNNECESSARY_NOT_NULL_ASSERTION")
+    @Suppress("UNCHECKED_CAST")
     protected fun toProxyOrNull(raw: T) : T {
         if (raw == null) {
             return null as T

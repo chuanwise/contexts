@@ -42,19 +42,25 @@ interface ReactionModule : Module
 
 // 正在构建的视图上下文，用于向 ReactiveCallContext 传递参数。
 @ContextsInternalApi
-val buildingContext = ThreadLocal<Context>()
+private val buildingReactionManager = ThreadLocal<ReactionManager?>()
+
+@OptIn(ContextsInternalApi::class)
+fun getBuildingReactionManager(): ReactionManager? {
+    return buildingReactionManager.get()
+}
 
 @ContextsInternalApi
 @Suppress("UNCHECKED_CAST")
 class ReactionModuleImpl: ReactionModule {
     private class ViewFunctionImpl(
         private val context: Context,
+        private val reactionManager: ReactionManager,
         private val autoBind: Boolean,
         private val function: ViewFunction
     ) : ViewFunction {
         override fun buildView(context: ViewContext) {
-            val backup = buildingContext.get()
-            buildingContext.set(this.context)
+            val backup = buildingReactionManager.get()
+            buildingReactionManager.set(reactionManager)
             try {
                 if (autoBind) {
                     context.bind {
@@ -65,9 +71,9 @@ class ReactionModuleImpl: ReactionModule {
                 }
             } finally {
                 if (backup == null) {
-                    buildingContext.remove()
+                    buildingReactionManager.remove()
                 } else {
-                    buildingContext.set(backup)
+                    buildingReactionManager.set(backup)
                 }
             }
         }
@@ -256,7 +262,7 @@ class ReactionModuleImpl: ReactionModule {
             true
         }
 
-        override fun onFunctionCall(context: ReactiveCallContext<Any?>): Unit = lock.write {
+        override fun onCall(context: ReactiveCallContext<Any?>): Unit = lock.write {
             val rawProxyRef = Ref(context.rawProxy)
 
             val callSource = callSourceByCallContexts.computeIfAbsent(context.sourceResult) {
@@ -302,7 +308,7 @@ class ReactionModuleImpl: ReactionModule {
         private val reactiveCache = ConcurrentHashMap<Reactive<Any?>, ReactiveCache<Any?>>()
 
         override fun registerViewFunction(autoBind: Boolean, function: ViewFunction): MutableEntry<ViewFunction> {
-            val finalFunction = ViewFunctionImpl(context, autoBind, function)
+            val finalFunction = ViewFunctionImpl(context, this, autoBind, function)
             return viewFunctions.add(finalFunction)
         }
 
@@ -322,19 +328,19 @@ class ReactionModuleImpl: ReactionModule {
             }
         }
 
-        override fun onFunctionCall(context: ReactiveCallContext<Any?>) {
+        override fun onCall(context: ReactiveCallContext<Any?>) {
             val cache = reactiveCache[context.reactive]
             require(cache is ProxyReactiveCacheImpl) { "Reactive value ${context.reactive} has not been cached previously." }
 
             if (context.context === this.context) {
                 // 只在构建自己的视图的时候记录函数调用。
-                cache.onFunctionCall(context)
+                cache.onCall(context)
             }
 
             val notChild = context.context?.allParents?.contains(this.context) != true
             if (autoFlush && !isFlushing && notChild) {
                 // 其他时候，如果不是正在构建视图，且开启了自动刷新，则尝试刷新。
-                tryFlush(context.reactive, (context.reactive as AbstractReactive).raw)
+                tryFlush(context.reactive, (context.reactive as AbstractReactive).rawValue)
             }
         }
 

@@ -45,19 +45,7 @@ import java.lang.reflect.Method
  * @param T 响应式值的类型
  * @author Chuanwise
  */
-interface ReactiveCallContext<T> {
-    val reactive: Reactive<T>
-
-    /**
-     * 如果该函数调用是为了构建某个视图产生的，则该值为视图上下文。
-     */
-    val context: Context?
-
-    /**
-     * 如果该函数调用是为了构建某个视图产生的，则该值为视图上下文管理器。
-     */
-    val reactionManager: ReactionManager?
-
+interface ReactiveCallContext<T> : ReactiveContext<T> {
     val raw: Any
     val rawProxy: Any
 

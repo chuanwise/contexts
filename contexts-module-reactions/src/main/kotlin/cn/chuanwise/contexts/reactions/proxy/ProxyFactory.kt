@@ -112,8 +112,15 @@ class ProxyFactoryImpl(
 
         private val Method.rawFunctionOrNull: KFunction<*>?
             get() = try { kotlinFunction } catch (e: Error) {
-                null // may raise KotlinReflectionInternalError
+                checkKotlinReflectionInternalError(e)
+                null
             }
+
+        private fun checkKotlinReflectionInternalError(e: Throwable) {
+            if (e::class.qualifiedName != "kotlin.reflect.jvm.internal.KotlinReflectionInternalError") {
+                throw e
+            }
+        }
 
         fun onCall(method: Method, arguments: Array<Any?>) : Any? {
             val rawFunction = method.rawFunctionOrNull

@@ -48,6 +48,7 @@ class ProxyFactoryTest {
         assertEquals("Proxy(value=$FooImpl)", foo.toString())
 
         val charSequence = proxyFactory.createProxy<CharSequence>("114", JustForwardProxyHandler).valueProxy
+        assertEquals('1', charSequence[0])
         assertEquals("114", charSequence.toString())
     }
 }

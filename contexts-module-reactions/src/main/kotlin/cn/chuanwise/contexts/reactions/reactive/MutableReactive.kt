@@ -31,17 +31,17 @@ interface MutableReactive<T> : Reactive<T> {
 class MutableReactiveImpl<T>(
     initialValue: T, type: ResolvableType<T>, proxyClassLoader: ClassLoader?
 ) : AbstractMutableReactive<T>(type, proxyClassLoader) {
-    override var raw: T = initialValue
+    override var rawValue: T = initialValue
 
     override var value: T
-        get() = onValueRead(toProxyOrNull(raw))
+        get() = onValueRead(toProxyOrNull(rawValue))
         set(value) {
             val result = tryToRawOrNull(value)
-            raw = result
+            rawValue = result
             onValueWrite(result)
         }
 
     override fun toString(): String {
-        return "MutableReactive(value=$raw)"
+        return "MutableReactive(value=$rawValue)"
     }
 }
